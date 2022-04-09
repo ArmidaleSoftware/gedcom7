@@ -15,6 +15,24 @@ namespace Gedcom7
         public override string ToString() { return this.Path; }
 
         /// <summary>
+        /// Find the record with a given tag and xref.
+        /// </summary>
+        /// <param name="tag">Tag of record to find</param>
+        /// <param name="xref">Xref of record to find</param>
+        /// <returns>Record, or null if not found</returns>
+        public GedcomStructure FindRecord(string tag, string xref)
+        {
+            foreach (GedcomStructure record in this.Records)
+            {
+                if (record.Tag == tag && record.Xref == xref)
+                {
+                    return record;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Load a GEDCOM file from a specified path.
         /// </summary>
         /// <param name="pathToFile">Path to file to load</param>
@@ -34,7 +52,7 @@ namespace Gedcom7
                 while ((line = reader.ReadLine()) != null)
                 {
                     this.LineCount++;
-                    var s = new GedcomStructure(this.LineCount, line, structurePath);
+                    var s = new GedcomStructure(this, this.LineCount, line, structurePath);
                     if (s.Level == 0)
                     {
                         Records.Add(s);

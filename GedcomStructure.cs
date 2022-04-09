@@ -7,13 +7,15 @@ namespace Gedcom7
 {
     public class GedcomStructure
     {
-        public override string ToString() { return this.OriginalLine; }
+        public override string ToString() => this.OriginalLine;
         WeakReference<GedcomStructure> Superstructure { get; set; }
-        int LineNumber { get; set; }
+        WeakReference<GedcomFile> File { get; set; }
+        public int LineNumber { get; private set; }
         public int Level { get; private set; }
-        string Xref { get; set; }
-        string Tag { get; set; }
-        string TagWithPath
+        public string Xref { get; private set; }
+        public string Tag { get; private set; }
+        bool IsNoteType => this.Tag == "NOTE" || this.Tag == "SNOTE";
+        public string TagWithPath
         {
             get
             {
@@ -30,8 +32,8 @@ namespace Gedcom7
                 return result;
             }
         }
-        string LineVal { get; set; }
-        string OriginalLine { get; set; }
+        public string LineVal { get; private set; }
+        public string OriginalLine { get; private set; }
         public bool IsExemptFromMatching
         {
             get
@@ -64,8 +66,9 @@ namespace Gedcom7
         List<GedcomStructure> Substructures { get; set; }
         WeakReference<GedcomStructure> MatchStructure { get; set; }
 
-        public GedcomStructure(int lineNumber, string line, List<GedcomStructure> structurePath)
+        public GedcomStructure(GedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
         {
+            this.File = new WeakReference<GedcomFile>(file);
             this.LineNumber = lineNumber;
             this.OriginalLine = line;
 
@@ -115,6 +118,59 @@ namespace Gedcom7
         }
 
         /// <summary>
+        /// Compare two LineStr values.
+        /// </summary>
+        /// <param name="a">First value to compare</param>
+        /// <param name="b">Second value to compare</param>
+        /// <returns>positive if similar, negative if dissimilar</returns>
+        static float ScoreLineStr(string a, string b)
+        {
+            if (a != b)
+            {
+                // TODO: use a more intelligent scoring algorithm.
+                return float.MinValue;
+            }
+            return 1;
+        }
+
+        float ScoreSubstructures(List<GedcomStructure> others)
+        {
+            float cumulativeScore = 0;
+            foreach (GedcomStructure structure in this.Substructures)
+            {
+                float score;
+                structure.FindBestMatch(others, out score);
+                cumulativeScore += score;
+            }
+            return cumulativeScore;
+        }
+
+        /// <summary>
+        /// Score an SNOTE structure against a NOTE structure.  This allows for the
+        /// case where one has been converted to the other without loss of information.
+        /// </summary>
+        /// <param name="sharedNote">NOTE structure</param>
+        /// <returns>negative if dissimilar, positive if similar</returns>
+        float ScoreSharedNoteVsNote(GedcomStructure note)
+        {
+            // Find the record that the shared note points to.
+            GedcomFile file;
+            if (!this.File.TryGetTarget(out file))
+            {
+                return 0;
+            }
+            GedcomStructure sharedNoteRecord = file.FindRecord("SNOTE", this.LineVal);
+            if (sharedNoteRecord == null)
+            {
+                return 0;
+            }
+
+            float cumulativeScore = ScoreLineStr(sharedNoteRecord.LineVal, note.LineVal);
+            cumulativeScore += sharedNoteRecord.ScoreSubstructures(note.Substructures);
+            return cumulativeScore;
+        }
+
+        /// <summary>
         /// Compute a score of how closely another structure matches this one.
         /// </summary>
         /// <param name="other"></param>
@@ -123,6 +179,10 @@ namespace Gedcom7
         {
             if (this.Tag != other.Tag)
             {
+                if (IsNoteType && other.IsNoteType)
+                {
+                    return (this.Tag == "SNOTE") ? ScoreSharedNoteVsNote(other) : other.ScoreSharedNoteVsNote(this);
+                }
                 return 0;
             }
 
@@ -131,21 +191,21 @@ namespace Gedcom7
             {
                 return float.MinValue;
             }
-            if (!IsPointer(this.LineVal) && this.LineVal != other.LineVal)
-            {
-                // TODO: use a more intelligent scoring algorithm.
-                return float.MinValue;
-            }
+            float cumulativeScore = (IsPointer(this.LineVal)) ? 1 : ScoreLineStr(this.LineVal, other.LineVal);
 
             // Score substructures.
-            float cumulativeScore = 1;
-            foreach (GedcomStructure structure in this.Substructures)
-            {
-                float subScore;
-                GedcomStructure sub = structure.FindBestMatch(other.Substructures, out subScore);
-                cumulativeScore += subScore;
-            }
+            cumulativeScore += this.ScoreSubstructures(other.Substructures);
+
             return cumulativeScore;
+        }
+
+        void SaveSharedNoteVsNoteMatch(GedcomStructure note)
+        {
+            // Find the record that the shared note points to.
+            GedcomFile file;
+            this.File.TryGetTarget(out file);
+            GedcomStructure sharedNoteRecord = file.FindRecord("SNOTE", this.LineVal);
+            sharedNoteRecord.MatchStructure = new WeakReference<GedcomStructure>(note);
         }
 
         /// <summary>
@@ -156,6 +216,21 @@ namespace Gedcom7
         {
             this.MatchStructure = new WeakReference<GedcomStructure>(other);
             other.MatchStructure = new WeakReference<GedcomStructure>(this);
+
+            if (this.Tag != other.Tag)
+            {
+                // Handle some special cases.
+                if (this.IsNoteType) {
+                    if (this.Tag == "SNOTE")
+                    {
+                        this.SaveSharedNoteVsNoteMatch(other);
+                    }
+                    else
+                    {
+                        other.SaveSharedNoteVsNoteMatch(this);
+                    }
+                }
+            }
 
             // Save substructure matches.
             foreach (GedcomStructure sub in this.Substructures)
