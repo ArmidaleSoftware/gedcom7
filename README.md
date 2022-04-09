@@ -1,1 +1,5 @@
-# gedcom7
+# GedCompare
+
+```
+Usage: GedCompare <filename1> <filename2>
+```
