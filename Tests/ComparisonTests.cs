@@ -21,24 +21,24 @@ namespace Tests
         [TestMethod]
         public void CompareMinimalWithSelf()
         {
-            CompareFileWithSelf("../../../../samples/minimal70.ged");
+            CompareFileWithSelf("../../../samples/minimal70.ged");
         }
 
         [TestMethod]
         public void CompareMaximalWithSelf()
         {
-            CompareFileWithSelf("../../../../samples/maximal70.ged");
+            CompareFileWithSelf("../../../samples/maximal70.ged");
         }
 
         [TestMethod]
         public void CompareMinimalWithMaximal()
         {
             var minimal70 = new GedcomFile();
-            bool ok = minimal70.Load("../../../../samples/minimal70.ged");
+            bool ok = minimal70.Load("../../../samples/minimal70.ged");
             Assert.IsTrue(ok);
 
             var maximal70 = new GedcomFile();
-            ok = maximal70.Load("../../../../samples/maximal70.ged");
+            ok = maximal70.Load("../../../samples/maximal70.ged");
             Assert.IsTrue(ok);
 
             // Adding information is ok.
@@ -58,11 +58,11 @@ namespace Tests
         public void CompareNoteWithSharedNote()
         {
             var note = new GedcomFile();
-            bool ok = note.Load("../../../../samples/note.ged");
+            bool ok = note.Load("../../../samples/note.ged");
             Assert.IsTrue(ok);
 
             var snote = new GedcomFile();
-            ok = snote.Load("../../../../samples/snote.ged");
+            ok = snote.Load("../../../samples/snote.ged");
             Assert.IsTrue(ok);
 
             GedcomComparisonReport report = note.Compare(snote);
