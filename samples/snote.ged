@@ -1,0 +1,7 @@
+﻿0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 SNOTE @N1@
+0 @N1@ SNOTE A single-use note record
+0 TRLR

@@ -75,7 +75,7 @@ namespace Gedcom7
                 structure.FindAndSaveBestMatch(otherFile.Records);
             }
 
-            var report = new GedcomComparisonReport();
+            var report = new GedcomComparisonReport(this.LineCount);
             foreach (GedcomStructure structure in this.Records)
             {
                 structure.AppendNonMatchingStructures(report.StructuresRemoved);

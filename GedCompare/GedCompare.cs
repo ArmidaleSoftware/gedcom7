@@ -54,9 +54,7 @@ namespace Gedcom7
             DumpStructures(report.StructuresRemoved);
             Console.WriteLine();
 
-            double lossFraction = 100.0 * report.StructuresRemoved.Count / file1.LineCount;
-            int compliancePercentage = (int)(100 - lossFraction);
-            Console.WriteLine("Compliance rating: " + compliancePercentage + "%");
+            Console.WriteLine("Compliance rating: " + report.CompliancePercentage + "%");
 
             return 0;
         }
