@@ -15,7 +15,7 @@ namespace Tests
             GedcomComparisonReport report = file.Compare(file);
             Assert.AreEqual(report.StructuresAdded.Count, 0);
             Assert.AreEqual(report.StructuresRemoved.Count, 0);
-            Assert.AreEqual(report.CompliancePercentage, 100);
+            Assert.AreEqual(report.CompatabilityPercentage, 100);
         }
 
         [TestMethod]
@@ -45,13 +45,13 @@ namespace Tests
             GedcomComparisonReport report = minimal70.Compare(maximal70);
             Assert.AreEqual(report.StructuresAdded.Count, 802);
             Assert.AreEqual(report.StructuresRemoved.Count, 0);
-            Assert.AreEqual(report.CompliancePercentage, 100);
+            Assert.AreEqual(report.CompatabilityPercentage, 100);
 
             // Losing information is not ok.
             report = maximal70.Compare(minimal70);
             Assert.AreEqual(report.StructuresAdded.Count, 0);
             Assert.AreEqual(report.StructuresRemoved.Count, 802);
-            Assert.AreEqual(report.CompliancePercentage, 3);
+            Assert.AreEqual(report.CompatabilityPercentage, 3);
         }
 
         [TestMethod]
@@ -68,7 +68,7 @@ namespace Tests
             GedcomComparisonReport report = note.Compare(snote);
             Assert.AreEqual(report.StructuresAdded.Count, 0);
             Assert.AreEqual(report.StructuresRemoved.Count, 0);
-            Assert.AreEqual(report.CompliancePercentage, 100);
+            Assert.AreEqual(report.CompatabilityPercentage, 100);
         }
     }
 }

@@ -54,7 +54,7 @@ namespace Gedcom7
             DumpStructures(report.StructuresRemoved);
             Console.WriteLine();
 
-            Console.WriteLine("Compliance rating: " + report.CompliancePercentage + "%");
+            Console.WriteLine("Compatability percentage: " + report.CompatabilityPercentage + "%");
 
             return 0;
         }
