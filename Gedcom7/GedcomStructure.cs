@@ -128,7 +128,7 @@ namespace Gedcom7
             if (a != b)
             {
                 // TODO: use a more intelligent scoring algorithm.
-                return float.MinValue;
+                return -1;
             }
             return 1;
         }
@@ -206,6 +206,17 @@ namespace Gedcom7
             this.File.TryGetTarget(out file);
             GedcomStructure sharedNoteRecord = file.FindRecord("SNOTE", this.LineVal);
             sharedNoteRecord.MatchStructure = new WeakReference<GedcomStructure>(note);
+
+            // Save substructure matches.
+            foreach (GedcomStructure sub in sharedNoteRecord.Substructures)
+            {
+                float score;
+                GedcomStructure otherSub = sub.FindBestMatch(note.Substructures, out score);
+                if (score > 0)
+                {
+                    sub.SaveMatch(otherSub);
+                }
+            }
         }
 
         /// <summary>
@@ -252,7 +263,7 @@ namespace Gedcom7
         /// <returns>Best match</returns>
         public GedcomStructure FindBestMatch(List<GedcomStructure> others, out float returnScore)
         {
-            float bestScore = float.MinValue;
+            float bestScore = 0;
             GedcomStructure bestOther = null;
             foreach (GedcomStructure other in others)
             {
@@ -262,7 +273,7 @@ namespace Gedcom7
                     continue;
                 }
                 float score = ScoreMatch(other);
-                if (bestScore < score)
+                if (bestOther == null || bestScore < score)
                 {
                     bestScore = score;
                     bestOther = other;
