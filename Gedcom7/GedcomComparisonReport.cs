@@ -11,13 +11,13 @@ namespace Gedcom7
         int LineCount { get; set; }
         public List<GedcomStructure> StructuresAdded { get; set; }
         public List<GedcomStructure> StructuresRemoved { get; set; }
-        public int CompliancePercentage
+        public int CompatabilityPercentage
         {
             get
             {
                 double lossFraction = 100.0 * this.StructuresRemoved.Count / this.LineCount;
-                int compliancePercentage = (int)(100 - lossFraction);
-                return compliancePercentage;
+                int compatabilityPercentage = (int)(100 - lossFraction);
+                return compatabilityPercentage;
             }
         }
 
