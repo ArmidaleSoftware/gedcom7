@@ -46,6 +46,8 @@ namespace Gedcom7
             }
 
             GedcomComparisonReport report = file1.Compare(file2);
+            Console.WriteLine("Source program: " + file2.SourceProgram + "\n");
+
             Console.WriteLine("Structures added: " + report.StructuresAdded.Count);
             DumpStructures(report.StructuresAdded);
             Console.WriteLine();
