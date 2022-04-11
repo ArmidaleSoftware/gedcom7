@@ -13,6 +13,23 @@ namespace Gedcom7
         public int LineCount { get; private set; }
         List<GedcomStructure> Records = new List<GedcomStructure>();
         public override string ToString() { return this.Path; }
+        GedcomStructure Head => (this.Records.Count > 0) ? this.Records[0] : null;
+
+        /// <summary>
+        /// Program and version that generated this GEDCOM file.
+        /// </summary>
+        public string SourceProgram
+        {
+            get
+            {
+                GedcomStructure sourceProgram = this.Head?.FindFirstSubstructure("SOUR");
+                if (sourceProgram == null)
+                {
+                    return null;
+                }
+                return sourceProgram.LineVal + " " + sourceProgram.FindFirstSubstructure("VERS")?.LineVal;
+            }
+        }
 
         /// <summary>
         /// Find the record with a given tag and xref.

@@ -15,6 +15,7 @@ namespace Gedcom7
         public string Xref { get; private set; }
         public string Tag { get; private set; }
         bool IsNoteType => this.Tag == "NOTE" || this.Tag == "SNOTE";
+        public GedcomStructure FindFirstSubstructure(string tag) => this.Substructures.Find(x => x.Tag == tag);
         public string TagWithPath
         {
             get
