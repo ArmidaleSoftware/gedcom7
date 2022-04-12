@@ -39,8 +39,10 @@ namespace Gedcom7
         {
             get
             {
-                // Two files are expected to have different HEAD.SOUR structures.
-                if (this.TagWithPath == "HEAD.SOUR")
+                // Two files are expected to have different HEAD.SOUR and HEAD.DEST structures.
+                if (this.TagWithPath == "HEAD.SOUR" ||
+                    this.TagWithPath == "HEAD.DEST" ||
+                    this.TagWithPath == "HEAD.DATE")
                 {
                     return true;
                 }
