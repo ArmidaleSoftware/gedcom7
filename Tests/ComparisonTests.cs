@@ -43,14 +43,14 @@ namespace Tests
 
             // Adding information is ok.
             GedcomComparisonReport report = minimal70.Compare(maximal70);
-            Assert.AreEqual(report.StructuresAdded.Count, 802);
+            Assert.AreEqual(report.StructuresAdded.Count, 799);
             Assert.AreEqual(report.StructuresRemoved.Count, 0);
             Assert.AreEqual(report.CompatabilityPercentage, 100);
 
             // Losing information is not ok.
             report = maximal70.Compare(minimal70);
             Assert.AreEqual(report.StructuresAdded.Count, 0);
-            Assert.AreEqual(report.StructuresRemoved.Count, 802);
+            Assert.AreEqual(report.StructuresRemoved.Count, 799);
             Assert.AreEqual(report.CompatabilityPercentage, 3);
         }
 
