@@ -12,6 +12,12 @@ updates:
       interval: "weekly"
       day: "saturday"
 
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "saturday"
+
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
