@@ -21,24 +21,24 @@ namespace Tests
         [TestMethod]
         public void CompareMinimalWithSelf()
         {
-            CompareFileWithSelf("../../../samples/minimal70.ged");
+            CompareFileWithSelf("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged");
         }
 
         [TestMethod]
         public void CompareMaximalWithSelf()
         {
-            CompareFileWithSelf("../../../samples/maximal70.ged");
+            CompareFileWithSelf("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged");
         }
 
         [TestMethod]
         public void CompareMinimalWithMaximal()
         {
             var minimal70 = new GedcomFile();
-            bool ok = minimal70.Load("../../../samples/minimal70.ged");
+            bool ok = minimal70.Load("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged");
             Assert.IsTrue(ok);
 
             var maximal70 = new GedcomFile();
-            ok = maximal70.Load("../../../samples/maximal70.ged");
+            ok = maximal70.Load("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged");
             Assert.IsTrue(ok);
 
             // Adding information is ok.
