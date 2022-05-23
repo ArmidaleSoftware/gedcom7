@@ -104,5 +104,13 @@ namespace Gedcom7
 
             return report;
         }
+
+        public void ResetComparison()
+        {
+            foreach (GedcomStructure structure in this.Records)
+            {
+                structure.ClearMatch();
+            }
+        }
     }
 }

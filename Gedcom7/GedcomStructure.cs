@@ -259,6 +259,18 @@ namespace Gedcom7
         }
 
         /// <summary>
+        /// Forget that this structure matches another structure.
+        /// </summary>
+        public void ClearMatch()
+        {
+            this.MatchStructure = null;
+            foreach (GedcomStructure sub in this.Substructures)
+            {
+                sub.ClearMatch();
+            }
+        }
+
+        /// <summary>
         /// Find the best match in a given list of possibilities.
         /// </summary>
         /// <param name="others">List of possibilities to look for a match in</param>
