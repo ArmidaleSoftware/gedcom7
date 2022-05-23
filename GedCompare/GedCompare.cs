@@ -30,18 +30,18 @@ namespace Gedcom7
             }
         }
 
-        static int Main(string[] args)
+        static int Compare(string filename1, string filename2)
         {
-            if (args.Length != 2)
+            GedcomFile file1 = LoadFile(filename1);
+            if (file1 == null)
             {
-                Console.WriteLine("usage: GedCompare <filename1> <filename2>");
+                Console.WriteLine("Could not load " + filename1);
                 return 1;
             }
-
-            GedcomFile file1 = LoadFile(args[0]);
-            GedcomFile file2 = LoadFile(args[1]);
-            if (file1 == null || file2 == null)
+            GedcomFile file2 = LoadFile(filename2);
+            if (file2 == null)
             {
+                Console.WriteLine("Could not load " + filename2);
                 return 1;
             }
 
@@ -56,9 +56,47 @@ namespace Gedcom7
             DumpStructures(report.StructuresRemoved);
             Console.WriteLine();
 
-            Console.WriteLine("Compatability percentage: " + report.CompatabilityPercentage + "%");
-
+            Console.WriteLine("Overall compatibility percentage: " + report.CompatibilityPercentage + "%");
             return 0;
+        }
+
+        static int CheckCompatibility(string filename, string baselinePath)
+        {
+            GedcomFile file = LoadFile(filename);
+            if (file == null)
+            {
+                Console.WriteLine("Could not load " + filename);
+                return 1;
+            }
+            GedcomCompatibilityReport report = new GedcomCompatibilityReport(file, baselinePath);
+            Console.WriteLine();
+            Console.WriteLine("Category Compatibility");
+            Console.WriteLine("------------------------");
+            Console.WriteLine("             Tree Level 1: " + report.Tree1CompatibilityPercentage);
+            Console.WriteLine("             Tree Level 2: " + report.Tree2CompatibilityPercentage);
+            Console.WriteLine("         Memories Level 1: " + report.Memories1CompatibilityPercentage);
+            Console.WriteLine("         Memories Level 2: " + report.Memories2CompatibilityPercentage);
+            Console.WriteLine("Latter-day Saint Services: " + report.LdsCompatibilityPercentage);
+            return 0;
+        }
+
+        static int Main(string[] args)
+        {
+            if (args.Length == 2)
+            {
+                return Compare(args[0], args[1]);
+            }
+            if (args.Length == 3 && args[0] == "-b")
+            {
+                return CheckCompatibility(args[2], args[1]);
+            }
+
+            Console.WriteLine("usage: GedCompare <filename1> <filename2>");
+            Console.WriteLine("          to simply compare two GEDCOM files");
+            Console.WriteLine("       GedCompare -b <baselinePath> <filename>");
+            Console.WriteLine("          to generate a FamilySearch GEDCOM 7 compatibility report");
+            Console.WriteLine("          where <baselinePath> is the directory containing the maximal70 files");
+            return 1;
         }
     }
 }

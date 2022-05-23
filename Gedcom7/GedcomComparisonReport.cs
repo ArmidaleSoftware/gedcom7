@@ -8,10 +8,10 @@ namespace Gedcom7
 {
     public class GedcomComparisonReport
     {
-        int LineCount { get; set; }
+        public int LineCount { get; set; }
         public List<GedcomStructure> StructuresAdded { get; set; }
         public List<GedcomStructure> StructuresRemoved { get; set; }
-        public int CompatabilityPercentage
+        public int CompatibilityPercentage
         {
             get
             {
