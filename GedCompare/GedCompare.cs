@@ -72,11 +72,11 @@ namespace Gedcom7
             Console.WriteLine();
             Console.WriteLine("Category Compatibility");
             Console.WriteLine("------------------------");
-            Console.WriteLine("             Tree Level 1: " + report.Tree1CompatibilityPercentage);
-            Console.WriteLine("             Tree Level 2: " + report.Tree2CompatibilityPercentage);
-            Console.WriteLine("         Memories Level 1: " + report.Memories1CompatibilityPercentage);
-            Console.WriteLine("         Memories Level 2: " + report.Memories2CompatibilityPercentage);
-            Console.WriteLine("Latter-day Saint Services: " + report.LdsCompatibilityPercentage);
+            Console.WriteLine("             Tree Level 1: " + report.Tree1CompatibilityPercentage + "%");
+            Console.WriteLine("             Tree Level 2: " + report.Tree2CompatibilityPercentage + "%");
+            Console.WriteLine("         Memories Level 1: " + report.Memories1CompatibilityPercentage + "%");
+            Console.WriteLine("         Memories Level 2: " + report.Memories2CompatibilityPercentage + "%");
+            Console.WriteLine("Latter-day Saint Services: " + report.LdsCompatibilityPercentage + "%");
             return 0;
         }
 
