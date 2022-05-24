@@ -73,10 +73,10 @@ namespace Gedcom7
             Console.WriteLine("Category Compatibility");
             Console.WriteLine("------------------------");
             Console.WriteLine(GedcomCompatibilityReport.GetOutput("Tree Level 1", report.Tree1CompatibilityPercentage, report.Tree1Report));
-            Console.WriteLine(GedcomCompatibilityReport.GetOutput("Tree Level 2", report.Tree2CompatibilityPercentage, report.Tree2Report, report.Tree1Report));
-            Console.WriteLine(GedcomCompatibilityReport.GetOutput("Memories Level 1", report.Memories1CompatibilityPercentage, report.Memories1Report, report.Tree1Report));
-            Console.WriteLine(GedcomCompatibilityReport.GetOutput("Memories Level 2", report.Memories2CompatibilityPercentage, report.Memories2Report, report.Memories1Report));
-            Console.WriteLine(GedcomCompatibilityReport.GetOutput("Latter-day Saint Services", report.LdsCompatibilityPercentage, report.LdsReport, report.Tree1Report));
+            Console.WriteLine(GedcomCompatibilityReport.GetOutput("Tree Level 2", report.Tree2CompatibilityPercentage, report.Tree2Report));
+            Console.WriteLine(GedcomCompatibilityReport.GetOutput("Memories Level 1", report.Memories1CompatibilityPercentage, report.Memories1Report));
+            Console.WriteLine(GedcomCompatibilityReport.GetOutput("Memories Level 2", report.Memories2CompatibilityPercentage, report.Memories2Report));
+            Console.WriteLine(GedcomCompatibilityReport.GetOutput("Latter-day Saint Services", report.LdsCompatibilityPercentage, report.LdsReport));
             return 0;
         }
 
