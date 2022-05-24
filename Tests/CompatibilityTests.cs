@@ -26,37 +26,37 @@ namespace Tests
         [TestMethod]
         public void MinimalCompatibility()
         {
-            TestCompatibility("minimal70", 7, 0, 0, 0, 0);
+            TestCompatibility("minimal70", 7, 2, 6, 5, 4);
         }
 
         [TestMethod]
         public void Tree1Compatibility()
         {
-            TestCompatibility("maximal70-tree1", 100, 0, 0, 0, 0);
+            TestCompatibility("maximal70-tree1", 100, 33, 84, 75, 65);
         }
 
         [TestMethod]
         public void Tree2Compatibility()
         {
-            TestCompatibility("maximal70-tree2", 100, 100, 0, 0, 0);
+            TestCompatibility("maximal70-tree2", 100, 100, 84, 75, 65);
         }
 
         [TestMethod]
         public void Memories1Compatibility()
         {
-            TestCompatibility("maximal70-memories1", 100, 0, 100, 0, 0);
+            TestCompatibility("maximal70-memories1", 100, 33, 100, 89, 65);
         }
 
         [TestMethod]
         public void Memories2Compatibility()
         {
-            TestCompatibility("maximal70-memories2", 100, 0, 100, 100, 0);
+            TestCompatibility("maximal70-memories2", 100, 33, 100, 100, 65);
         }
 
         [TestMethod]
         public void LdsCompatibility()
         {
-            TestCompatibility("maximal70-lds", 100, 0, 0, 0, 100);
+            TestCompatibility("maximal70-lds", 100, 33, 84, 75, 100);
         }
 
         [TestMethod]
