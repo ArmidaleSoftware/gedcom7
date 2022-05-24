@@ -56,13 +56,13 @@ namespace Tests
         [TestMethod]
         public void CompareMinimalWithMaximal()
         {
-            CompareSubsetWithSuperset("minimal70", "maximal70", 806, 3);
+            CompareSubsetWithSuperset("minimal70", "maximal70", 808, 3);
         }
 
         [TestMethod]
         public void CompareMinimalWithTree1()
         {
-            CompareSubsetWithSuperset("minimal70", "maximal70-tree1", 50, 7);
+            CompareSubsetWithSuperset("minimal70", "maximal70-tree1", 51, 7);
         }
 
         [TestMethod]
@@ -74,7 +74,7 @@ namespace Tests
         [TestMethod]
         public void CompareTree2WithMaximal()
         {
-            CompareSubsetWithSuperset("maximal70-tree1", "maximal70", 756, 9);
+            CompareSubsetWithSuperset("maximal70-tree1", "maximal70", 757, 9);
         }
 
         [TestMethod]
@@ -86,7 +86,7 @@ namespace Tests
         [TestMethod]
         public void CompareLdsWithMaximal()
         {
-            CompareSubsetWithSuperset("maximal70-lds", "maximal70", 727, 13);
+            CompareSubsetWithSuperset("maximal70-lds", "maximal70", 728, 13);
         }
 
         [TestMethod]
@@ -98,13 +98,13 @@ namespace Tests
         [TestMethod]
         public void CompareMemories1WithMemories2()
         {
-            CompareSubsetWithSuperset("maximal70-memories1", "maximal70-memories2", 8, 88);
+            CompareSubsetWithSuperset("maximal70-memories1", "maximal70-memories2", 8, 89);
         }
 
         [TestMethod]
         public void CompareMemories2WithMaximal()
         {
-            CompareSubsetWithSuperset("maximal70-memories2", "maximal70", 738, 11);
+            CompareSubsetWithSuperset("maximal70-memories2", "maximal70", 739, 11);
         }
 
         [TestMethod]
