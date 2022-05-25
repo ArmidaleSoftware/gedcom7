@@ -8,6 +8,8 @@ namespace Gedcom7
 {
     public class GedcomCompatibilityReport
     {
+        public string BaselineVersion { get; private set; }
+        public string BaselineDate { get; private set; }
         public GedcomComparisonReport Maximal70Report { get; private set; }
         public GedcomComparisonReport Tree1Report { get; private set; }
         public GedcomComparisonReport Tree2Report { get; private set; }
@@ -40,20 +42,32 @@ namespace Gedcom7
             return output;
         }
 
+        private GedcomComparisonReport CompareFiles(GedcomFile baselineFile, GedcomFile file)
+        {
+            GedcomComparisonReport report = baselineFile.Compare(file);
+            file.ResetComparison();
+            return report;
+        }
+
         private GedcomComparisonReport Compare(string baseline, GedcomFile file)
         {
             var baselineFile = new GedcomFile();
             if (!baselineFile.Load(baseline)) {
                 return null;
             }
-            GedcomComparisonReport report = baselineFile.Compare(file);
-            file.ResetComparison();
-            return report;
+            return CompareFiles(baselineFile, file);
         }
 
         public GedcomCompatibilityReport(GedcomFile file, string pathToBaselineFiles)
         {
-            this.Maximal70Report = Compare(Path.Combine(pathToBaselineFiles, "maximal70.ged"), file);
+            var baselineFile = new GedcomFile();
+            if (!baselineFile.Load(Path.Combine(pathToBaselineFiles, "maximal70.ged")))
+            {
+                return;
+            }
+            this.BaselineVersion = baselineFile.Version;
+            this.BaselineDate = baselineFile.Date;
+            this.Maximal70Report = CompareFiles(baselineFile, file);
             this.Tree1Report = Compare(Path.Combine(pathToBaselineFiles, "maximal70-tree1.ged"), file);
             this.Tree2Report = Compare(Path.Combine(pathToBaselineFiles, "maximal70-tree2.ged"), file);
             this.Memories1Report = Compare(Path.Combine(pathToBaselineFiles, "maximal70-memories1.ged"), file);

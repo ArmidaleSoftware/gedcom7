@@ -55,8 +55,6 @@ namespace Gedcom7
             Console.WriteLine("Structures removed: " + report.StructuresRemoved.Count);
             DumpStructures(report.StructuresRemoved);
             Console.WriteLine();
-
-            Console.WriteLine("Overall compatibility percentage: " + report.CompatibilityPercentage + "%");
             return 0;
         }
 
@@ -69,6 +67,9 @@ namespace Gedcom7
                 return 1;
             }
             GedcomCompatibilityReport report = new GedcomCompatibilityReport(file, baselinePath);
+
+            Console.WriteLine("Baseline Version: " + report.BaselineVersion + " (" + report.BaselineDate + ")");
+            Console.WriteLine("Overall compatibility percentage: " + report.Maximal70Report.CompatibilityPercentage + "%");
             Console.WriteLine();
             Console.WriteLine("Category Compatibility");
             Console.WriteLine("------------------------");
