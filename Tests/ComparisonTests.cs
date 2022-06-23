@@ -123,5 +123,53 @@ namespace Tests
             Assert.AreEqual(report.StructuresRemoved.Count, 0);
             Assert.AreEqual(report.CompatibilityPercentage, 100);
         }
+
+        [TestMethod]
+        public void CompareSingleNamePiecesWithMultipleNamePieces()
+        {
+            var singles = new GedcomFile();
+            bool ok = singles.Load("../../../samples/name-pieces-single.ged");
+            Assert.IsTrue(ok);
+
+            var multiples = new GedcomFile();
+            ok = multiples.Load("../../../samples/name-pieces-multiple.ged");
+            Assert.IsTrue(ok);
+
+            // Verify that both compare equally.
+            GedcomComparisonReport report = singles.Compare(multiples);
+            Assert.AreEqual(report.StructuresAdded.Count, 0);
+            Assert.AreEqual(report.StructuresRemoved.Count, 0);
+            Assert.AreEqual(report.CompatibilityPercentage, 100);
+
+            report = multiples.Compare(singles);
+            Assert.AreEqual(report.StructuresAdded.Count, 0);
+            Assert.AreEqual(report.StructuresRemoved.Count, 0);
+            Assert.AreEqual(report.CompatibilityPercentage, 100);
+
+            var mismatch = new GedcomFile();
+            ok = mismatch.Load("../../../samples/name-pieces-multiple-mismatch.ged");
+            Assert.IsTrue(ok);
+
+            // Verify that mismatch does not compare equally.
+            report = singles.Compare(mismatch);
+            Assert.AreEqual(report.StructuresAdded.Count, 6);
+            Assert.AreEqual(report.StructuresRemoved.Count, 6);
+            Assert.AreEqual(report.CompatibilityPercentage, 50);
+
+            report = mismatch.Compare(singles);
+            Assert.AreEqual(report.StructuresAdded.Count, 6);
+            Assert.AreEqual(report.StructuresRemoved.Count, 6);
+            Assert.AreEqual(report.CompatibilityPercentage, 66);
+
+            report = multiples.Compare(mismatch);
+            Assert.AreEqual(report.StructuresAdded.Count, 6);
+            Assert.AreEqual(report.StructuresRemoved.Count, 6);
+            Assert.AreEqual(report.CompatibilityPercentage, 66);
+
+            report = mismatch.Compare(multiples);
+            Assert.AreEqual(report.StructuresAdded.Count, 6);
+            Assert.AreEqual(report.StructuresRemoved.Count, 6);
+            Assert.AreEqual(report.CompatibilityPercentage, 66);
+        }
     }
 }

@@ -103,6 +103,8 @@ namespace Gedcom7
             {
                 structure.AppendNonMatchingStructures(report.StructuresAdded);
             }
+            this.ResetComparison();
+            otherFile.ResetComparison();
 
             return report;
         }
