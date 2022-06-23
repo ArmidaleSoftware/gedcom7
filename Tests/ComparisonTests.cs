@@ -123,5 +123,22 @@ namespace Tests
             Assert.AreEqual(report.StructuresRemoved.Count, 0);
             Assert.AreEqual(report.CompatibilityPercentage, 100);
         }
+
+        [TestMethod]
+        public void CompareSingleNamePiecesWithMultipleNamePieces()
+        {
+            var note = new GedcomFile();
+            bool ok = note.Load("../../../samples/name-pieces-single.ged");
+            Assert.IsTrue(ok);
+
+            var snote = new GedcomFile();
+            ok = snote.Load("../../../samples/name-pieces-multiple.ged");
+            Assert.IsTrue(ok);
+
+            GedcomComparisonReport report = note.Compare(snote);
+            Assert.AreEqual(report.StructuresAdded.Count, 0);
+            Assert.AreEqual(report.StructuresRemoved.Count, 0);
+            Assert.AreEqual(report.CompatibilityPercentage, 100);
+        }
     }
 }
