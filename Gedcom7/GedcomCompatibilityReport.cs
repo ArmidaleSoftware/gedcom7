@@ -44,9 +44,7 @@ namespace Gedcom7
 
         private GedcomComparisonReport CompareFiles(GedcomFile baselineFile, GedcomFile file)
         {
-            GedcomComparisonReport report = baselineFile.Compare(file);
-            file.ResetComparison();
-            return report;
+            return baselineFile.Compare(file);
         }
 
         private GedcomComparisonReport Compare(string baseline, GedcomFile file)

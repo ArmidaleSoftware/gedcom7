@@ -301,10 +301,14 @@ namespace Gedcom7
             // Save substructure matches.
             foreach (GedcomStructure sub in this.Substructures)
             {
-                float subScore;
-                GedcomStructure otherSub = sub.FindBestMatch(other.Substructures, out subScore);
-                if (subScore > 0)
+                while (!sub.IsMatchComplete)
                 {
+                    float subScore;
+                    GedcomStructure otherSub = sub.FindBestMatch(other.Substructures, out subScore);
+                    if (subScore <= 0)
+                    {
+                        break;
+                    }
                     sub.SaveMatch(otherSub);
                 }
             }
