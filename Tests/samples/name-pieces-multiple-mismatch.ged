@@ -1,0 +1,18 @@
+﻿0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 NAME npfx1 npfx2 givn1 givn2 nick1 nick2 /spfx1 spfx2 surn1 surn2/ nsfx1 nsfx2
+2 NPFX npfx1
+2 NPFX npfx1
+2 GIVN givn1
+2 GIVN givn1
+2 NICK nick1
+2 NICK nick1
+2 SPFX spfx1
+2 SPFX spfx1
+2 SURN surn1
+2 SURN surn1
+2 NSFX nsfx1
+2 NSFX nsfx1
+0 TRLR

@@ -127,15 +127,20 @@ namespace Tests
         [TestMethod]
         public void CompareSingleNamePiecesWithMultipleNamePieces()
         {
-            var note = new GedcomFile();
-            bool ok = note.Load("../../../samples/name-pieces-single.ged");
+            var singles = new GedcomFile();
+            bool ok = singles.Load("../../../samples/name-pieces-single.ged");
             Assert.IsTrue(ok);
 
-            var snote = new GedcomFile();
-            ok = snote.Load("../../../samples/name-pieces-multiple.ged");
+            var multiples = new GedcomFile();
+            ok = multiples.Load("../../../samples/name-pieces-multiple.ged");
             Assert.IsTrue(ok);
 
-            GedcomComparisonReport report = note.Compare(snote);
+            GedcomComparisonReport report = singles.Compare(multiples);
+            Assert.AreEqual(report.StructuresAdded.Count, 0);
+            Assert.AreEqual(report.StructuresRemoved.Count, 0);
+            Assert.AreEqual(report.CompatibilityPercentage, 100);
+
+            report = multiples.Compare(singles);
             Assert.AreEqual(report.StructuresAdded.Count, 0);
             Assert.AreEqual(report.StructuresRemoved.Count, 0);
             Assert.AreEqual(report.CompatibilityPercentage, 100);

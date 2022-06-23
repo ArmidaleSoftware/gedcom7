@@ -15,6 +15,7 @@ namespace Gedcom7
         public string Xref { get; private set; }
         public string Tag { get; private set; }
         bool IsNoteType => this.Tag == "NOTE" || this.Tag == "SNOTE";
+        bool IsNamePieceType => this.Tag == "NPFX" || this.Tag == "GIVN" || this.Tag == "NICK" || this.Tag == "SPFX" || this.Tag == "SURN" || this.Tag == "NSFX";
         public GedcomStructure FindFirstSubstructure(string tag) => this.Substructures.Find(x => x.Tag == tag);
         public string TagWithPath
         {
@@ -67,13 +68,49 @@ namespace Gedcom7
             }
         }
         List<GedcomStructure> Substructures { get; set; }
-        WeakReference<GedcomStructure> MatchStructure { get; set; }
+        List<WeakReference<GedcomStructure>> MatchStructures { get; set; }
+
+        string SpacedLineVal => " " + this.LineVal + " ";
+
+        /// <summary>
+        /// Get the LineVal payload that does not yet have any match.  This is used with
+        /// name pieces where the payload may be split among multiple matching structures.
+        /// </summary>
+        string UnmatchedSpacedLineVal
+        {
+            get
+            {
+                string spacedValue = this.SpacedLineVal;
+                string remainder = spacedValue;
+                foreach (WeakReference<GedcomStructure> matchReference in this.MatchStructures)
+                {
+                    GedcomStructure match;
+                    if (matchReference.TryGetTarget(out match))
+                    {
+                        string spacedMatchValue = match.SpacedLineVal;
+                        if (spacedMatchValue.Contains(spacedValue))
+                        {
+                            // This structure's payload is a substring of the match payload.
+                            return " ";
+                        }
+                        remainder = remainder.Replace(spacedMatchValue, " ");
+                    }
+                }
+                return remainder;
+            }
+        }
+
+        /// <summary>
+        /// Check whether this structure has been fully matched within the other file.
+        /// </summary>
+        bool IsMatchComplete => (this.IsNamePieceType) ? (UnmatchedSpacedLineVal == " ") : (MatchStructures.Count > 0);
 
         public GedcomStructure(GedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
         {
             this.File = new WeakReference<GedcomFile>(file);
             this.LineNumber = lineNumber;
             this.OriginalLine = line;
+            this.MatchStructures = new List<WeakReference<GedcomStructure>>();
 
             // Parse line into Level, Xref, Tag, Pointer, and LineVal.
             string[] tokens = line.Split(' ');
@@ -136,6 +173,17 @@ namespace Gedcom7
             return 1;
         }
 
+        /// <summary>
+        /// Compare two name piece structures to see if one is a subset of the other.
+        /// </summary>
+        /// <param name="superset">Potential superset to compare against</param>
+        /// <param name="subset">Potential subset to compare</param>
+        /// <returns>positive if similar, negative if dissimilar</returns>
+        static float ScoreNamePiece(GedcomStructure superset, GedcomStructure subset)
+        {
+            return superset.UnmatchedSpacedLineVal.Contains(subset.SpacedLineVal) ? 1 : -1;
+        }
+
         float ScoreSubstructures(List<GedcomStructure> others)
         {
             float cumulativeScore = 0;
@@ -188,6 +236,10 @@ namespace Gedcom7
                 }
                 return 0;
             }
+            if (IsNamePieceType && other.IsNamePieceType)
+            {
+                return Math.Max(ScoreNamePiece(this, other), ScoreNamePiece(other, this));
+            }
 
             // Score line values.
             if (IsPointer(this.LineVal) != IsPointer(other.LineVal))
@@ -208,7 +260,7 @@ namespace Gedcom7
             GedcomFile file;
             this.File.TryGetTarget(out file);
             GedcomStructure sharedNoteRecord = file.FindRecord("SNOTE", this.LineVal);
-            sharedNoteRecord.MatchStructure = new WeakReference<GedcomStructure>(note);
+            sharedNoteRecord.MatchStructures.Add(new WeakReference<GedcomStructure>(note));
 
             // Save substructure matches.
             foreach (GedcomStructure sub in sharedNoteRecord.Substructures)
@@ -228,8 +280,8 @@ namespace Gedcom7
         /// <param name="other">Matching structure</param>
         void SaveMatch(GedcomStructure other)
         {
-            this.MatchStructure = new WeakReference<GedcomStructure>(other);
-            other.MatchStructure = new WeakReference<GedcomStructure>(this);
+            this.MatchStructures.Add(new WeakReference<GedcomStructure>(other));
+            other.MatchStructures.Add(new WeakReference<GedcomStructure>(this));
 
             if (this.Tag != other.Tag)
             {
@@ -263,7 +315,7 @@ namespace Gedcom7
         /// </summary>
         public void ClearMatch()
         {
-            this.MatchStructure = null;
+            this.MatchStructures.Clear();
             foreach (GedcomStructure sub in this.Substructures)
             {
                 sub.ClearMatch();
@@ -282,7 +334,7 @@ namespace Gedcom7
             GedcomStructure bestOther = null;
             foreach (GedcomStructure other in others)
             {
-                if (other.MatchStructure != null)
+                if (other.IsMatchComplete)
                 {
                     // Already matched something else.
                     continue;
@@ -322,7 +374,7 @@ namespace Gedcom7
             {
                 return;
             }
-            if (this.MatchStructure == null)
+            if (!this.IsMatchComplete)
             {
                 list.Add(this);
             }
