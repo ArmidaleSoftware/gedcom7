@@ -69,6 +69,7 @@ namespace Gedcom7
         }
         List<GedcomStructure> Substructures { get; set; }
         List<WeakReference<GedcomStructure>> MatchStructures { get; set; }
+        float Score { get; set; }
 
         string SpacedLineVal => " " + this.LineVal + " ";
 
@@ -269,7 +270,7 @@ namespace Gedcom7
                 GedcomStructure otherSub = sub.FindBestMatch(note.Substructures, out score);
                 if (score > 0)
                 {
-                    sub.SaveMatch(otherSub);
+                    sub.SaveMatch(otherSub, score);
                 }
             }
         }
@@ -278,10 +279,30 @@ namespace Gedcom7
         /// Remember that this structure matches another structure.
         /// </summary>
         /// <param name="other">Matching structure</param>
-        void SaveMatch(GedcomStructure other)
+        /// <param name="score">Score</param>
+        void SaveMatch(GedcomStructure other, float score)
         {
+            if (other.IsMatchComplete)
+            {
+                // We just found a better match for 'other' than
+                // what it previously had stored.  Remove the other's
+                // previous match(es).
+                foreach (var otherMatchWeak in other.MatchStructures)
+                {
+                    GedcomStructure otherMatch;
+                    bool ok = otherMatchWeak.TryGetTarget(out otherMatch);
+                    if (ok)
+                    {
+                        otherMatch.ClearMatch();
+                    }
+                }
+                other.ClearMatch();
+            }
+
             this.MatchStructures.Add(new WeakReference<GedcomStructure>(other));
             other.MatchStructures.Add(new WeakReference<GedcomStructure>(this));
+            this.Score += score;
+            other.Score += score;
 
             if (this.Tag != other.Tag)
             {
@@ -309,7 +330,7 @@ namespace Gedcom7
                     {
                         break;
                     }
-                    sub.SaveMatch(otherSub);
+                    sub.SaveMatch(otherSub, subScore);
                 }
             }
         }
@@ -319,6 +340,7 @@ namespace Gedcom7
         /// </summary>
         public void ClearMatch()
         {
+            this.Score = 0;
             this.MatchStructures.Clear();
             foreach (GedcomStructure sub in this.Substructures)
             {
@@ -338,12 +360,12 @@ namespace Gedcom7
             GedcomStructure bestOther = null;
             foreach (GedcomStructure other in others)
             {
-                if (other.IsMatchComplete)
+                float score = ScoreMatch(other);
+                if (other.IsMatchComplete && (other.Score >= score))
                 {
                     // Already matched something else.
                     continue;
                 }
-                float score = ScoreMatch(other);
                 if (bestOther == null || bestScore < score)
                 {
                     bestScore = score;
@@ -364,7 +386,7 @@ namespace Gedcom7
             GedcomStructure other = FindBestMatch(others, out score);
             if (score > 0)
             {
-                SaveMatch(other);
+                SaveMatch(other, score);
             }
         }
 

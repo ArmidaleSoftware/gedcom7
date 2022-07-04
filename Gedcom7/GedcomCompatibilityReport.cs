@@ -31,10 +31,14 @@ namespace Gedcom7
         public int LdsCompatibilityPercentage => CompatibilityPercentage(this.LdsReport);
         public int MaximalCompatibilityPercentage => CompatibilityPercentage(this.Maximal70Report);
 
-        public static string GetOutput(string label, int compatibilityPercentage, GedcomComparisonReport report)
+        public static string GetOutput(string label, int compatibilityPercentage, GedcomComparisonReport report, bool includePercentage = false)
         {
-            string output = label + ": " + compatibilityPercentage + "%\n";
-            output += "   Structures removed: " + report.StructuresRemoved.Count + "\n";
+            string output = label + ":";
+            if (includePercentage)
+            {
+                output += " " + compatibilityPercentage + "%";
+            }
+            output += "\n   Structures removed: " + report.StructuresRemoved.Count + "\n";
             foreach (GedcomStructure structure in report.StructuresRemoved)
             {
                 output += "      " + structure.LineWithPath + "\n";
