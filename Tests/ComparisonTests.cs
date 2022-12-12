@@ -9,7 +9,7 @@ namespace Tests
         void CompareFileWithSelf(string path)
         {
             var file = new GedcomFile();
-            bool ok = file.Load(path);
+            bool ok = file.LoadFromPath(path);
             Assert.IsTrue(ok);
 
             GedcomComparisonReport report = file.Compare(file);
@@ -33,11 +33,11 @@ namespace Tests
         private void CompareSubsetWithSuperset(string subset, string superset, int structuresAdded, int percentage)
         {
             var subsetFile = new GedcomFile();
-            bool ok = subsetFile.Load("../../../../external/GEDCOM.io/testfiles/gedcom70/" + subset + ".ged");
+            bool ok = subsetFile.LoadFromPath("../../../../external/GEDCOM.io/testfiles/gedcom70/" + subset + ".ged");
             Assert.IsTrue(ok);
 
             var supersetFile = new GedcomFile();
-            ok = supersetFile.Load("../../../../external/GEDCOM.io/testfiles/gedcom70/" + superset + ".ged");
+            ok = supersetFile.LoadFromPath("../../../../external/GEDCOM.io/testfiles/gedcom70/" + superset + ".ged");
             Assert.IsTrue(ok);
 
             // Adding information is ok.
@@ -111,11 +111,11 @@ namespace Tests
         public void CompareNoteWithSharedNote()
         {
             var note = new GedcomFile();
-            bool ok = note.Load("../../../samples/note.ged");
+            bool ok = note.LoadFromPath("../../../samples/note.ged");
             Assert.IsTrue(ok);
 
             var snote = new GedcomFile();
-            ok = snote.Load("../../../samples/snote.ged");
+            ok = snote.LoadFromPath("../../../samples/snote.ged");
             Assert.IsTrue(ok);
 
             GedcomComparisonReport report = note.Compare(snote);
@@ -128,11 +128,11 @@ namespace Tests
         public void CompareSingleNamePiecesWithMultipleNamePieces()
         {
             var singles = new GedcomFile();
-            bool ok = singles.Load("../../../samples/name-pieces-single.ged");
+            bool ok = singles.LoadFromPath("../../../samples/name-pieces-single.ged");
             Assert.IsTrue(ok);
 
             var multiples = new GedcomFile();
-            ok = multiples.Load("../../../samples/name-pieces-multiple.ged");
+            ok = multiples.LoadFromPath("../../../samples/name-pieces-multiple.ged");
             Assert.IsTrue(ok);
 
             // Verify that both compare equally.
@@ -147,7 +147,7 @@ namespace Tests
             Assert.AreEqual(report.CompatibilityPercentage, 100);
 
             var mismatch = new GedcomFile();
-            ok = mismatch.Load("../../../samples/name-pieces-multiple-mismatch.ged");
+            ok = mismatch.LoadFromPath("../../../samples/name-pieces-multiple-mismatch.ged");
             Assert.IsTrue(ok);
 
             // Verify that mismatch does not compare equally.

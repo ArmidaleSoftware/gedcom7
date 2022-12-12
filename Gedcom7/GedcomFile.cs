@@ -51,12 +51,28 @@ namespace Gedcom7
             return null;
         }
 
+        private void LoadFromStreamReader(StreamReader reader)
+        {
+            var structurePath = new List<GedcomStructure>();
+            string line;
+            this.LineCount = 0;
+            while ((line = reader.ReadLine()) != null)
+            {
+                this.LineCount++;
+                var s = new GedcomStructure(this, this.LineCount, line, structurePath);
+                if (s.Level == 0)
+                {
+                    Records.Add(s);
+                }
+            }
+        }
+
         /// <summary>
         /// Load a GEDCOM file from a specified path.
         /// </summary>
         /// <param name="pathToFile">Path to file to load</param>
         /// <returns></returns>
-        public bool Load(string pathToFile)
+        public bool LoadFromPath(string pathToFile)
         {
             this.Path = pathToFile;
             if (!File.Exists(pathToFile))
@@ -65,17 +81,27 @@ namespace Gedcom7
             }
             using (var reader = new StreamReader(pathToFile))
             {
-                var structurePath = new List<GedcomStructure>();
-                string line;
-                this.LineCount = 0;
-                while ((line = reader.ReadLine()) != null)
+                LoadFromStreamReader(reader);
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Load a GEDCOM file from a specified URL.
+        /// </summary>
+        /// <param name="url">URL to file to load</param>
+        /// <returns></returns>
+        public bool LoadFromUrl(string url)
+        {
+            this.Path = url;
+
+            var net = new System.Net.WebClient();
+            var data = net.DownloadData(url);
+            using (var content = new System.IO.MemoryStream(data))
+            {
+                using (var reader = new StreamReader(content))
                 {
-                    this.LineCount++;
-                    var s = new GedcomStructure(this, this.LineCount, line, structurePath);
-                    if (s.Level == 0)
-                    {
-                        Records.Add(s);
-                    }
+                    LoadFromStreamReader(reader);
                 }
             }
             return true;
