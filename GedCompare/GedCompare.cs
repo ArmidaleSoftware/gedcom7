@@ -13,7 +13,7 @@ namespace Gedcom7
         static GedcomFile LoadFile(string filename)
         {
             var file = new GedcomFile();
-            bool ok = file.Load(filename);
+            bool ok = file.LoadFromPath(filename);
             if (!ok)
             {
                 Console.WriteLine("Failed to load " + filename);
@@ -58,7 +58,7 @@ namespace Gedcom7
             return 0;
         }
 
-        static int CheckCompatibility(string filename, string baselinePath, bool includePercentage = false)
+        static int CheckCompatibility(string filename, bool includePercentage = false)
         {
             GedcomFile file = LoadFile(filename);
             if (file == null)
@@ -66,7 +66,7 @@ namespace Gedcom7
                 Console.WriteLine("Could not load " + filename);
                 return 1;
             }
-            GedcomCompatibilityReport report = new GedcomCompatibilityReport(file, baselinePath);
+            GedcomCompatibilityReport report = new GedcomCompatibilityReport(file);
 
             Console.WriteLine("Baseline Version: " + report.BaselineVersion + " (" + report.BaselineDate + ")");
             if (includePercentage)
@@ -90,16 +90,15 @@ namespace Gedcom7
             {
                 return Compare(args[0], args[1]);
             }
-            if (args.Length == 3 && args[0] == "-b")
+            if (args.Length == 1)
             {
-                return CheckCompatibility(args[2], args[1]);
+                return CheckCompatibility(args[1]);
             }
 
             Console.WriteLine("usage: GedCompare <filename1> <filename2>");
             Console.WriteLine("          to simply compare two GEDCOM files");
-            Console.WriteLine("       GedCompare -b <baselinePath> <filename>");
+            Console.WriteLine("       GedCompare <filename>");
             Console.WriteLine("          to generate a FamilySearch GEDCOM 7 compatibility report");
-            Console.WriteLine("          where <baselinePath> is the directory containing the maximal70 files");
             return 1;
         }
     }
