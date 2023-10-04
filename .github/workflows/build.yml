@@ -50,5 +50,5 @@ jobs:
       run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Analysis='True' ${{env.SOLUTION_FILE_PATH}}
 
     - name: Run Basic Unit Tests
-      working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/netcoreapp3.1
+      working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0
       run: vstest.console.exe Tests.dll
