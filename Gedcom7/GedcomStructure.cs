@@ -9,11 +9,40 @@ namespace Gedcom7
     {
         // Data members.
         public List<GedcomStructure> Substructures { get; set; }
-        public WeakReference<GedcomStructure> Superstructure { get; set; }
-        /// <summary>
-        /// TODO: combine this state with the Superstructure WeakReference.
-        /// </summary>
-        public WeakReference<GedcomFile> File { get; set; }
+        private object _superstructure;
+        private GedcomStructure Superstructure
+        {
+            get
+            {
+                if (_superstructure is WeakReference<GedcomStructure>)
+                {
+                    WeakReference<GedcomStructure> wr = _superstructure as WeakReference<GedcomStructure>;
+                    GedcomStructure target;
+                    if (wr.TryGetTarget(out target))
+                    {
+                        return target;
+                    }
+                }
+                return null;
+            }
+        }
+        public GedcomFile File
+        {
+            get
+            {
+                if (_superstructure is WeakReference<GedcomFile>)
+                {
+                    WeakReference<GedcomFile> wr = _superstructure as WeakReference<GedcomFile>;
+                    GedcomFile target;
+                    if (wr.TryGetTarget(out target))
+                    {
+                        return target;
+                    }
+                }
+                GedcomStructure superstructure = this.Superstructure;
+                return superstructure?.File;
+            }
+        }
         public int LineNumber { get; private set; }
         public int Level { get; private set; }
         public string Xref { get; private set; }
@@ -29,26 +58,15 @@ namespace Gedcom7
         public bool IsNoteType => this.Tag == "NOTE" || this.Tag == "SNOTE";
         public bool IsNamePieceType => this.Tag == "NPFX" || this.Tag == "GIVN" || this.Tag == "NICK" || this.Tag == "SPFX" || this.Tag == "SURN" || this.Tag == "NSFX";
         public GedcomStructure FindFirstSubstructure(string tag) => this.Substructures.Find(x => x.Tag == tag);
-        public GedcomFile TryGetFile() {
-            GedcomFile file;
-            if (!this.File.TryGetTarget(out file))
-            {
-                return null;
-            }
-            return file;
-        }
         public string TagWithPath
         {
             get
             {
                 string result = "";
-                if (this.Superstructure != null)
+                GedcomStructure superstructure = this.Superstructure;
+                if (superstructure != null)
                 {
-                    GedcomStructure superstructure;
-                    if (this.Superstructure.TryGetTarget(out superstructure))
-                    {
-                        result += superstructure.TagWithPath + ".";
-                    }
+                    result += superstructure.TagWithPath + ".";
                 }
                 result += this.Tag;
                 return result;
@@ -92,7 +110,6 @@ namespace Gedcom7
 
         public GedcomStructure(GedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
         {
-            this.File = new WeakReference<GedcomFile>(file);
             this.LineNumber = lineNumber;
             this.OriginalLine = line;
 
@@ -126,8 +143,10 @@ namespace Gedcom7
             if (this.Level > 0)
             {
                 GedcomStructure superstructure = structurePath[this.Level - 1];
-                this.Superstructure = new WeakReference<GedcomStructure>(superstructure);
+                this._superstructure = new WeakReference<GedcomStructure>(superstructure);
                 superstructure.Substructures.Add(this);
+            } else {
+                this._superstructure = new WeakReference<GedcomFile>(file);
             }
         }
 
@@ -165,7 +184,7 @@ namespace Gedcom7
         /// <returns>positive if similar, negative if dissimilar</returns>
         static float ScoreNamePiece(GedcomStructure superset, GedcomStructure subset)
         {
-            GedcomFile file = superset.TryGetFile();
+            GedcomFile file = superset.File;
             if (file == null)
             {
                 return 0;
@@ -194,12 +213,7 @@ namespace Gedcom7
         float ScoreSharedNoteVsNote(GedcomStructure note)
         {
             // Find the record that the shared note points to.
-            GedcomFile file;
-            if (!this.File.TryGetTarget(out file))
-            {
-                return 0;
-            }
-            GedcomStructure sharedNoteRecord = file.FindRecord("SNOTE", this.LineVal);
+            GedcomStructure sharedNoteRecord = this.File?.FindRecord("SNOTE", this.LineVal);
             if (sharedNoteRecord == null)
             {
                 return 0;
@@ -252,7 +266,7 @@ namespace Gedcom7
         public GedcomStructure FindBestMatch(List<GedcomStructure> others, out float returnScore)
         {
             returnScore = 0;
-            GedcomFile file = TryGetFile();
+            GedcomFile file = this.File;
             if (file == null)
             {
                 return null;
@@ -261,7 +275,7 @@ namespace Gedcom7
             GedcomStructure bestOther = null;
             foreach (GedcomStructure other in others)
             {
-                GedcomFile otherFile = other.TryGetFile();
+                GedcomFile otherFile = other.File;
                 if (otherFile == null)
                 {
                     return null;

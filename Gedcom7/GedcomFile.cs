@@ -149,7 +149,7 @@ namespace Gedcom7
         public GedcomStructureMatchInfo GetMatchInfo(GedcomStructure structure)
         {
 #if DEBUG
-            GedcomFile file = structure.TryGetFile();
+            GedcomFile file = structure.File;
             Debug.Assert(file == this);
 #endif
             if (!this.StructureMatchDictionary.ContainsKey(structure))
@@ -183,7 +183,7 @@ namespace Gedcom7
         public void SaveMatch(GedcomStructure current, GedcomStructure other, float score)
         {
             GedcomStructureMatchInfo currentMatchInfo = GetMatchInfo(current);
-            GedcomFile otherFile = other.TryGetFile();
+            GedcomFile otherFile = other.File;
             GedcomStructureMatchInfo otherMatchInfo = otherFile.GetMatchInfo(other);
             if (otherFile.GetIsMatchComplete(otherMatchInfo))
             {
