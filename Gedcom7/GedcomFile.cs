@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -129,7 +130,7 @@ namespace Gedcom7
             }
             foreach (GedcomStructure structure in otherFile.Records)
             {
-                AppendNonMatchingStructures(structure, report.StructuresAdded);
+                otherFile.AppendNonMatchingStructures(structure, report.StructuresAdded);
             }
             this.ResetComparison();
             otherFile.ResetComparison();
@@ -145,7 +146,18 @@ namespace Gedcom7
             }
         }
 
-        public GedcomStructureMatchInfo GetMatchInfo(GedcomStructure structure) => this.StructureMatchDictionary[structure];
+        public GedcomStructureMatchInfo GetMatchInfo(GedcomStructure structure)
+        {
+#if DEBUG
+            GedcomFile file = structure.TryGetFile();
+            Debug.Assert(file == this);
+#endif
+            if (!this.StructureMatchDictionary.ContainsKey(structure))
+            {
+                this.StructureMatchDictionary[structure] = new GedcomStructureMatchInfo(structure);
+            }
+            return this.StructureMatchDictionary[structure];
+        }
 
         /// <summary>
         /// Find the best match and remember it.
@@ -170,14 +182,15 @@ namespace Gedcom7
         /// <param name="score">Score</param>
         public void SaveMatch(GedcomStructure current, GedcomStructure other, float score)
         {
-            GedcomStructureMatchInfo currentMatch = new GedcomStructureMatchInfo(current);
-            GedcomStructureMatchInfo otherMatch = GetMatchInfo(other);
-            if (GetIsMatchComplete(otherMatch))
+            GedcomStructureMatchInfo currentMatchInfo = GetMatchInfo(current);
+            GedcomFile otherFile = other.TryGetFile();
+            GedcomStructureMatchInfo otherMatchInfo = otherFile.GetMatchInfo(other);
+            if (otherFile.GetIsMatchComplete(otherMatchInfo))
             {
                 // We just found a better match for 'other' than
                 // what it previously had stored.  Remove the other's
                 // previous match(es).
-                foreach (var otherMatchWeak in otherMatch.MatchStructures)
+                foreach (var otherMatchWeak in otherMatchInfo.MatchStructures)
                 {
                     GedcomStructure otherMatch2;
                     bool ok = otherMatchWeak.TryGetTarget(out otherMatch2);
@@ -189,10 +202,10 @@ namespace Gedcom7
                 ClearMatch(other);
             }
 
-            currentMatch.MatchStructures.Add(new WeakReference<GedcomStructure>(other));
-            otherMatch.MatchStructures.Add(new WeakReference<GedcomStructure>(current));
-            currentMatch.Score += score;
-            otherMatch.Score += score;
+            currentMatchInfo.MatchStructures.Add(new WeakReference<GedcomStructure>(other));
+            otherMatchInfo.MatchStructures.Add(new WeakReference<GedcomStructure>(current));
+            currentMatchInfo.Score += score;
+            otherMatchInfo.Score += score;
 
             if (current.Tag != other.Tag)
             {
@@ -205,7 +218,7 @@ namespace Gedcom7
                     }
                     else
                     {
-                        SaveSharedNoteVsNoteMatch(other, current);
+                        otherFile.SaveSharedNoteVsNoteMatch(other, current);
                     }
                 }
             }
@@ -213,8 +226,8 @@ namespace Gedcom7
             // Save substructure matches.
             foreach (GedcomStructure sub in current.Substructures)
             {
-                GedcomStructureMatchInfo subMatch = GetMatchInfo(sub);
-                while (!GetIsMatchComplete(subMatch))
+                GedcomStructureMatchInfo subMatchInfo = GetMatchInfo(sub);
+                while (!GetIsMatchComplete(subMatchInfo))
                 {
                     float subScore;
                     GedcomStructure otherSub = sub.FindBestMatch(other.Substructures, out subScore);
@@ -312,6 +325,10 @@ namespace Gedcom7
         /// </summary>
         public bool GetIsMatchComplete(GedcomStructureMatchInfo current)
         {
+            if (current == null)
+            {
+                return false;
+            }
             return (current.Structure.IsNamePieceType) ? (GetUnmatchedSpacedLineVal(current.Structure) == " ") : (current.MatchStructures.Count > 0);
         }
     }

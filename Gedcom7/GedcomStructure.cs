@@ -251,19 +251,24 @@ namespace Gedcom7
         /// <returns>Best match</returns>
         public GedcomStructure FindBestMatch(List<GedcomStructure> others, out float returnScore)
         {
+            returnScore = 0;
             GedcomFile file = TryGetFile();
             if (file == null)
             {
-                returnScore = 0;
                 return null;
             }
             float bestScore = 0;
             GedcomStructure bestOther = null;
             foreach (GedcomStructure other in others)
             {
+                GedcomFile otherFile = other.TryGetFile();
+                if (otherFile == null)
+                {
+                    return null;
+                }
                 float score = ScoreMatch(other);
-                GedcomStructureMatchInfo otherMatchInfo = file.GetMatchInfo(other);
-                if (file.GetIsMatchComplete(otherMatchInfo) && (otherMatchInfo.Score >= score))
+                GedcomStructureMatchInfo otherMatchInfo = otherFile.GetMatchInfo(other);
+                if (otherFile.GetIsMatchComplete(otherMatchInfo) && (otherMatchInfo.Score >= score))
                 {
                     // Already matched something else.
                     continue;
@@ -282,8 +287,16 @@ namespace Gedcom7
     public class GedcomStructureMatchInfo
     {
         // Data members.
+
+        /// <summary>
+        /// GEDCOM structure looking for matches.
+        /// </summary>
         public GedcomStructure Structure { get; set; }
         public List<WeakReference<GedcomStructure>> MatchStructures { get; set; }
+        
+        /// <summary>
+        /// Comparison score.
+        /// </summary>
         public float Score { get; set; }
 
         // Constructor.
