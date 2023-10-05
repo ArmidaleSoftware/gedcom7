@@ -46,10 +46,18 @@ namespace Gedcom7
         public int LineNumber { get; private set; }
         public int Level { get; private set; }
         public string Xref { get; private set; }
-        /// <summary>
-        /// TODO: use a more efficient representation than string.
-        /// </summary>
-        public string Tag { get; private set; }
+        public GedcomTagInfo TagInfo { get; private set; }
+        public string Tag
+        {
+            get
+            {
+                return TagInfo.Tag;
+            }
+            set
+            {
+                this.TagInfo = GedcomTagInfo.GetTagInfo(value);
+            }
+        }
         public string LineVal { get; private set; }
         public string OriginalLine { get; private set; }
 
