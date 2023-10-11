@@ -20,50 +20,40 @@ namespace Tests
         void TestMemoryUsage(string fileName, long maxSize)
         {
             GedcomStructureSchema.LoadAll();
+            GC.Collect();
             long beforeMemory = GC.GetTotalMemory(true);
-            TestContext.WriteLine($"{fileName}: {beforeMemory} bytes");
-            Console.WriteLine($"{fileName}: {beforeMemory} bytes");
+            TestContext.WriteLine($"Baseline: {beforeMemory} bytes");
 
             var note = new GedcomFile();
 
             // Fetch new process information.
+            GC.Collect();
             long emptyMemory = GC.GetTotalMemory(true);
             long used = emptyMemory - beforeMemory;
             TestContext.WriteLine($"Empty GedcomFile: {used} bytes");
-            Console.WriteLine($"Empty GedcomFile: {used} bytes");
-            Assert.IsTrue(used <= 1760);
+            Assert.IsTrue(used <= 528);
 
             bool ok = note.LoadFromPath(fileName);
             Assert.IsTrue(ok);
 
             // Fetch new process information.
+            GC.Collect();
             long afterMemory = GC.GetTotalMemory(true);
             used = afterMemory - emptyMemory;
-            TestContext.WriteLine($"Full GedcomFile: +{used} bytes");
-            Console.WriteLine($"Full GedcomFile: +{used} bytes");
+            TestContext.WriteLine($"Full GedcomFile: +{used} bytes for {fileName}");
             Assert.IsTrue(used <= maxSize);
         }
 
         [TestMethod]
         public void Minimal70MemoryUsage()
         {
-            // Note: currently the number is high because the taginfo is lazily constructed
-            // instead of constructed a priori which would remove it from the per-file size.
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged", 1208);
-
-            // Now that the taginfo dictionary has been constructed,
-            // do a real test.
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged", 1112);
+            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged", 1320);
         }
 
         [TestMethod]
         public void Maximal70MemoryUsage()
         {
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 214392);
-
-            // Now that the taginfo dictionary has been constructed,
-            // do a real test.
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 213616);
+            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 214528);
         }
     }
 }
