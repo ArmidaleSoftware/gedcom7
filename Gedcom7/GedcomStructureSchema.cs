@@ -12,8 +12,21 @@ namespace Gedcom7
     {
         public bool Required; // True: Minimum = 1, False: Minimum = 0.
         public bool Singleton; // True: Maximum = 1, False: Maximum = M.
-    };
-
+        public override string ToString()
+        {
+            return "{" + (Required ? "1" : "0") + ":" + (Singleton ? "1" : "M") + "}";
+        }
+    }
+    public struct GedcomStructureSchemaKey
+    {
+        public string SourceProgram; // null for standard tags.
+        public string SuperstructureUri;
+        public string Tag;
+        public override string ToString()
+        {
+            return SourceProgram + "|" + SuperstructureUri + "|" + Tag;
+        }
+    }
     public class GedcomStructureSchema
     {
         static void AddStrings(List<string> list, Object[] array)
@@ -67,6 +80,11 @@ namespace Gedcom7
             this.Superstructures = new Dictionary<string, GedcomStructureCountInfo>();
         }
 
+        public override string ToString()
+        {
+            return this.StandardTag;
+        }
+
         GedcomStructureSchema(Dictionary<object, object> dictionary)
         {
             this.Lang = dictionary["lang"] as string;
@@ -92,7 +110,17 @@ namespace Gedcom7
         public Dictionary<string, GedcomStructureCountInfo> Substructures { get; private set; }
         public Dictionary<string, GedcomStructureCountInfo> Superstructures { get; private set; }
 
-        static Dictionary<string, GedcomStructureSchema> s_StructureSchemas = new Dictionary<string, GedcomStructureSchema>();
+        static Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
+        static void AddSchema(string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
+        {
+            GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
+            structureSchemaKey.SourceProgram = sourceProgram;
+            structureSchemaKey.SuperstructureUri = superstructureUri;
+            structureSchemaKey.Tag = tag;
+            Debug.Assert(!s_StructureSchemas.ContainsKey(structureSchemaKey));
+            s_StructureSchemas[structureSchemaKey] = schema;
+        }
+        
         public static void LoadAll()
         {
             if (s_StructureSchemas.Count > 0)
@@ -108,19 +136,54 @@ namespace Gedcom7
                 object[] myObject = serializer.DeserializeFromFile(filename);
                 var dictionary = myObject[0] as Dictionary<object, object>;
                 var schema = new GedcomStructureSchema(dictionary);
-                s_StructureSchemas[schema.StandardTag] = schema;
+                if (schema.Superstructures.Count == 0)
+                {
+                    AddSchema(null, null, schema.StandardTag, schema);
+                }
+                else
+                {
+                    foreach (var superstructureUri in schema.Superstructures.Keys)
+                    {
+                        AddSchema(null, superstructureUri, schema.StandardTag, schema);
+                    }
+                }
             }
         }
-        public static GedcomStructureSchema GetSchema(string sourceProduct, string tag)
+        public static GedcomStructureSchema GetSchema(string sourceProgram, string superstructureUri, string tag)
         {
-            if (!s_StructureSchemas.ContainsKey(tag)) {
-                // This is an undocumented extension tag use.
-                // Create a new schema for it.
-                var schema = new GedcomStructureSchema(sourceProduct, tag);
-                s_StructureSchemas[tag] = schema;
+            // First look for a schema with a wildcard source program.
+            GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
+            structureSchemaKey.SuperstructureUri = superstructureUri;
+            structureSchemaKey.Tag = tag;
+            if (s_StructureSchemas.ContainsKey(structureSchemaKey))
+            {
+                return s_StructureSchemas[structureSchemaKey];
             }
 
-            return s_StructureSchemas[tag];
+            // Now look for a schema specific to the source program
+            // and superstructure URI, which would be a documented
+            // extension tag.
+            structureSchemaKey.SourceProgram = sourceProgram;
+            if (s_StructureSchemas.ContainsKey(structureSchemaKey))
+            {
+                return s_StructureSchemas[structureSchemaKey];
+            }
+
+            // Now look for a schema specific to the source program
+            // and wildcard superstructure URI, which would be an
+            // undocumented extension tag.
+            structureSchemaKey.SuperstructureUri = null;
+            if (s_StructureSchemas.ContainsKey(structureSchemaKey))
+            {
+                return s_StructureSchemas[structureSchemaKey];
+            }
+
+            // Create a new schema for it.
+            Debug.Assert(sourceProgram != null);
+            structureSchemaKey.SuperstructureUri = null;
+            var schema = new GedcomStructureSchema(sourceProgram, tag);
+            s_StructureSchemas[structureSchemaKey] = schema;
+            return s_StructureSchemas[structureSchemaKey];
         }
     }
 }

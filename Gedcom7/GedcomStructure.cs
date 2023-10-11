@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Gedcom7
 {
@@ -56,7 +57,8 @@ namespace Gedcom7
             set
             {
                 string sourceProgram = this.File.SourceProduct?.LineVal;
-                this.Schema = GedcomStructureSchema.GetSchema(sourceProgram, value);
+                string superstructureUri = this.Superstructure?.Schema.Uri;
+                this.Schema = GedcomStructureSchema.GetSchema(sourceProgram, superstructureUri, value);
             }
         }
         public string LineVal { get; private set; }
