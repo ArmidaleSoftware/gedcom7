@@ -31,7 +31,7 @@ namespace Tests
             long used = emptyMemory - beforeMemory;
             TestContext.WriteLine($"Empty GedcomFile: {used} bytes");
             Console.WriteLine($"Empty GedcomFile: {used} bytes");
-            Assert.IsTrue(used <= 1664);
+            Assert.IsTrue(used <= 1760);
 
             bool ok = note.LoadFromPath(fileName);
             Assert.IsTrue(ok);
@@ -49,7 +49,7 @@ namespace Tests
         {
             // Note: currently the number is high because the taginfo is lazily constructed
             // instead of constructed a priori which would remove it from the per-file size.
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged", 9824);
+            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged", 1208);
 
             // Now that the taginfo dictionary has been constructed,
             // do a real test.
@@ -59,7 +59,7 @@ namespace Tests
         [TestMethod]
         public void Maximal70MemoryUsage()
         {
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 235928);
+            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 214392);
 
             // Now that the taginfo dictionary has been constructed,
             // do a real test.
