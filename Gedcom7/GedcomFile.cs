@@ -17,7 +17,8 @@ namespace Gedcom7
         List<GedcomStructure> Records = new List<GedcomStructure>();
         public override string ToString() { return this.Path; }
         GedcomStructure Head => (this.Records.Count > 0) ? this.Records[0] : null;
-        public string Version => Head?.FindFirstSubstructure("SOUR")?.FindFirstSubstructure("VERS")?.LineVal;
+        public GedcomStructure SourceProduct => Head?.FindFirstSubstructure("SOUR");
+        public string SourceProductVersion => SourceProduct?.FindFirstSubstructure("VERS")?.LineVal;
         public string Date => Head?.FindFirstSubstructure("DATE")?.LineVal;
 
         /// <summary>
@@ -27,7 +28,7 @@ namespace Gedcom7
         {
             get
             {
-                GedcomStructure sourceProgram = this.Head?.FindFirstSubstructure("SOUR");
+                GedcomStructure sourceProgram = this.SourceProduct;
                 if (sourceProgram == null)
                 {
                     return null;

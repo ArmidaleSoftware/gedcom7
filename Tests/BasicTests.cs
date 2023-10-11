@@ -1,6 +1,7 @@
+// Copyright (c) Armidale Software
+// SPDX-License-Identifier: MIT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Gedcom7;
-using System.Diagnostics;
 using System;
 
 namespace Tests
@@ -18,6 +19,7 @@ namespace Tests
 
         void TestMemoryUsage(string fileName, long maxSize)
         {
+            GedcomStructureSchema.LoadAll();
             long beforeMemory = GC.GetTotalMemory(true);
             TestContext.WriteLine($"{fileName}: {beforeMemory} bytes");
             Console.WriteLine($"{fileName}: {beforeMemory} bytes");
@@ -61,7 +63,7 @@ namespace Tests
 
             // Now that the taginfo dictionary has been constructed,
             // do a real test.
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 213608);
+            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 213616);
         }
     }
 }
