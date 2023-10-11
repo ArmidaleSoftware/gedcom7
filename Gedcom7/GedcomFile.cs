@@ -10,6 +10,10 @@ namespace Gedcom7
 {
     public class GedcomFile
     {
+        public GedcomFile()
+        {
+            GedcomStructureSchema.LoadAll();
+        }
         // Data members.
         Dictionary<GedcomStructure, GedcomStructureMatchInfo> StructureMatchDictionary = new Dictionary<GedcomStructure, GedcomStructureMatchInfo>();
         public string Path { get; private set; }

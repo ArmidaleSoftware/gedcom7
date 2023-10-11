@@ -47,7 +47,7 @@ namespace Tests
         [TestMethod]
         public void Minimal70MemoryUsage()
         {
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged", 1320);
+            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged", 1576);
         }
 
         [TestMethod]
