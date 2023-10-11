@@ -1,6 +1,7 @@
+// Copyright (c) Armidale Software
+// SPDX-License-Identifier: MIT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Gedcom7;
-using System.Diagnostics;
 using System;
 
 namespace Tests
@@ -18,6 +19,7 @@ namespace Tests
 
         void TestMemoryUsage(string fileName, long maxSize)
         {
+            GedcomStructureSchema.LoadAll();
             long beforeMemory = GC.GetTotalMemory(true);
             TestContext.WriteLine($"{fileName}: {beforeMemory} bytes");
             Console.WriteLine($"{fileName}: {beforeMemory} bytes");
@@ -29,7 +31,7 @@ namespace Tests
             long used = emptyMemory - beforeMemory;
             TestContext.WriteLine($"Empty GedcomFile: {used} bytes");
             Console.WriteLine($"Empty GedcomFile: {used} bytes");
-            Assert.IsTrue(used <= 1664);
+            Assert.IsTrue(used <= 1760);
 
             bool ok = note.LoadFromPath(fileName);
             Assert.IsTrue(ok);
@@ -47,7 +49,7 @@ namespace Tests
         {
             // Note: currently the number is high because the taginfo is lazily constructed
             // instead of constructed a priori which would remove it from the per-file size.
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged", 9824);
+            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged", 1208);
 
             // Now that the taginfo dictionary has been constructed,
             // do a real test.
@@ -57,11 +59,11 @@ namespace Tests
         [TestMethod]
         public void Maximal70MemoryUsage()
         {
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 235928);
+            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 214392);
 
             // Now that the taginfo dictionary has been constructed,
             // do a real test.
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 213608);
+            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 213616);
         }
     }
 }

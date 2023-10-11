@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Copyright (c) Armidale Software
+// SPDX-License-Identifier: MIT
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -67,7 +69,7 @@ namespace Gedcom7
             {
                 return;
             }
-            this.BaselineVersion = baselineFile.Version;
+            this.BaselineVersion = baselineFile.SourceProductVersion;
             this.BaselineDate = baselineFile.Date;
             this.Maximal70Report = CompareFiles(baselineFile, file);
             this.Tree1Report = Compare("https://gedcom.io/testfiles/gedcom70/maximal70-tree1.ged", file);

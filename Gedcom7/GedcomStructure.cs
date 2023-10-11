@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Gedcom7
 {
@@ -46,16 +47,18 @@ namespace Gedcom7
         public int LineNumber { get; private set; }
         public int Level { get; private set; }
         public string Xref { get; private set; }
-        public GedcomTagInfo TagInfo { get; private set; }
+        public GedcomStructureSchema Schema { get; private set; }
         public string Tag
         {
             get
             {
-                return TagInfo.Tag;
+                return this.Schema?.StandardTag;
             }
             set
             {
-                this.TagInfo = GedcomTagInfo.GetTagInfo(value);
+                string sourceProgram = this.File.SourceProduct?.LineVal;
+                string superstructureUri = this.Superstructure?.Schema.Uri;
+                this.Schema = GedcomStructureSchema.GetSchema(sourceProgram, superstructureUri, value);
             }
         }
         public string LineVal { get; private set; }
@@ -129,6 +132,22 @@ namespace Gedcom7
             }
             int index = 0;
             this.Level = Convert.ToInt32(tokens[index++]);
+
+            // Update path to current structure.
+            structurePath.RemoveRange(this.Level, structurePath.Count - this.Level);
+            structurePath.Add(this);
+
+            if (this.Level > 0)
+            {
+                GedcomStructure superstructure = structurePath[this.Level - 1];
+                this._superstructure = new WeakReference<GedcomStructure>(superstructure);
+                superstructure.Substructures.Add(this);
+            }
+            else
+            {
+                this._superstructure = new WeakReference<GedcomFile>(file);
+            }
+
             if (tokens.Length > index && tokens[index][0] == '@')
             {
                 this.Xref = tokens[index++];
@@ -143,19 +162,6 @@ namespace Gedcom7
                 }
             }
             this.Substructures = new List<GedcomStructure>();
-
-            // Update path to current structure.
-            structurePath.RemoveRange(this.Level, structurePath.Count - this.Level);
-            structurePath.Add(this);
-
-            if (this.Level > 0)
-            {
-                GedcomStructure superstructure = structurePath[this.Level - 1];
-                this._superstructure = new WeakReference<GedcomStructure>(superstructure);
-                superstructure.Substructures.Add(this);
-            } else {
-                this._superstructure = new WeakReference<GedcomFile>(file);
-            }
         }
 
         /// <summary>
