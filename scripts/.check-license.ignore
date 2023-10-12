@@ -1,0 +1,23 @@
+# This file uses regular expressions, not shell globs!
+
+# File extensions that don't support embedding license info
+.*\.md$
+.*\.rst$
+.*\.o$
+.*\.bmp$
+.*\.png$
+.*\.proj$
+.*\.csproj$
+.*\.rc$
+.*\.sln$
+.*\.vsdx$
+
+# Other Files
+LICENSE
+\.check-license\.ignore
+check-license.sh
+copy_pre_commit.ps1
+pre-commit
+\.github/workflows/build.yml
+\.gitignore
+\.gitmodules
