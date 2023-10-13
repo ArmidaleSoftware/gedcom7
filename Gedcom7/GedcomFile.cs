@@ -115,6 +115,18 @@ namespace Gedcom7
             return true;
         }
 
+        public bool LoadFromString(string stringContent)
+        {
+            using (var content = new MemoryStream(Encoding.UTF8.GetBytes(stringContent ?? "")))
+            {
+                using (var reader = new StreamReader(content))
+                {
+                    LoadFromStreamReader(reader);
+                }
+            }
+            return true;
+        }
+
         /// <summary>
         /// Generate a comparison report after comparing two GEDCOM files.
         /// </summary>
@@ -326,7 +338,7 @@ namespace Gedcom7
         }
 
         /// <summary>
-        /// Check whether this structure has been fully matched within the other file.
+        /// Check whether a given structure has been fully matched within the other file.
         /// </summary>
         public bool GetIsMatchComplete(GedcomStructureMatchInfo current)
         {
@@ -335,6 +347,38 @@ namespace Gedcom7
                 return false;
             }
             return (current.Structure.IsNamePieceType) ? (GetUnmatchedSpacedLineVal(current.Structure) == " ") : (current.MatchStructures.Count > 0);
+        }
+
+        /// <summary>
+        /// Check whether this file is valid GEDCOM.
+        /// </summary>
+        /// <returns></returns>
+        public bool Validate()
+        {
+            // The file must start with HEAD and end with TRLR.
+            if (this.Records.Count < 2)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < this.Records.Count; i++)
+            {
+                var record = this.Records[i];
+                if (!record.IsValid)
+                {
+                    return false;
+                }
+                if ((record.Tag == "HEAD") != (i == 0))
+                {
+                    return false;
+                }
+                if ((record.Tag == "TRLR") != (i == this.Records.Count - 1))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

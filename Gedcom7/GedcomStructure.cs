@@ -61,6 +61,7 @@ namespace Gedcom7
                 this.Schema = GedcomStructureSchema.GetSchema(sourceProgram, superstructureUri, value);
             }
         }
+        public bool IsExtensionTag => this.Tag[0] == '_';
         public string LineVal { get; private set; }
         public string OriginalLine { get; private set; }
 
@@ -96,6 +97,129 @@ namespace Gedcom7
                     return true;
                 }
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// X may be a substructure of Y if any of the following apply:
+        /// (a) X's YAML file has superstructures entry with key Y,
+        /// (b) Y's YAML file has substructures entry with key X, or
+        /// (c) X is a relocated standard structure (extension tag and standard URI)
+        /// </summary>
+        bool IsPlacementValid
+        {
+            get
+            {
+                if (this.Superstructure == null)
+                {
+                    return true;
+                }
+
+                // See if this structure's YAML file has a superstructures entry
+                // for this structure's superstructure.
+                if (this.Superstructure.Schema.IsDocumented &&
+                    this.Schema.Superstructures.ContainsKey(this.Superstructure.Schema.Uri))
+                {
+                    return true;
+                }
+
+                // See if the superstructure's YAML file has a substructures entry
+                // for this structure.
+                if (this.Schema.IsDocumented &&
+                    this.Superstructure.Schema.Substructures.ContainsKey(this.Schema.Uri))
+                {
+                    return true;
+                }
+
+                // See if this is a relocated standard structure.
+                if (this.IsExtensionTag && this.Schema.IsStandard)
+                {
+                    return true;
+                }
+
+                // See if this is an undocumented extension structure.
+                if (this.IsExtensionTag && !this.Schema.IsDocumented)
+                {
+                    return true;
+                }
+
+                // See if the superstructure is an undocumented extension structure.
+                if (this.Superstructure.IsExtensionTag && !this.Superstructure.Schema.IsDocumented)
+                {
+                    return true;
+                }
+
+                // See if the superstructure's path has an extension in it.
+                if (this.Superstructure.Superstructure?.TagWithPath.Contains('_') ?? false)
+                {
+                    return true;
+                }
+
+                // See if this is a CONT pseudostructure under a string structure.
+                if ((this.Schema.StandardTag == "CONT") &&
+                    (this.Superstructure.Schema.Payload == "http://www.w3.org/2001/XMLSchema#string"))
+                {
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        public bool IsValid
+        {
+            get
+            {
+                if (!this.IsPlacementValid)
+                {
+                    return false;
+                }
+                Dictionary<string, int> foundCount = new Dictionary<string, int>();
+                foreach (var substructure in this.Substructures)
+                {
+                    if (!substructure.IsValid)
+                    {
+                        return false;
+                    }
+                    if (substructure.Schema.IsDocumented)
+                    {
+                        if (foundCount.ContainsKey(substructure.Schema.Uri))
+                        {
+                            foundCount[substructure.Schema.Uri]++;
+                        }
+                        else
+                        {
+                            foundCount[substructure.Schema.Uri] = 1;
+                        }
+                    }
+                }
+
+                // TRLR and CONT cannot contain substructures.
+                if ((this.Tag == "CONT" || this.Tag == "TRLR")
+                    && (this.Substructures.Count > 0))
+                {
+                    return false;
+                }
+
+                // Check cardinality of permitted substructures.
+                foreach (var substructureSchemaPair in this.Schema.Substructures)
+                {
+                    string uri = substructureSchemaPair.Key;
+                    GedcomStructureCountInfo countInfo = substructureSchemaPair.Value;
+                    if (countInfo.Required && !foundCount.ContainsKey(uri))
+                    {
+                        // Missing required substructure.
+                        return false;
+                    }
+                    if (countInfo.Singleton && foundCount.ContainsKey(uri) &&
+                        (foundCount[uri] > 1))
+                    {
+                        // Contains multiple when only a singleton is permitted.
+                        return false;
+                    }
+                }
+
+                return true;
             }
         }
 

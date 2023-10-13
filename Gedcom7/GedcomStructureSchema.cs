@@ -47,7 +47,6 @@ namespace Gedcom7
                 {
                     var value = input[key] as string;
                     var info = new GedcomStructureCountInfo();      
-                    dictionary[key as string] = info;
                     if (value == "{0:1}")
                     {
                         info.Required = false;
@@ -68,6 +67,7 @@ namespace Gedcom7
                     {
                         throw new Exception();
                     }
+                    dictionary[key as string] = info;
                 }
             }
         }
@@ -79,6 +79,12 @@ namespace Gedcom7
             this.Substructures = new Dictionary<string, GedcomStructureCountInfo>();
             this.Superstructures = new Dictionary<string, GedcomStructureCountInfo>();
         }
+
+        /// <summary>
+        /// Check whether this schema is a standard schema (even if relocated).
+        /// </summary>
+        public bool IsStandard => (this.StandardTag[0] != '_');
+        public bool IsDocumented => (this.Uri != null);
 
         public override string ToString()
         {
@@ -179,7 +185,10 @@ namespace Gedcom7
             }
 
             // Create a new schema for it.
-            Debug.Assert(sourceProgram != null);
+            if (sourceProgram == null)
+            {
+                sourceProgram = "Unknown";
+            }
             structureSchemaKey.SuperstructureUri = null;
             var schema = new GedcomStructureSchema(sourceProgram, tag);
             s_StructureSchemas[structureSchemaKey] = schema;
