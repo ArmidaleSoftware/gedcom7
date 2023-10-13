@@ -106,7 +106,7 @@ namespace Gedcom7
         /// (b) Y's YAML file has substructures entry with key X, or
         /// (c) X is a relocated standard structure (extension tag and standard URI)
         /// </summary>
-        bool IsSelfValid
+        bool IsPlacementValid
         {
             get
             {
@@ -170,7 +170,7 @@ namespace Gedcom7
         {
             get
             {
-                if (!this.IsSelfValid)
+                if (!this.IsPlacementValid)
                 {
                     return false;
                 }
@@ -181,6 +181,14 @@ namespace Gedcom7
                         return false;
                     }
                 }
+
+                // TRLR and CONT cannot contain substructures.
+                if ((this.Tag == "CONT" || this.Tag == "TRLR")
+                    && (this.Substructures.Count > 0))
+                {
+                    return false;
+                }
+
                 return true;
             }
         }

@@ -30,6 +30,15 @@ namespace Tests
             Assert.AreEqual(expected_result, ok);
         }
 
+        void ValidateGedcomText(string text, bool expected_result)
+        {
+            var file = new GedcomFile();
+            bool ok = file.LoadFromString(text);
+            Assert.IsTrue(ok);
+            ok = file.Validate();
+            Assert.AreEqual(expected_result, ok);
+        }
+
         [TestMethod]
         public void ValidateEscapes()
         {
@@ -118,6 +127,22 @@ namespace Tests
         public void ValidateVoidptr()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/voidptr.ged", true);
+        }
+
+        [TestMethod]
+        public void ValidateTrailer()
+        {
+            ValidateGedcomText("0 HEAD\n", false);
+            ValidateGedcomText("0 TRLR\n", false);
+            ValidateGedcomText("0 HEAD\n0 TRLR\n", true);
+            ValidateGedcomText("0 TRLR\n0 HEAD\n", false);
+
+            // The trailer cannot contain substructures.
+            ValidateGedcomText("0 HEAD\n0 TRLR\n1 _EXT bad", false);
+
+            // Validate arity.
+            ValidateGedcomText("0 HEAD\n0 HEAD\n0 TRLR\n", false);
+            ValidateGedcomText("0 HEAD\n0 TRLR\n0 TRLR \n", false);
         }
     }
 }

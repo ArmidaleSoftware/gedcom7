@@ -185,7 +185,10 @@ namespace Gedcom7
             }
 
             // Create a new schema for it.
-            Debug.Assert(sourceProgram != null);
+            if (sourceProgram == null)
+            {
+                sourceProgram = "Unknown";
+            }
             structureSchemaKey.SuperstructureUri = null;
             var schema = new GedcomStructureSchema(sourceProgram, tag);
             s_StructureSchemas[structureSchemaKey] = schema;
