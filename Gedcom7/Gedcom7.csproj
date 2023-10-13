@@ -8,4 +8,8 @@
     <PackageReference Include="YamlSerializer" Version="1.0.0" />
   </ItemGroup>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="powershell -NonInteractive -ExecutionPolicy Unrestricted $(SolutionDir)scripts\copy_pre_commit.ps1 $(SolutionDir)scripts\pre-commit" />
+  </Target>
+
 </Project>
