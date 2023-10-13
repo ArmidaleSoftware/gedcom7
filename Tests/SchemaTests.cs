@@ -130,19 +130,95 @@ namespace Tests
         }
 
         [TestMethod]
-        public void ValidateTrailer()
+        public void ValidateHeaderAndTrailer()
         {
-            ValidateGedcomText("0 HEAD\n", false);
+            // Missing TRLR.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+", false);
+
+            // Missing HEAD.
             ValidateGedcomText("0 TRLR\n", false);
-            ValidateGedcomText("0 HEAD\n0 TRLR\n", true);
-            ValidateGedcomText("0 TRLR\n0 HEAD\n", false);
+
+            // Minimal70.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 TRLR
+", true);
+
+            // Backwards order.
+            ValidateGedcomText(@"0 TRLR
+0 HEAD
+1 GEDC
+2 VERS 7.0
+", false);
 
             // The trailer cannot contain substructures.
-            ValidateGedcomText("0 HEAD\n0 TRLR\n1 _EXT bad", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 TRLR
+1 _EXT bad
+", false);
 
-            // Validate arity.
-            ValidateGedcomText("0 HEAD\n0 HEAD\n0 TRLR\n", false);
-            ValidateGedcomText("0 HEAD\n0 TRLR\n0 TRLR \n", false);
+            // Two HEADs.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 HEAD
+1 GEDC
+2 VERS 7.0
+0 TRLR
+", false);
+
+            // Two TRLRs.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 TRLR
+0 TRLR
+", false);
+        }
+
+        [TestMethod]
+        public void ValidateStructureCardinality()
+        {
+            // Try zero GEDC which should be {1:1}.
+            ValidateGedcomText("0 HEAD\n0 TRLR\n", false);
+
+            // Try two VERS which should be {1:1}.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+2 VERS 7.0
+0 TRLR
+", false);
+
+            // Try two SCHMA which should be {0:1}.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SCHMA
+1 SCHMA
+0 TRLR
+", false);
+
+            // Try zero FILE which should be {1:M}.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @O1@ OBJE
+0 TRLR
+", false);
+
+            // Try a COPR in the wrong place.
+            ValidateGedcomText("0 HEAD\n0 COPR bad\n0 TRLR\n", false);
+            ValidateGedcomText("0 HEAD\n1 COPR bad\n0 TRLR\n", false);
+
+            // Try a CONT in the wrong place.
+            ValidateGedcomText("0 HEAD\n1 CONT bad\n0 TRLR\n", false);
         }
     }
 }

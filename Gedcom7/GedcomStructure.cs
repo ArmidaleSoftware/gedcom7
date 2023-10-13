@@ -174,11 +174,23 @@ namespace Gedcom7
                 {
                     return false;
                 }
+                Dictionary<string, int> foundCount = new Dictionary<string, int>();
                 foreach (var substructure in this.Substructures)
                 {
                     if (!substructure.IsValid)
                     {
                         return false;
+                    }
+                    if (substructure.Schema.IsDocumented)
+                    {
+                        if (foundCount.ContainsKey(substructure.Schema.Uri))
+                        {
+                            foundCount[substructure.Schema.Uri]++;
+                        }
+                        else
+                        {
+                            foundCount[substructure.Schema.Uri] = 1;
+                        }
                     }
                 }
 
@@ -187,6 +199,24 @@ namespace Gedcom7
                     && (this.Substructures.Count > 0))
                 {
                     return false;
+                }
+
+                // Check cardinality of permitted substructures.
+                foreach (var substructureSchemaPair in this.Schema.Substructures)
+                {
+                    string uri = substructureSchemaPair.Key;
+                    GedcomStructureCountInfo countInfo = substructureSchemaPair.Value;
+                    if (countInfo.Required && !foundCount.ContainsKey(uri))
+                    {
+                        // Missing required substructure.
+                        return false;
+                    }
+                    if (countInfo.Singleton && foundCount.ContainsKey(uri) &&
+                        (foundCount[uri] > 1))
+                    {
+                        // Contains multiple when only a singleton is permitted.
+                        return false;
+                    }
                 }
 
                 return true;

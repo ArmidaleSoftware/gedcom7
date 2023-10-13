@@ -47,7 +47,6 @@ namespace Gedcom7
                 {
                     var value = input[key] as string;
                     var info = new GedcomStructureCountInfo();      
-                    dictionary[key as string] = info;
                     if (value == "{0:1}")
                     {
                         info.Required = false;
@@ -68,6 +67,7 @@ namespace Gedcom7
                     {
                         throw new Exception();
                     }
+                    dictionary[key as string] = info;
                 }
             }
         }
