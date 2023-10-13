@@ -80,6 +80,12 @@ namespace Gedcom7
             this.Superstructures = new Dictionary<string, GedcomStructureCountInfo>();
         }
 
+        /// <summary>
+        /// Check whether this schema is a standard schema (even if relocated).
+        /// </summary>
+        public bool IsStandard => (this.StandardTag[0] != '_');
+        public bool IsDocumented => (this.Uri != null);
+
         public override string ToString()
         {
             return this.StandardTag;

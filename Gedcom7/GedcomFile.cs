@@ -326,7 +326,7 @@ namespace Gedcom7
         }
 
         /// <summary>
-        /// Check whether this structure has been fully matched within the other file.
+        /// Check whether a given structure has been fully matched within the other file.
         /// </summary>
         public bool GetIsMatchComplete(GedcomStructureMatchInfo current)
         {
@@ -335,6 +335,22 @@ namespace Gedcom7
                 return false;
             }
             return (current.Structure.IsNamePieceType) ? (GetUnmatchedSpacedLineVal(current.Structure) == " ") : (current.MatchStructures.Count > 0);
+        }
+
+        /// <summary>
+        /// Check whether this file is valid GEDCOM.
+        /// </summary>
+        /// <returns></returns>
+        public bool Validate()
+        {
+            foreach (var record in this.Records)
+            {
+                if (!record.IsValid)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }
