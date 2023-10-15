@@ -213,9 +213,21 @@ namespace Tests
 0 TRLR
 ", false);
 
-            // Try a COPR in the wrong place.
-            ValidateGedcomText("0 HEAD\n0 COPR bad\n0 TRLR\n", false);
-            ValidateGedcomText("0 HEAD\n1 COPR bad\n0 TRLR\n", false);
+            // Try a COPR at level 0.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 COPR
+0 TRLR
+", false);
+
+            // Try HEAD.PHON.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 PHON
+0 TRLR
+", false);
 
             // Try a CONT in the wrong place.
             ValidateGedcomText("0 HEAD\n1 CONT bad\n0 TRLR\n", false);
