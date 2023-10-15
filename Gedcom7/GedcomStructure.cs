@@ -112,7 +112,11 @@ namespace Gedcom7
             {
                 if (this.Superstructure == null)
                 {
-                    return true;
+                    if (this.Schema.IsStandard && !this.Schema.IsDocumented)
+                    {
+                        return false;
+                    }
+                    return (this.Schema.Superstructures.Count == 0);
                 }
 
                 // See if this structure's YAML file has a superstructures entry
