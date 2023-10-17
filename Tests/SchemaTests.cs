@@ -34,8 +34,10 @@ namespace Tests
         {
             var file = new GedcomFile();
             bool ok = file.LoadFromString(text);
-            Assert.IsTrue(ok);
-            ok = file.Validate();
+            if (ok)
+            {
+                ok = file.Validate();
+            }
             Assert.AreEqual(expected_result, ok);
         }
 
@@ -231,6 +233,26 @@ namespace Tests
 
             // Try a CONT in the wrong place.
             ValidateGedcomText("0 HEAD\n1 CONT bad\n0 TRLR\n", false);
+        }
+
+        [TestMethod]
+        public void ValidateSpacing()
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+ 2 VERS 7.0
+0 TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2  VERS 7.0
+0 TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS  7.0
+0 TRLR
+", true);
         }
     }
 }
