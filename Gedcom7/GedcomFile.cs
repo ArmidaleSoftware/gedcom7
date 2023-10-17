@@ -18,7 +18,7 @@ namespace Gedcom7
         Dictionary<GedcomStructure, GedcomStructureMatchInfo> StructureMatchDictionary = new Dictionary<GedcomStructure, GedcomStructureMatchInfo>();
         public string Path { get; private set; }
         public int LineCount { get; private set; }
-        List<GedcomStructure> Records = new List<GedcomStructure>();
+        public List<GedcomStructure> Records = new List<GedcomStructure>();
         public override string ToString() { return this.Path; }
         GedcomStructure Head => (this.Records.Count > 0) ? this.Records[0] : null;
         public GedcomStructure SourceProduct => Head?.FindFirstSubstructure("SOUR");
@@ -59,7 +59,12 @@ namespace Gedcom7
             return null;
         }
 
-        private void LoadFromStreamReader(StreamReader reader)
+        /// <summary>
+        /// Load a GEDCOM file from a stream.
+        /// </summary>
+        /// <param name="reader">The stream to read from</param>
+        /// <returns>true if valid, false if invalid</returns>
+        private bool LoadFromStreamReader(StreamReader reader)
         {
             var structurePath = new List<GedcomStructure>();
             string line;
@@ -67,12 +72,13 @@ namespace Gedcom7
             while ((line = reader.ReadLine()) != null)
             {
                 this.LineCount++;
-                var s = new GedcomStructure(this, this.LineCount, line, structurePath);
-                if (s.Level == 0)
+                var s = new GedcomStructure();
+                if (!s.Parse(this, this.LineCount, line, structurePath))
                 {
-                    Records.Add(s);
+                    return false;
                 }
             }
+            return true;
         }
 
         /// <summary>
@@ -89,9 +95,8 @@ namespace Gedcom7
             }
             using (var reader = new StreamReader(pathToFile))
             {
-                LoadFromStreamReader(reader);
+                return LoadFromStreamReader(reader);
             }
-            return true;
         }
 
         /// <summary>
@@ -109,10 +114,9 @@ namespace Gedcom7
             {
                 using (var reader = new StreamReader(content))
                 {
-                    LoadFromStreamReader(reader);
+                    return LoadFromStreamReader(reader);
                 }
             }
-            return true;
         }
 
         public bool LoadFromString(string stringContent)
@@ -121,10 +125,9 @@ namespace Gedcom7
             {
                 using (var reader = new StreamReader(content))
                 {
-                    LoadFromStreamReader(reader);
+                    return LoadFromStreamReader(reader);
                 }
             }
-            return true;
         }
 
         /// <summary>

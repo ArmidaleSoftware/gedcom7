@@ -61,7 +61,7 @@ namespace Gedcom7
                 this.Schema = GedcomStructureSchema.GetSchema(sourceProgram, superstructureUri, value);
             }
         }
-        public bool IsExtensionTag => this.Tag[0] == '_';
+        public bool IsExtensionTag => (this.Tag.Length > 0) && (this.Tag[0] == '_');
         public string LineVal { get; private set; }
         public string OriginalLine { get; private set; }
 
@@ -247,19 +247,27 @@ namespace Gedcom7
 
         public string SpacedLineVal => " " + this.LineVal + " ";
 
-        public GedcomStructure(GedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
+        public bool Parse(GedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
         {
             this.LineNumber = lineNumber;
             this.OriginalLine = line;
+            this.Substructures = new List<GedcomStructure>();
 
             // Parse line into Level, Xref, Tag, Pointer, and LineVal.
-            string[] tokens = line.Split(' ');
             if (line == null)
             {
-                return;
+                return false;
             }
+            string[] tokens = line.Split(' ');
             int index = 0;
-            this.Level = Convert.ToInt32(tokens[index++]);
+            int level;
+            if (Int32.TryParse(tokens[index++], out level))
+            {
+                this.Level = level;
+            } else
+            {
+                return false;
+            }
 
             // Update path to current structure.
             structurePath.RemoveRange(this.Level, structurePath.Count - this.Level);
@@ -274,9 +282,10 @@ namespace Gedcom7
             else
             {
                 this._superstructure = new WeakReference<GedcomFile>(file);
+                file.Records.Add(this);
             }
 
-            if (tokens.Length > index && tokens[index][0] == '@')
+            if ((tokens.Length > index) && (tokens[index].Length > 0) && (tokens[index][0] == '@'))
             {
                 this.Xref = tokens[index++];
             }
@@ -289,7 +298,7 @@ namespace Gedcom7
                     this.LineVal = line.Substring(offset + this.Tag.Length + 1);
                 }
             }
-            this.Substructures = new List<GedcomStructure>();
+            return true;
         }
 
         /// <summary>
