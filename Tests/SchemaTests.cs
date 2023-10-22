@@ -276,5 +276,132 @@ namespace Tests
 0 TRLR
 ", false);
         }
+
+        [TestMethod]
+        public void ValidateXref()
+        {
+            // HEAD record does not allow an xref.
+            ValidateGedcomText(@"0 @H1@ HEAD
+1 GEDC
+2 VERS 7.0
+0 TRLR
+", false);
+
+            // INDI record requires an xref.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 INDI
+0 TRLR
+", false);
+
+            // TRLR record does not allow an xref.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @T1@ TRLR
+", false);
+
+            // Test characters within an xref, which is
+            // @<alphanum><pointer_string>@
+            // GEDCOM 5.5.1:
+            // where pointer_string has (alnum|space|#)
+            // and GEDCOM 7.0
+            // where pointer_string has (upper|digit|_)
+
+            // Upper case letters and numbers are fine.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+0 TRLR
+", true);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+0 TRLR
+", true);
+
+            // GEDCOM 7.0 disallows @VOID@ as an actual xref id.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @VOID@ INDI
+0 TRLR
+", true);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @VOID@ INDI
+0 TRLR
+", false);
+
+            // Spaces are ok in GEDCOM 5.5.1 but not 7.0.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I 1@ INDI
+0 TRLR
+", true);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I 1@ INDI
+0 TRLR
+", false);
+
+            // Hash is ok in GEDCOM 5.5.1 (except at the start) but not 7.0
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I#1@ INDI
+0 TRLR
+", true);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @#I1@ INDI
+0 TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I#1@ INDI
+0 TRLR
+", false);
+
+            // Underscore is ok in GEDCOM 7.0 but not 5.5.1.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I_1@ INDI
+0 TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I_1@ INDI
+0 TRLR
+", true);
+
+            // Lower-case letters are ok in GEDCOM 5.5.1 but not 7.0.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @i1@ INDI
+0 TRLR
+", true);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @i1@ INDI
+0 TRLR
+", false);
+
+            // TODO: test xref ptrs
+        }
+
+        // TODO: test payload types
     }
 }

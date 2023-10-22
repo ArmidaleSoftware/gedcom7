@@ -415,11 +415,18 @@ namespace Gedcom7
                 {
                     return false;
                 }
-                if ((record.Tag == "HEAD") != (i == 0))
+                string tag = record.Tag;
+                if ((tag == "HEAD") != (i == 0))
                 {
                     return false;
                 }
-                if ((record.Tag == "TRLR") != (i == this.Records.Count - 1))
+                if ((tag == "TRLR") != (i == this.Records.Count - 1))
+                {
+                    return false;
+                }
+
+                // An xref is disallowed for HEAD and TRLR and required for all others.
+                if ((tag == "HEAD" || tag == "TRLR") != (record.Xref == null))
                 {
                     return false;
                 }
