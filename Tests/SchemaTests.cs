@@ -44,91 +44,91 @@ namespace Tests
         }
 
         [TestMethod]
-        public void ValidateEscapes()
+        public void ValidateFileEscapes()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/escapes.ged", true);
         }
 
         [TestMethod]
-        public void ValidateExtensionRecord()
+        public void ValidateFileExtensionRecord()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/extension-record.ged", true);
         }
 
         [TestMethod]
-        public void ValidateLongUrl()
+        public void ValidateFileLongUrl()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/long-url.ged", true);
         }
 
         [TestMethod]
-        public void ValidateMaximal70Lds()
+        public void ValidateFileMaximal70Lds()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70-lds.ged", true);
         }
 
         [TestMethod]
-        public void ValidateMaximal70Memories1()
+        public void ValidateFileMaximal70Memories1()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70-memories1.ged", true);
         }
 
         [TestMethod]
-        public void ValidateMaximal70Memories2()
+        public void ValidateFileMaximal70Memories2()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70-memories2.ged", true);
         }
 
         [TestMethod]
-        public void ValidateMaximal70Tree1()
+        public void ValidateFileMaximal70Tree1()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70-tree1.ged", true);
         }
 
         [TestMethod]
-        public void ValidateMaximal70Tree2()
+        public void ValidateFileMaximal70Tree2()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70-tree2.ged", true);
         }
 
         [TestMethod]
-        public void ValidateMaximal70()
+        public void ValidateFileMaximal70()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", true);
         }
 
         [TestMethod]
-        public void ValidateMinimal70()
+        public void ValidateFileMinimal70()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged", true);
         }
 
         [TestMethod]
-        public void ValidateRemarriage1()
+        public void ValidateFileRemarriage1()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/remarriage1.ged", true);
         }
 
         [TestMethod]
-        public void ValidateRemarriage2()
+        public void ValidateFileRemarriage2()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/remarriage2.ged", true);
         }
 
         [TestMethod]
-        public void ValidateSameSexMarriage()
+        public void ValidateFileSameSexMarriage()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/same-sex-marriage.ged", true);
         }
 
         [TestMethod]
-        public void ValidateSpaces()
+        public void ValidateFileSpaces()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/spaces.ged", false);
         }
 
         [TestMethod]
-        public void ValidateVoidptr()
+        public void ValidateFileVoidptr()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/voidptr.ged", true);
         }
