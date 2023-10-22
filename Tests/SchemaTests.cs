@@ -360,18 +360,6 @@ namespace Tests
 0 @ INDI
 0 TRLR
 ", "Line 4: Xref must start and end with @");
-=======
-=======
-2 VERS 5.5.1
-0 @T1@ TRLR
-", false);
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
->>>>>>> 49f2d5a (Validate xref characters)
-2 VERS 7.0
-0 @T1@ TRLR
-", false);
->>>>>>> d483bcf (Add test cases)
 
             // Xref must start with @.
             ValidateGedcomText(@"0 HEAD
@@ -379,13 +367,13 @@ namespace Tests
 2 VERS 5.5.1
 0 I1@ INDI
 0 TRLR
-", false);
+", "Line 4: Undocumented standard record");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
 0 I1@ INDI
 0 TRLR
-", false);
+", "Line 4: Undocumented standard record");
 
             // Xref must end with @.
             ValidateGedcomText(@"0 HEAD
@@ -393,13 +381,13 @@ namespace Tests
 2 VERS 5.5.1
 0 @I1 INDI
 0 TRLR
-", false);
+", "Line 4: Xref must start and end with @");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
 0 @I1 INDI
 0 TRLR
-", false);
+", "Line 4: Xref must start and end with @");
 
             // Xref must contain something.
             ValidateGedcomText(@"0 HEAD
@@ -407,13 +395,13 @@ namespace Tests
 2 VERS 5.5.1
 0 @ INDI
 0 TRLR
-", false);
+", "Line 4: Xref must start and end with @");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
 0 @ INDI
 0 TRLR
-", false);
+", "Line 4: Xref must start and end with @");
 
             // Test characters within an xref, which is
             // @<alphanum><pointer_string>@
