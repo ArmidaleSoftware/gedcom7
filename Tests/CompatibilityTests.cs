@@ -14,8 +14,8 @@ namespace Tests
             int memories1Percentage, int memories2Percentage, int ldsPercentage)
         {
             var file = new GedcomFile();
-            bool ok = file.LoadFromPath(BaselinePath + filename + ".ged");
-            Assert.IsTrue(ok);
+            string error = file.LoadFromPath(BaselinePath + filename + ".ged");
+            Assert.IsNull(error);
             GedcomCompatibilityReport report = new GedcomCompatibilityReport(file);
 
             Assert.AreEqual(tree1Percentage, report.Tree1CompatibilityPercentage);

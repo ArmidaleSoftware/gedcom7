@@ -11,8 +11,8 @@ namespace Tests
         void CompareFileWithSelf(string path)
         {
             var file = new GedcomFile();
-            bool ok = file.LoadFromPath(path);
-            Assert.IsTrue(ok);
+            string error = file.LoadFromPath(path);
+            Assert.IsNull(error);
 
             GedcomComparisonReport report = file.Compare(file);
             Assert.AreEqual(report.StructuresAdded.Count, 0);
@@ -35,12 +35,12 @@ namespace Tests
         private void CompareSubsetWithSuperset(string subset, string superset, int structuresAdded, int percentage)
         {
             var subsetFile = new GedcomFile();
-            bool ok = subsetFile.LoadFromPath("../../../../external/GEDCOM.io/testfiles/gedcom70/" + subset + ".ged");
-            Assert.IsTrue(ok);
+            string error = subsetFile.LoadFromPath("../../../../external/GEDCOM.io/testfiles/gedcom70/" + subset + ".ged");
+            Assert.IsNull(error);
 
             var supersetFile = new GedcomFile();
-            ok = supersetFile.LoadFromPath("../../../../external/GEDCOM.io/testfiles/gedcom70/" + superset + ".ged");
-            Assert.IsTrue(ok);
+            error = supersetFile.LoadFromPath("../../../../external/GEDCOM.io/testfiles/gedcom70/" + superset + ".ged");
+            Assert.IsNull(error);
 
             // Adding information is ok.
             GedcomComparisonReport report = subsetFile.Compare(supersetFile);
@@ -113,12 +113,12 @@ namespace Tests
         public void CompareNoteWithSharedNote()
         {
             var note = new GedcomFile();
-            bool ok = note.LoadFromPath("../../../samples/note.ged");
-            Assert.IsTrue(ok);
+            string error = note.LoadFromPath("../../../samples/note.ged");
+            Assert.IsNull(error);
 
             var snote = new GedcomFile();
-            ok = snote.LoadFromPath("../../../samples/snote.ged");
-            Assert.IsTrue(ok);
+            error = snote.LoadFromPath("../../../samples/snote.ged");
+            Assert.IsNull(error);
 
             GedcomComparisonReport report = note.Compare(snote);
             Assert.AreEqual(report.StructuresAdded.Count, 0);
@@ -130,12 +130,12 @@ namespace Tests
         public void CompareSingleNamePiecesWithMultipleNamePieces()
         {
             var singles = new GedcomFile();
-            bool ok = singles.LoadFromPath("../../../samples/name-pieces-single.ged");
-            Assert.IsTrue(ok);
+            string error = singles.LoadFromPath("../../../samples/name-pieces-single.ged");
+            Assert.IsNull(error);
 
             var multiples = new GedcomFile();
-            ok = multiples.LoadFromPath("../../../samples/name-pieces-multiple.ged");
-            Assert.IsTrue(ok);
+            error = multiples.LoadFromPath("../../../samples/name-pieces-multiple.ged");
+            Assert.IsNull(error);
 
             // Verify that both compare equally.
             GedcomComparisonReport report = singles.Compare(multiples);
@@ -149,8 +149,8 @@ namespace Tests
             Assert.AreEqual(report.CompatibilityPercentage, 100);
 
             var mismatch = new GedcomFile();
-            ok = mismatch.LoadFromPath("../../../samples/name-pieces-multiple-mismatch.ged");
-            Assert.IsTrue(ok);
+            error = mismatch.LoadFromPath("../../../samples/name-pieces-multiple-mismatch.ged");
+            Assert.IsNull(error);
 
             // Verify that mismatch does not compare equally.
             report = singles.Compare(mismatch);

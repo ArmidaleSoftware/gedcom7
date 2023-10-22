@@ -72,8 +72,8 @@ namespace Gedcom7
         /// Load a GEDCOM file from a stream.
         /// </summary>
         /// <param name="reader">The stream to read from</param>
-        /// <returns>true if valid, false if invalid</returns>
-        private bool LoadFromStreamReader(StreamReader reader)
+        /// <returns>Error message, or null on success</returns>
+        private string LoadFromStreamReader(StreamReader reader)
         {
             // Do GEDCOM version detection.
             string line;
@@ -117,25 +117,26 @@ namespace Gedcom7
             {
                 this.LineCount++;
                 var s = new GedcomStructure();
-                if (!s.Parse(this, this.LineCount, line, structurePath))
+                string error = s.Parse(this, this.LineCount, line, structurePath);
+                if (error != null)
                 {
-                    return false;
+                    return error;
                 }
             }
-            return true;
+            return null;
         }
 
         /// <summary>
         /// Load a GEDCOM file from a specified path.
         /// </summary>
         /// <param name="pathToFile">Path to file to load</param>
-        /// <returns></returns>
-        public bool LoadFromPath(string pathToFile)
+        /// <returns>Error message, or null on success</returns>
+        public string LoadFromPath(string pathToFile)
         {
             this.Path = pathToFile;
             if (!File.Exists(pathToFile))
             {
-                return false;
+                return "File not found: " + pathToFile;
             }
             using (var reader = new StreamReader(pathToFile))
             {
@@ -147,8 +148,8 @@ namespace Gedcom7
         /// Load a GEDCOM file from a specified URL.
         /// </summary>
         /// <param name="url">URL to file to load</param>
-        /// <returns></returns>
-        public bool LoadFromUrl(string url)
+        /// <returns>Error message, or null on success</returns>
+        public string LoadFromUrl(string url)
         {
             this.Path = url;
 
@@ -163,7 +164,12 @@ namespace Gedcom7
             }
         }
 
-        public bool LoadFromString(string stringContent)
+        /// <summary>
+        /// Load a set of string content into this GEDCOM file.
+        /// </summary>
+        /// <param name="stringContent">File content</param>
+        /// <returns>Error message, or null on success</returns>
+        public string LoadFromString(string stringContent)
         {
             using (var content = new MemoryStream(Encoding.UTF8.GetBytes(stringContent ?? "")))
             {
@@ -399,40 +405,45 @@ namespace Gedcom7
         /// <summary>
         /// Check whether this file is valid GEDCOM.
         /// </summary>
-        /// <returns>true if valid, false if not</returns>
-        public bool Validate()
+        /// <returns>Error message, or null on success</returns>
+        public string Validate()
         {
             // The file must start with HEAD and end with TRLR.
             if (this.Records.Count < 2)
             {
-                return false;
+                return "File contains fewer than 2 records";
             }
 
             for (int i = 0; i < this.Records.Count; i++)
             {
                 var record = this.Records[i];
-                if (!record.IsValid)
+                string error = record.Validate();
+                if (error != null)
                 {
-                    return false;
+                    return error;
                 }
                 string tag = record.Tag;
                 if ((tag == "HEAD") != (i == 0))
                 {
-                    return false;
+                    return record.ErrorMessage("HEAD must be the first record");
                 }
                 if ((tag == "TRLR") != (i == this.Records.Count - 1))
                 {
-                    return false;
+                    return record.ErrorMessage("TRLR must be the last record");
                 }
 
                 // An xref is disallowed for HEAD and TRLR and required for all others.
                 if ((tag == "HEAD" || tag == "TRLR") != (record.Xref == null))
                 {
-                    return false;
+                    if (record.Xref == null)
+                    {
+                        return record.ErrorMessage("Missing Xref for this record");
+                    }
+                    return record.ErrorMessage("Xref is not valid for this record");
                 }
             }
 
-            return true;
+            return null;
         }
     }
 }

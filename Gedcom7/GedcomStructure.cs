@@ -106,125 +106,127 @@ namespace Gedcom7
         /// (b) Y's YAML file has substructures entry with key X, or
         /// (c) X is a relocated standard structure (extension tag and standard URI)
         /// </summary>
-        bool IsPlacementValid
+        /// <returns>Error message, or null on success</returns>
+        string ValidatePlacement()
         {
-            get
+            if (this.Superstructure == null)
             {
-                if (this.Superstructure == null)
+                if (this.Schema.IsStandard && !this.Schema.IsDocumented)
                 {
-                    if (this.Schema.IsStandard && !this.Schema.IsDocumented)
-                    {
-                        return false;
-                    }
-                    return (this.Schema.Superstructures.Count == 0);
+                    return ErrorMessage("Undocumented standard record");
                 }
-
-                // See if this structure's YAML file has a superstructures entry
-                // for this structure's superstructure.
-                if (this.Superstructure.Schema.IsDocumented &&
-                    this.Schema.Superstructures.ContainsKey(this.Superstructure.Schema.Uri))
-                {
-                    return true;
-                }
-
-                // See if the superstructure's YAML file has a substructures entry
-                // for this structure.
-                if (this.Schema.IsDocumented &&
-                    this.Superstructure.Schema.Substructures.ContainsKey(this.Schema.Uri))
-                {
-                    return true;
-                }
-
-                // See if this is a relocated standard structure.
-                if (this.IsExtensionTag && this.Schema.IsStandard)
-                {
-                    return true;
-                }
-
-                // See if this is an undocumented extension structure.
-                if (this.IsExtensionTag && !this.Schema.IsDocumented)
-                {
-                    return true;
-                }
-
-                // See if the superstructure is an undocumented extension structure.
-                if (this.Superstructure.IsExtensionTag && !this.Superstructure.Schema.IsDocumented)
-                {
-                    return true;
-                }
-
-                // See if the superstructure's path has an extension in it.
-                if (this.Superstructure.Superstructure?.TagWithPath.Contains('_') ?? false)
-                {
-                    return true;
-                }
-
-                // See if this is a CONT pseudostructure under a string structure.
-                if ((this.Schema.StandardTag == "CONT") &&
-                    (this.Superstructure.Schema.Payload == "http://www.w3.org/2001/XMLSchema#string"))
-                {
-                    return true;
-                }
-
-                return false;
+                return (this.Schema.Superstructures.Count == 0) ? null :
+                    ErrorMessage(this.Tag + " is not a valid record");
             }
+
+            // See if this structure's YAML file has a superstructures entry
+            // for this structure's superstructure.
+            if (this.Superstructure.Schema.IsDocumented &&
+                this.Schema.Superstructures.ContainsKey(this.Superstructure.Schema.Uri))
+            {
+                return null;
+            }
+
+            // See if the superstructure's YAML file has a substructures entry
+            // for this structure.
+            if (this.Schema.IsDocumented &&
+                this.Superstructure.Schema.Substructures.ContainsKey(this.Schema.Uri))
+            {
+                return null;
+            }
+
+            // See if this is a relocated standard structure.
+            if (this.IsExtensionTag && this.Schema.IsStandard)
+            {
+                return null;
+            }
+
+            // See if this is an undocumented extension structure.
+            if (this.IsExtensionTag && !this.Schema.IsDocumented)
+            {
+                return null;
+            }
+
+            // See if the superstructure is an undocumented extension structure.
+            if (this.Superstructure.IsExtensionTag && !this.Superstructure.Schema.IsDocumented)
+            {
+                return null;
+            }
+
+            // See if the superstructure's path has an extension in it.
+            if (this.Superstructure.Superstructure?.TagWithPath.Contains('_') ?? false)
+            {
+                return null;
+            }
+
+            // See if this is a CONT pseudostructure under a string structure.
+            if ((this.Schema.StandardTag == "CONT") &&
+                (this.Superstructure.Schema.Payload == "http://www.w3.org/2001/XMLSchema#string"))
+            {
+                return null;
+            }
+
+            return ErrorMessage(this.Tag + " is not a valid substructure of " + this.Superstructure.Tag);
         }
 
-        public bool IsValid
+        /// <summary>
+        /// Validate this structure.
+        /// </summary>
+        /// <returns>Error message, or null on success</returns>
+        public string Validate()
         {
-            get
+            string error = ValidatePlacement();
+            if (error != null)
             {
-                if (!this.IsPlacementValid)
-                {
-                    return false;
-                }
-                Dictionary<string, int> foundCount = new Dictionary<string, int>();
-                foreach (var substructure in this.Substructures)
-                {
-                    if (!substructure.IsValid)
-                    {
-                        return false;
-                    }
-                    if (substructure.Schema.IsDocumented)
-                    {
-                        if (foundCount.ContainsKey(substructure.Schema.Uri))
-                        {
-                            foundCount[substructure.Schema.Uri]++;
-                        }
-                        else
-                        {
-                            foundCount[substructure.Schema.Uri] = 1;
-                        }
-                    }
-                }
-
-                // TRLR and CONT cannot contain substructures.
-                if ((this.Tag == "CONT" || this.Tag == "TRLR")
-                    && (this.Substructures.Count > 0))
-                {
-                    return false;
-                }
-
-                // Check cardinality of permitted substructures.
-                foreach (var substructureSchemaPair in this.Schema.Substructures)
-                {
-                    string uri = substructureSchemaPair.Key;
-                    GedcomStructureCountInfo countInfo = substructureSchemaPair.Value;
-                    if (countInfo.Required && !foundCount.ContainsKey(uri))
-                    {
-                        // Missing required substructure.
-                        return false;
-                    }
-                    if (countInfo.Singleton && foundCount.ContainsKey(uri) &&
-                        (foundCount[uri] > 1))
-                    {
-                        // Contains multiple when only a singleton is permitted.
-                        return false;
-                    }
-                }
-
-                return true;
+                return error;
             }
+            Dictionary<string, int> foundCount = new Dictionary<string, int>();
+            foreach (var substructure in this.Substructures)
+            {
+                error = substructure.Validate();
+                if (error != null)
+                {
+                    return error;
+                }
+                if (substructure.Schema.IsDocumented)
+                {
+                    if (foundCount.ContainsKey(substructure.Schema.Uri))
+                    {
+                        foundCount[substructure.Schema.Uri]++;
+                    }
+                    else
+                    {
+                        foundCount[substructure.Schema.Uri] = 1;
+                    }
+                }
+            }
+
+            // TRLR and CONT cannot contain substructures.
+            if ((this.Tag == "CONT" || this.Tag == "TRLR")
+                && (this.Substructures.Count > 0))
+            {
+                return ErrorMessage(this.Tag + " must not contain substructures");
+            }
+
+            // Check cardinality of permitted substructures.
+            foreach (var substructureSchemaPair in this.Schema.Substructures)
+            {
+                string uri = substructureSchemaPair.Key;
+                GedcomStructureCountInfo countInfo = substructureSchemaPair.Value;
+                if (countInfo.Required && !foundCount.ContainsKey(uri))
+                {
+                    // Missing required substructure.
+                    return ErrorMessage("Missing substructure " + uri);
+                }
+                if (countInfo.Singleton && foundCount.ContainsKey(uri) &&
+                    (foundCount[uri] > 1))
+                {
+                    // Contains multiple when only a singleton is permitted.
+                    return ErrorMessage("Multiple substructures of " + uri);
+                }
+            }
+
+            return null;
         }
 
         public string LineWithPath
@@ -247,7 +249,15 @@ namespace Gedcom7
 
         public string SpacedLineVal => " " + this.LineVal + " ";
 
-        public bool Parse(GedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
+        /// <summary>
+        /// Parse a line of text into a GEDCOM structure.
+        /// </summary>
+        /// <param name="file">GEDCOM file the line came from</param>
+        /// <param name="lineNumber">Line number in the file</param>
+        /// <param name="line">Line text</param>
+        /// <param name="structurePath">Prior structure path</param>
+        /// <returns>Error message, or null on success</returns>
+        public string Parse(GedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
         {
             this.LineNumber = lineNumber;
             this.OriginalLine = line;
@@ -256,7 +266,7 @@ namespace Gedcom7
             // Parse line into Level, Xref, Tag, Pointer, and LineVal.
             if (line == null)
             {
-                return false;
+                return ErrorMessage("No line text");
             }
             string[] tokens = line.Split(' ');
             int index = 0;
@@ -278,7 +288,7 @@ namespace Gedcom7
             }
             else
             {
-                return false;
+                return ErrorMessage("Line must start with an integer");
             }
 
             // Update path to current structure.
@@ -302,20 +312,20 @@ namespace Gedcom7
                 this.Xref = tokens[index++];
                 if ((this.Xref.Length < 3) || !this.Xref.EndsWith('@'))
                 {
-                    return false;
+                    return ErrorMessage("Xref must start and end with @");
                 }
                 string value = this.Xref.Substring(1, this.Xref.Length - 2);
                 if (file.GedcomVersion == GedcomVersion.V70)
                 {
                     if (this.Xref == "@VOID@")
                     {
-                        return false;
+                        return ErrorMessage("Xref must not be @VOID@");
                     }
                     foreach (var c in value)
                     {
                         if (!(Char.IsUpper(c) || Char.IsDigit(c) || c == '_'))
                         {
-                            return false;
+                            return ErrorMessage("Invalid Xref character");
                         }
                     }
                 }
@@ -323,11 +333,11 @@ namespace Gedcom7
                 {
                     if (!Char.IsLetterOrDigit(value[0]))
                     {
-                        return false;
+                        return ErrorMessage("Xref must start with a letter or digit");
                     }
                     if (value.Contains('_'))
                     {
-                        return false;
+                        return ErrorMessage("Invalid Xref character '_'");
                     }
                 }
             }
@@ -335,6 +345,11 @@ namespace Gedcom7
             if (tokens.Length > index)
             {
                 this.Tag = tokens[index++];
+                if (this.Tag == "")
+                {
+                    return ErrorMessage("Tag must not be empty");
+                }
+
                 if (tokens.Length > index)
                 {
                     int offset = line.IndexOf(this.Tag);
@@ -342,11 +357,16 @@ namespace Gedcom7
                     if (this.LineVal == "")
                     {
                         // An empty payload is not valid after a space.
-                        return false;
+                        return ErrorMessage("An empty payload is not valid after a space");
                     }
                 }
             }
-            return true;
+            return null;
+        }
+
+        public string ErrorMessage(string message)
+        {
+            return String.Format("Line {0}: {1}", this.LineNumber, message);
         }
 
         /// <summary>
