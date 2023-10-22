@@ -275,7 +275,8 @@ namespace Gedcom7
             if (Int32.TryParse(tokens[index++], out level))
             {
                 this.Level = level;
-            } else
+            }
+            else
             {
                 return false;
             }
@@ -299,6 +300,36 @@ namespace Gedcom7
             if ((this.Level == 0) && (tokens.Length > index) && (tokens[index].Length > 0) && (tokens[index][0] == '@'))
             {
                 this.Xref = tokens[index++];
+                if ((this.Xref.Length < 3) || !this.Xref.EndsWith('@'))
+                {
+                    return false;
+                }
+                string value = this.Xref.Substring(1, this.Xref.Length - 2);
+                if (file.GedcomVersion == GedcomVersion.V70)
+                {
+                    if (this.Xref == "@VOID@")
+                    {
+                        return false;
+                    }
+                    foreach (var c in value)
+                    {
+                        if (!(Char.IsUpper(c) || Char.IsDigit(c) || c == '_'))
+                        {
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    if (!Char.IsLetterOrDigit(value[0]))
+                    {
+                        return false;
+                    }
+                    if (value.Contains('_'))
+                    {
+                        return false;
+                    }
+                }
             }
 
             if (tokens.Length > index)

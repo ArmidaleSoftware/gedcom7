@@ -283,11 +283,22 @@ namespace Tests
             // HEAD record does not allow an xref.
             ValidateGedcomText(@"0 @H1@ HEAD
 1 GEDC
+2 VERS 5.5.1
+0 TRLR
+", false);
+            ValidateGedcomText(@"0 @H1@ HEAD
+1 GEDC
 2 VERS 7.0
 0 TRLR
 ", false);
 
             // INDI record requires an xref.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 INDI
+0 TRLR
+", false);
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
@@ -298,8 +309,55 @@ namespace Tests
             // TRLR record does not allow an xref.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
+2 VERS 5.5.1
+0 @T1@ TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
 2 VERS 7.0
 0 @T1@ TRLR
+", false);
+
+            // Xref must start with @.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 I1@ INDI
+0 TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 I1@ INDI
+0 TRLR
+", false);
+
+            // Xref must end with @.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1 INDI
+0 TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1 INDI
+0 TRLR
+", false);
+
+            // Xref must contain something.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @ INDI
+0 TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @ INDI
+0 TRLR
 ", false);
 
             // Test characters within an xref, which is
@@ -337,21 +395,7 @@ namespace Tests
 0 TRLR
 ", false);
 
-            // Spaces are ok in GEDCOM 5.5.1 but not 7.0.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @I 1@ INDI
-0 TRLR
-", true);
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @I 1@ INDI
-0 TRLR
-", false);
-
-            // Hash is ok in GEDCOM 5.5.1 (except at the start) but not 7.0
+            // Hash is ok in GEDCOM 5.5.1 (except at the start) but not 7.0.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 5.5.1
