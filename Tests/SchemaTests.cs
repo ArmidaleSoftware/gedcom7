@@ -310,7 +310,6 @@ namespace Tests
             // TRLR record does not allow an xref.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-<<<<<<< HEAD
 2 VERS 5.5.1
 0 @T1@ TRLR
 ", "Line 4: Xref is not valid for this record");
@@ -362,10 +361,59 @@ namespace Tests
 0 TRLR
 ", "Line 4: Xref must start and end with @");
 =======
+=======
+2 VERS 5.5.1
+0 @T1@ TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+>>>>>>> 49f2d5a (Validate xref characters)
 2 VERS 7.0
 0 @T1@ TRLR
 ", false);
 >>>>>>> d483bcf (Add test cases)
+
+            // Xref must start with @.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 I1@ INDI
+0 TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 I1@ INDI
+0 TRLR
+", false);
+
+            // Xref must end with @.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1 INDI
+0 TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1 INDI
+0 TRLR
+", false);
+
+            // Xref must contain something.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @ INDI
+0 TRLR
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @ INDI
+0 TRLR
+", false);
 
             // Test characters within an xref, which is
             // @<alphanum><pointer_string>@
@@ -402,20 +450,6 @@ namespace Tests
 0 TRLR
 ", "Line 4: Xref must not be @VOID@");
 
-            // Spaces are ok in GEDCOM 5.5.1 but not 7.0.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @I 1@ INDI
-0 TRLR
-", true);
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @I 1@ INDI
-0 TRLR
-", false);
-
             // Hash is ok in GEDCOM 5.5.1 (except at the start) but not 7.0.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
@@ -428,21 +462,13 @@ namespace Tests
 2 VERS 5.5.1
 0 @#I1@ INDI
 0 TRLR
-<<<<<<< HEAD
 ", "Line 4: Xref must start with a letter or digit");
-=======
-", false);
->>>>>>> d483bcf (Add test cases)
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
 0 @I#1@ INDI
 0 TRLR
-<<<<<<< HEAD
 ", "Line 4: Invalid Xref character");
-=======
-", false);
->>>>>>> d483bcf (Add test cases)
 
             // Underscore is ok in GEDCOM 7.0 but not 5.5.1.
             ValidateGedcomText(@"0 HEAD
