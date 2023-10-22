@@ -25,8 +25,10 @@ namespace Tests
         {
             var file = new GedcomFile();
             bool ok = file.LoadFromPath(path);
-            Assert.IsTrue(ok);
-            ok = file.Validate();
+            if (ok)
+            {
+                ok = file.Validate();
+            }
             Assert.AreEqual(expected_result, ok);
         }
 
@@ -122,7 +124,7 @@ namespace Tests
         [TestMethod]
         public void ValidateSpaces()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/spaces.ged", true);
+            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/spaces.ged", false);
         }
 
         [TestMethod]
@@ -238,9 +240,22 @@ namespace Tests
         [TestMethod]
         public void ValidateSpacing()
         {
+            // Leading whitespace is valid prior to 7.0 but not in 7.0.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+ 2 VERS 5.5.1
+0 TRLR
+", true);
             ValidateGedcomText(@"0 HEAD
 1 GEDC
  2 VERS 7.0
+0 TRLR
+", false);
+
+            // Extra space before the tag is not valid.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2  VERS 5.5.1
 0 TRLR
 ", false);
             ValidateGedcomText(@"0 HEAD
@@ -248,11 +263,18 @@ namespace Tests
 2  VERS 7.0
 0 TRLR
 ", false);
+
+            // Trailing whitespace is not valid.
             ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS  7.0
+1 GEDC 
+2 VERS 5.5.1
 0 TRLR
-", true);
+", false);
+            ValidateGedcomText(@"0 HEAD
+1 GEDC 
+2 VERS 7.0
+0 TRLR
+", false);
         }
     }
 }
