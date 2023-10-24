@@ -487,6 +487,42 @@ namespace Tests
 ", "Line 4: Invalid Xref character");
         }
 
-        // TODO: test payload types, including xref ptrs
+        [TestMethod]
+        public void ValidatePayloadType()
+        {
+            // Validate null.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC 1
+2 VERS 5.5.1
+0 TRLR
+", "Line 2: Payload must be null");
+
+            // Validate an integer.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+1 NCHI 0
+0 TRLR
+");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+1 NCHI -1
+0 TRLR
+", "Line 5: \"-1\" is not a non-negative integer");
+
+            // Test Y|<NULL>.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+1 BIRT N
+0 TRLR
+", "Line 5: BIRT payload must be 'Y' or empty");
+
+            // TODO: test payload types, including xref ptrs
+        }
     }
 }
