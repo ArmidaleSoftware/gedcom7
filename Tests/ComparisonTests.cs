@@ -1,3 +1,5 @@
+// Copyright (c) Armidale Software
+// SPDX-License-Identifier: MIT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Gedcom7;
 
@@ -42,21 +44,21 @@ namespace Tests
 
             // Adding information is ok.
             GedcomComparisonReport report = subsetFile.Compare(supersetFile);
-            Assert.AreEqual(report.StructuresAdded.Count, structuresAdded);
-            Assert.AreEqual(report.StructuresRemoved.Count, 0);
-            Assert.AreEqual(report.CompatibilityPercentage, 100);
+            Assert.AreEqual(structuresAdded, report.StructuresAdded.Count);
+            Assert.AreEqual(0, report.StructuresRemoved.Count);
+            Assert.AreEqual(100, report.CompatibilityPercentage);
 
             // Losing information is not ok.
             report = supersetFile.Compare(subsetFile);
-            Assert.AreEqual(report.StructuresAdded.Count, 0);
-            Assert.AreEqual(report.StructuresRemoved.Count, structuresAdded);
-            Assert.AreEqual(report.CompatibilityPercentage, percentage);
+            Assert.AreEqual(0, report.StructuresAdded.Count);
+            Assert.AreEqual(structuresAdded, report.StructuresRemoved.Count);
+            Assert.AreEqual(percentage, report.CompatibilityPercentage);
         }
 
         [TestMethod]
         public void CompareMinimalWithMaximal()
         {
-            CompareSubsetWithSuperset("minimal70", "maximal70", 830, 3);
+            CompareSubsetWithSuperset("minimal70", "maximal70", 833, 3);
         }
 
         [TestMethod]
@@ -74,7 +76,7 @@ namespace Tests
         [TestMethod]
         public void CompareTree2WithMaximal()
         {
-            CompareSubsetWithSuperset("maximal70-tree1", "maximal70", 779, 9);
+            CompareSubsetWithSuperset("maximal70-tree1", "maximal70", 782, 9);
         }
 
         [TestMethod]
@@ -86,7 +88,7 @@ namespace Tests
         [TestMethod]
         public void CompareLdsWithMaximal()
         {
-            CompareSubsetWithSuperset("maximal70-lds", "maximal70", 750, 13);
+            CompareSubsetWithSuperset("maximal70-lds", "maximal70", 753, 13);
         }
 
         [TestMethod]
@@ -104,7 +106,7 @@ namespace Tests
         [TestMethod]
         public void CompareMemories2WithMaximal()
         {
-            CompareSubsetWithSuperset("maximal70-memories2", "maximal70", 761, 11);
+            CompareSubsetWithSuperset("maximal70-memories2", "maximal70", 764, 11);
         }
 
         [TestMethod]
