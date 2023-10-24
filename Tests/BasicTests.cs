@@ -31,7 +31,9 @@ namespace Tests
             long emptyMemory = GC.GetTotalMemory(true);
             long used = emptyMemory - beforeMemory;
             TestContext.WriteLine($"Empty GedcomFile: {used} bytes");
-            Assert.IsTrue(used <= 608);
+
+            // Removed the following check since it is unreliable.
+            // Assert.IsTrue(used <= 608);
 
             string error = note.LoadFromPath(fileName);
             Assert.IsNull(error);

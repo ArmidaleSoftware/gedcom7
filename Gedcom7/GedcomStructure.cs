@@ -403,8 +403,35 @@ namespace Gedcom7
                         case "https://gedcom.io/terms/v7/type-Date#exact":
                             // TODO: validate exact date payload
                             break;
+                        case "https://gedcom.io/terms/v7/type-Date":
+                            // TODO: validate Date payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-Date#period":
+                            // TODO: validate date period payload
+                            break;
                         case "https://gedcom.io/terms/v7/type-Time":
-                            // TODO: validate time payload
+                            // TODO: validate Time payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-Name":
+                            // TODO: validate Name payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-Enum":
+                            // TODO: validate Enum payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-List#Text":
+                            // TODO: validate List of Text
+                            break;
+                        case "https://gedcom.io/terms/v7/type-List#Enum":
+                            // TODO: validate List of Enum
+                            break;
+                        case "http://www.w3.org/ns/dcat#mediaType":
+                            // TODO: validate media type payload
+                            break;
+                        case "http://www.w3.org/2001/XMLSchema#Language":
+                            // TODO: validate Language payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-Age":
+                            // TODO: parse Age payload
                             break;
                         default:
                             if (payloadType.StartsWith("@<") && payloadType.EndsWith(">@"))
@@ -415,6 +442,7 @@ namespace Gedcom7
                                     return ErrorMessage("Payload must be a pointer");
                                 }
                                 // TODO: validate payload as a pointer to recordType.
+                                break;
                             }
                             return ErrorMessage("TODO: unrecognized payload type");
                     }
