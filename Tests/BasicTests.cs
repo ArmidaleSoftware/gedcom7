@@ -31,7 +31,7 @@ namespace Tests
             long emptyMemory = GC.GetTotalMemory(true);
             long used = emptyMemory - beforeMemory;
             TestContext.WriteLine($"Empty GedcomFile: {used} bytes");
-            Assert.IsTrue(used <= 528);
+            Assert.IsTrue(used <= 608);
 
             bool ok = note.LoadFromPath(fileName);
             Assert.IsTrue(ok);
@@ -53,7 +53,7 @@ namespace Tests
         [TestMethod]
         public void Maximal70MemoryUsage()
         {
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 218320);
+            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 219208);
         }
     }
 }

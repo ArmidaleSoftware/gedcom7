@@ -8,12 +8,20 @@ using System.Text;
 
 namespace Gedcom7
 {
+    public enum GedcomVersion
+    {
+        Unknown = 0,
+        V551,
+        V70
+    }
     public class GedcomFile
     {
         public GedcomFile()
         {
+            this.GedcomVersion = GedcomVersion.Unknown;
             GedcomStructureSchema.LoadAll();
         }
+
         // Data members.
         Dictionary<GedcomStructure, GedcomStructureMatchInfo> StructureMatchDictionary = new Dictionary<GedcomStructure, GedcomStructureMatchInfo>();
         public string Path { get; private set; }
@@ -24,6 +32,7 @@ namespace Gedcom7
         public GedcomStructure SourceProduct => Head?.FindFirstSubstructure("SOUR");
         public string SourceProductVersion => SourceProduct?.FindFirstSubstructure("VERS")?.LineVal;
         public string Date => Head?.FindFirstSubstructure("DATE")?.LineVal;
+        public GedcomVersion GedcomVersion { get; set; }
 
         /// <summary>
         /// Program and version that generated this GEDCOM file.
@@ -66,8 +75,43 @@ namespace Gedcom7
         /// <returns>true if valid, false if invalid</returns>
         private bool LoadFromStreamReader(StreamReader reader)
         {
-            var structurePath = new List<GedcomStructure>();
+            // Do GEDCOM version detection.
             string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (line.Contains("1 GEDC"))
+                {
+                    break;
+                }
+            }
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (line.Contains("2 VERS"))
+                {
+                    if (line.Contains("7.0"))
+                    {
+                        this.GedcomVersion = GedcomVersion.V70;
+                    }
+                    else if (line.Contains("5.5.1"))
+                    {
+                        this.GedcomVersion = GedcomVersion.V551;
+                    }
+                    break;
+                }
+            }
+
+            // Reset the stream to the beginning.
+            reader.BaseStream.Position = 0;
+            reader.DiscardBufferedData();
+
+            // Consume the BOM if any.
+            if (reader.Peek() == 65279)
+            {
+                reader.Read();
+            }
+
+            // Now read the contents.
+            var structurePath = new List<GedcomStructure>();
             this.LineCount = 0;
             while ((line = reader.ReadLine()) != null)
             {
@@ -355,7 +399,7 @@ namespace Gedcom7
         /// <summary>
         /// Check whether this file is valid GEDCOM.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>true if valid, false if not</returns>
         public bool Validate()
         {
             // The file must start with HEAD and end with TRLR.

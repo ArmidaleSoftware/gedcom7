@@ -260,6 +260,17 @@ namespace Gedcom7
             }
             string[] tokens = line.Split(' ');
             int index = 0;
+
+            GedcomVersion gedcomVersion = file.GedcomVersion;
+            if (gedcomVersion != GedcomVersion.V70)
+            {
+                // Prior to GEDCOM 7, leading whitespace was allowed.
+                while (tokens[index].Length == 0)
+                {
+                    index++;
+                }
+            }
+
             int level;
             if (Int32.TryParse(tokens[index++], out level))
             {
@@ -285,10 +296,11 @@ namespace Gedcom7
                 file.Records.Add(this);
             }
 
-            if ((tokens.Length > index) && (tokens[index].Length > 0) && (tokens[index][0] == '@'))
+            if ((this.Level == 0) && (tokens.Length > index) && (tokens[index].Length > 0) && (tokens[index][0] == '@'))
             {
                 this.Xref = tokens[index++];
             }
+
             if (tokens.Length > index)
             {
                 this.Tag = tokens[index++];
@@ -296,6 +308,11 @@ namespace Gedcom7
                 {
                     int offset = line.IndexOf(this.Tag);
                     this.LineVal = line.Substring(offset + this.Tag.Length + 1);
+                    if (this.LineVal == "")
+                    {
+                        // An empty payload is not valid after a space.
+                        return false;
+                    }
                 }
             }
             return true;
