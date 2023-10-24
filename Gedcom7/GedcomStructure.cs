@@ -364,6 +364,11 @@ namespace Gedcom7
                         // We don't currently do any validation on the payload.
                         return null;
                     }
+                    if (!this.Schema?.IsDocumented ?? false)
+                    {
+                        // We can't do validation on undocumented structures.
+                        return null;
+                    }
                     string payloadType = this.Schema?.Payload;
                     switch (payloadType)
                     {
