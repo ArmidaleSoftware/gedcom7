@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Copyright (c) Armidale Software
+// SPDX-License-Identifier: MIT
+using System;
 using System.Collections.Generic;
 
 namespace Gedcom7
@@ -13,10 +15,10 @@ namespace Gedcom7
         static GedcomFile LoadFile(string filename)
         {
             var file = new GedcomFile();
-            bool ok = file.LoadFromPath(filename);
-            if (!ok)
+            string error = file.LoadFromPath(filename);
+            if (error != null)
             {
-                Console.WriteLine("Failed to load " + filename);
+                Console.WriteLine("Failed to load " + filename + ": " + error + "\n");
                 return null;
             }
             return file;
