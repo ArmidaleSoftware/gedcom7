@@ -361,6 +361,48 @@ namespace Tests
 0 TRLR
 ", "Line 4: Xref must start and end with @");
 
+            // Xref must start with @.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 I1@ INDI
+0 TRLR
+", "Line 4: Undocumented standard record");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 I1@ INDI
+0 TRLR
+", "Line 4: Undocumented standard record");
+
+            // Xref must end with @.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1 INDI
+0 TRLR
+", "Line 4: Xref must start and end with @");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1 INDI
+0 TRLR
+", "Line 4: Xref must start and end with @");
+
+            // Xref must contain something.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @ INDI
+0 TRLR
+", "Line 4: Xref must start and end with @");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @ INDI
+0 TRLR
+", "Line 4: Xref must start and end with @");
+
             // Test characters within an xref, which is
             // @<alphanum><pointer_string>@
             // GEDCOM 5.5.1:
@@ -445,6 +487,42 @@ namespace Tests
 ", "Line 4: Invalid Xref character");
         }
 
-        // TODO: test payload types, including xref ptrs
+        [TestMethod]
+        public void ValidatePayloadType()
+        {
+            // Validate null.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC 1
+2 VERS 5.5.1
+0 TRLR
+", "Line 2: Payload must be null");
+
+            // Validate an integer.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+1 NCHI 0
+0 TRLR
+");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+1 NCHI -1
+0 TRLR
+", "Line 5: \"-1\" is not a non-negative integer");
+
+            // Test Y|<NULL>.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+1 BIRT N
+0 TRLR
+", "Line 5: BIRT payload must be 'Y' or empty");
+
+            // TODO: test payload types, including xref ptrs
+        }
     }
 }

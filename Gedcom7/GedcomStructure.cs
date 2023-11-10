@@ -359,6 +359,93 @@ namespace Gedcom7
                         // An empty payload is not valid after a space.
                         return ErrorMessage("An empty payload is not valid after a space");
                     }
+                    if (this.Tag == "CONT")
+                    {
+                        // We don't currently do any validation on the payload.
+                        return null;
+                    }
+                    if (!this.Schema?.IsDocumented ?? false)
+                    {
+                        // We can't do validation on undocumented structures.
+                        return null;
+                    }
+                    string payloadType = this.Schema?.Payload;
+                    switch (payloadType)
+                    {
+                        case "http://www.w3.org/2001/XMLSchema#nonNegativeInteger":
+                            {
+                                UInt32 value;
+                                if (!UInt32.TryParse(this.LineVal, out value))
+                                {
+                                    return ErrorMessage("\"" + this.LineVal + "\" is not a non-negative integer");
+                                }
+                                break;
+                            }
+                        case null:
+                            {
+                                if (this.LineVal != null)
+                                {
+                                    return ErrorMessage("Payload must be null");
+                                }
+                                break;
+                            }
+                        case "Y|<NULL>":
+                            {
+                                if (this.LineVal != null && this.LineVal != "Y")
+                                {
+                                    return ErrorMessage(this.Tag + " payload must be 'Y' or empty");
+                                }
+                                break;
+                            }
+                        case "http://www.w3.org/2001/XMLSchema#string":
+                            // We currently don't do any further validation.
+                            break;
+                        case "https://gedcom.io/terms/v7/type-Date#exact":
+                            // TODO: validate exact date payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-Date":
+                            // TODO: validate Date payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-Date#period":
+                            // TODO: validate date period payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-Time":
+                            // TODO: validate Time payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-Name":
+                            // TODO: validate Name payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-Enum":
+                            // TODO: validate Enum payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-List#Text":
+                            // TODO: validate List of Text
+                            break;
+                        case "https://gedcom.io/terms/v7/type-List#Enum":
+                            // TODO: validate List of Enum
+                            break;
+                        case "http://www.w3.org/ns/dcat#mediaType":
+                            // TODO: validate media type payload
+                            break;
+                        case "http://www.w3.org/2001/XMLSchema#Language":
+                            // TODO: validate Language payload
+                            break;
+                        case "https://gedcom.io/terms/v7/type-Age":
+                            // TODO: parse Age payload
+                            break;
+                        default:
+                            if (payloadType.StartsWith("@<") && payloadType.EndsWith(">@"))
+                            {
+                                string recordType = payloadType.Substring(2, payloadType.Length - 4);
+                                if (this.LineVal.Length < 3 || this.LineVal[0] != '@' || this.LineVal[this.LineVal.Length - 1] != '@')
+                                {
+                                    return ErrorMessage("Payload must be a pointer");
+                                }
+                                // TODO: validate payload as a pointer to recordType.
+                                break;
+                            }
+                            return ErrorMessage("TODO: unrecognized payload type");
+                    }
                 }
             }
             return null;
