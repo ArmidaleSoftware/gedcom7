@@ -111,10 +111,6 @@ namespace Gedcom7
         {
             if (this.Superstructure == null)
             {
-                if (this.Schema.IsStandard && !this.Schema.IsDocumented)
-                {
-                    return ErrorMessage("Undocumented standard record");
-                }
                 return (this.Schema.Superstructures.Count == 0) ? null :
                     ErrorMessage(this.Tag + " is not a valid record");
             }
@@ -226,6 +222,27 @@ namespace Gedcom7
                 }
             }
 
+            // Check pointers.
+            if (this.Schema.HasPointer && (this.LineVal != "@VOID@"))
+            {
+                // Try to resolve the pointer.
+                string xref = this.LineVal;
+                GedcomFile file = this.File;
+                GedcomStructure record = file.FindRecord(xref);
+                if (record == null)
+                {
+                    return ErrorMessage(xref + " has no associated record");
+                }
+
+                string expectedRecordUri = this.Schema.Payload.Substring(2, this.Schema.Payload.Length - 4);
+
+                // Verify the record type.
+                if (record.Schema.Uri != expectedRecordUri)
+                {
+                    return ErrorMessage(this.Tag + " points to a " + record.Tag + " record");
+                }
+            }
+
             return null;
         }
 
@@ -245,6 +262,30 @@ namespace Gedcom7
                 }
                 return result;
             }
+        }
+
+        /// <summary>
+        /// Test whether a given string is a valid media type.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidMediaType(string value)
+        {
+            if (value == null || value.Length == 0) return false;
+            int slashes = 0;
+            foreach (char c in value)
+            {
+                if (c == '/') slashes++;
+                else if (!Char.IsLetterOrDigit(c))
+                {
+                    return false;
+                }
+            }
+            if ((value[0] == '/') || (value[value.Length - 1] == '/') || (slashes > 1))
+            {
+                return false;
+            }
+            return true;
         }
 
         public string SpacedLineVal => " " + this.LineVal + " ";
@@ -304,40 +345,39 @@ namespace Gedcom7
             else
             {
                 this._superstructure = new WeakReference<GedcomFile>(file);
-                file.Records.Add(this);
-            }
 
-            if ((this.Level == 0) && (tokens.Length > index) && (tokens[index].Length > 0) && (tokens[index][0] == '@'))
-            {
-                this.Xref = tokens[index++];
-                if ((this.Xref.Length < 3) || !this.Xref.EndsWith('@'))
+                if ((tokens.Length > index) && (tokens[index].Length > 0) && (tokens[index][0] == '@'))
                 {
-                    return ErrorMessage("Xref must start and end with @");
-                }
-                string value = this.Xref.Substring(1, this.Xref.Length - 2);
-                if (file.GedcomVersion == GedcomVersion.V70)
-                {
-                    if (this.Xref == "@VOID@")
+                    this.Xref = tokens[index++];
+                    if ((this.Xref.Length < 3) || !this.Xref.EndsWith('@'))
                     {
-                        return ErrorMessage("Xref must not be @VOID@");
+                        return ErrorMessage("Xref must start and end with @");
                     }
-                    foreach (var c in value)
+                    string value = this.Xref.Substring(1, this.Xref.Length - 2);
+                    if (file.GedcomVersion == GedcomVersion.V70)
                     {
-                        if (!(Char.IsUpper(c) || Char.IsDigit(c) || c == '_'))
+                        if (this.Xref == "@VOID@")
                         {
-                            return ErrorMessage("Invalid Xref character");
+                            return ErrorMessage("Xref must not be @VOID@");
+                        }
+                        foreach (var c in value)
+                        {
+                            if (!(Char.IsUpper(c) || Char.IsDigit(c) || c == '_'))
+                            {
+                                return ErrorMessage("Invalid Xref character");
+                            }
                         }
                     }
-                }
-                else
-                {
-                    if (!Char.IsLetterOrDigit(value[0]))
+                    else
                     {
-                        return ErrorMessage("Xref must start with a letter or digit");
-                    }
-                    if (value.Contains('_'))
-                    {
-                        return ErrorMessage("Invalid Xref character '_'");
+                        if (!Char.IsLetterOrDigit(value[0]))
+                        {
+                            return ErrorMessage("Xref must start with a letter or digit");
+                        }
+                        if (value.Contains('_'))
+                        {
+                            return ErrorMessage("Invalid Xref character '_'");
+                        }
                     }
                 }
             }
@@ -348,6 +388,10 @@ namespace Gedcom7
                 if (this.Tag == "")
                 {
                     return ErrorMessage("Tag must not be empty");
+                }
+                if (this.Schema != null && !this.Schema.IsDocumented && this.Schema.IsStandard && this.Level == 0)
+                {
+                    return ErrorMessage("Undocumented standard record");
                 }
 
                 if (tokens.Length > index)
@@ -366,88 +410,135 @@ namespace Gedcom7
                     }
                     if (!this.Schema?.IsDocumented ?? false)
                     {
-                        // We can't do validation on undocumented structures.
+                        // We can't do validation on undocumented structures, whether
+                        // extension or standard (under an extension).
                         return null;
                     }
+                }
+
+                    // TODO: use a payload-specific parser subclass instead of a string.
                     string payloadType = this.Schema?.Payload;
-                    switch (payloadType)
-                    {
-                        case "http://www.w3.org/2001/XMLSchema#nonNegativeInteger":
+                switch (payloadType)
+                {
+                    case "http://www.w3.org/2001/XMLSchema#nonNegativeInteger":
+                        {
+                            UInt32 value;
+                            if (!UInt32.TryParse(this.LineVal, out value))
                             {
-                                UInt32 value;
-                                if (!UInt32.TryParse(this.LineVal, out value))
-                                {
-                                    return ErrorMessage("\"" + this.LineVal + "\" is not a non-negative integer");
-                                }
-                                break;
+                                return ErrorMessage("\"" + this.LineVal + "\" is not a non-negative integer");
                             }
-                        case null:
+                            break;
+                        }
+                    case null:
+                        {
+                            if (this.LineVal != null)
                             {
-                                if (this.LineVal != null)
-                                {
-                                    return ErrorMessage("Payload must be null");
-                                }
-                                break;
+                                return ErrorMessage("Payload must be null");
                             }
-                        case "Y|<NULL>":
+                            break;
+                        }
+                    case "Y|<NULL>":
+                        {
+                            if (this.LineVal != null && this.LineVal != "Y")
                             {
-                                if (this.LineVal != null && this.LineVal != "Y")
-                                {
-                                    return ErrorMessage(this.Tag + " payload must be 'Y' or empty");
-                                }
-                                break;
+                                return ErrorMessage(this.Tag + " payload must be 'Y' or empty");
                             }
-                        case "http://www.w3.org/2001/XMLSchema#string":
-                            // We currently don't do any further validation.
                             break;
-                        case "https://gedcom.io/terms/v7/type-Date#exact":
-                            // TODO: validate exact date payload
-                            break;
-                        case "https://gedcom.io/terms/v7/type-Date":
-                            // TODO: validate Date payload
-                            break;
-                        case "https://gedcom.io/terms/v7/type-Date#period":
-                            // TODO: validate date period payload
-                            break;
-                        case "https://gedcom.io/terms/v7/type-Time":
-                            // TODO: validate Time payload
-                            break;
-                        case "https://gedcom.io/terms/v7/type-Name":
-                            // TODO: validate Name payload
-                            break;
-                        case "https://gedcom.io/terms/v7/type-Enum":
-                            // TODO: validate Enum payload
-                            break;
-                        case "https://gedcom.io/terms/v7/type-List#Text":
-                            // TODO: validate List of Text
-                            break;
-                        case "https://gedcom.io/terms/v7/type-List#Enum":
-                            // TODO: validate List of Enum
-                            break;
-                        case "http://www.w3.org/ns/dcat#mediaType":
-                            // TODO: validate media type payload
-                            break;
-                        case "http://www.w3.org/2001/XMLSchema#Language":
-                            // TODO: validate Language payload
-                            break;
-                        case "https://gedcom.io/terms/v7/type-Age":
-                            // TODO: parse Age payload
-                            break;
-                        default:
-                            if (payloadType.StartsWith("@<") && payloadType.EndsWith(">@"))
+                        }
+                    case "http://www.w3.org/2001/XMLSchema#string":
+                        // We currently don't do any further validation.
+                        break;
+                    case "https://gedcom.io/terms/v7/type-Date#exact":
+                        // TODO: validate exact date payload
+                        break;
+                    case "https://gedcom.io/terms/v7/type-Date":
+                        // TODO: validate Date payload
+                        break;
+                    case "https://gedcom.io/terms/v7/type-Date#period":
+                        // TODO: validate date period payload
+                        break;
+                    case "https://gedcom.io/terms/v7/type-Time":
+                        // TODO: validate Time payload
+                        break;
+                    case "https://gedcom.io/terms/v7/type-Name":
+                        // TODO: validate Name payload
+                        break;
+                    case "https://gedcom.io/terms/v7/type-Enum":
+                        // TODO: validate Enum payload
+                        break;
+                    case "https://gedcom.io/terms/v7/type-List#Text":
+                        // TODO: validate List of Text
+                        break;
+                    case "https://gedcom.io/terms/v7/type-List#Enum":
+                        // TODO: validate List of Enum
+                        break;
+                    case "http://www.w3.org/ns/dcat#mediaType":
+                        {
+                            if (!IsValidMediaType(this.LineVal))
                             {
-                                string recordType = payloadType.Substring(2, payloadType.Length - 4);
-                                if (this.LineVal.Length < 3 || this.LineVal[0] != '@' || this.LineVal[this.LineVal.Length - 1] != '@')
-                                {
-                                    return ErrorMessage("Payload must be a pointer");
-                                }
-                                // TODO: validate payload as a pointer to recordType.
-                                break;
+                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid media type");
                             }
-                            return ErrorMessage("TODO: unrecognized payload type");
-                    }
+                            if (this.Tag == "MIME" && this.LineVal != "text/plain" && this.LineVal != "text/html")
+                            {
+                                return ErrorMessage(this.Tag + " payload must be text/plain or text/html");
+                            }
+                            break;
+                        }
+                    case "http://www.w3.org/2001/XMLSchema#Language":
+                        // TODO: validate Language payload
+                        break;
+                    case "https://gedcom.io/terms/v7/type-Age":
+                        // TODO: parse Age payload
+                        break;
+                    default:
+                        if (this.Schema?.HasPointer ?? false)
+                        {
+                            string recordType = payloadType.Substring(2, payloadType.Length - 4);
+                            if (this.LineVal == null || this.LineVal.Length < 3 || this.LineVal[0] != '@' || this.LineVal[this.LineVal.Length - 1] != '@')
+                            {
+                                return ErrorMessage("Payload must be a pointer");
+                            }
+                            break;
+                        }
+                        return ErrorMessage("TODO: unrecognized payload type");
                 }
             }
+
+            if (this.Level == 0)
+            {
+                if ((this.Tag == "HEAD") != (file.Records.Count == 0))
+                {
+                    return ErrorMessage("HEAD must be the first record");
+                }
+                if (file.Records.ContainsKey("TRLR"))
+                {
+                    return ErrorMessage("Duplicate TRLR record");
+                }
+
+                // An xref is disallowed for HEAD and TRLR and required for all others.
+                string tag = this.Tag;
+                if ((tag == "HEAD" || tag == "TRLR") != (this.Xref == null))
+                {
+                    if (this.Xref == null)
+                    {
+                        return ErrorMessage("Missing Xref for this record");
+                    }
+                    return ErrorMessage("Xref is not valid for this record");
+                }
+                if (this.Xref != null)
+                {
+                    if (file.Records.ContainsKey(this.Xref))
+                    {
+                        return ErrorMessage("Duplicate Xref " + this.Xref);
+                    }
+                    file.Records[this.Xref] = this;
+                }
+                else
+                {
+                    file.Records[this.Tag] = this;
+                }
+            }
+
             return null;
         }
 
@@ -519,7 +610,7 @@ namespace Gedcom7
         float ScoreSharedNoteVsNote(GedcomStructure note)
         {
             // Find the record that the shared note points to.
-            GedcomStructure sharedNoteRecord = this.File?.FindRecord("SNOTE", this.LineVal);
+            GedcomStructure sharedNoteRecord = this.File?.FindRecord(this.LineVal);
             if (sharedNoteRecord == null)
             {
                 return 0;

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Gedcom7
@@ -26,9 +27,10 @@ namespace Gedcom7
         Dictionary<GedcomStructure, GedcomStructureMatchInfo> StructureMatchDictionary = new Dictionary<GedcomStructure, GedcomStructureMatchInfo>();
         public string Path { get; private set; }
         public int LineCount { get; private set; }
-        public List<GedcomStructure> Records = new List<GedcomStructure>();
+        public List<GedcomStructure> GetRecordsAsList() => Records.Values.ToList();
+        public Dictionary<string, GedcomStructure> Records = new Dictionary<string, GedcomStructure>();
         public override string ToString() { return this.Path; }
-        GedcomStructure Head => (this.Records.Count > 0) ? this.Records[0] : null;
+        GedcomStructure Head => (this.Records.ContainsKey("HEAD")) ? this.Records["HEAD"] : null;
         public GedcomStructure SourceProduct => Head?.FindFirstSubstructure("SOUR");
         public string SourceProductVersion => SourceProduct?.FindFirstSubstructure("VERS")?.LineVal;
         public string Date => Head?.FindFirstSubstructure("DATE")?.LineVal;
@@ -51,21 +53,17 @@ namespace Gedcom7
         }
 
         /// <summary>
-        /// Find the record with a given tag and xref.
+        /// Find the record with a given xref.
         /// </summary>
-        /// <param name="tag">Tag of record to find</param>
         /// <param name="xref">Xref of record to find</param>
         /// <returns>Record, or null if not found</returns>
-        public GedcomStructure FindRecord(string tag, string xref)
+        public GedcomStructure FindRecord(string xref)
         {
-            foreach (GedcomStructure record in this.Records)
+            if (!this.Records.ContainsKey(xref))
             {
-                if (record.Tag == tag && record.Xref == xref)
-                {
-                    return record;
-                }
+                return null;
             }
-            return null;
+            return this.Records[xref];
         }
 
         /// <summary>
@@ -188,19 +186,19 @@ namespace Gedcom7
         public GedcomComparisonReport Compare(GedcomFile otherFile)
         {
             // First do a pass trying to match structures in each file.
-            foreach (GedcomStructure structure in this.Records)
+            foreach (var keyValuePair in this.Records)
             {
-                FindAndSaveBestMatch(structure, otherFile.Records);
+                FindAndSaveBestMatch(keyValuePair.Value, otherFile.GetRecordsAsList());
             }
 
             var report = new GedcomComparisonReport(this.LineCount);
-            foreach (GedcomStructure structure in this.Records)
+            foreach (var keyValuePair in this.Records)
             {
-                AppendNonMatchingStructures(structure, report.StructuresRemoved);
+                AppendNonMatchingStructures(keyValuePair.Value, report.StructuresRemoved);
             }
-            foreach (GedcomStructure structure in otherFile.Records)
+            foreach (var keyValuePair in otherFile.Records)
             {
-                otherFile.AppendNonMatchingStructures(structure, report.StructuresAdded);
+                otherFile.AppendNonMatchingStructures(keyValuePair.Value, report.StructuresAdded);
             }
             this.ResetComparison();
             otherFile.ResetComparison();
@@ -210,9 +208,9 @@ namespace Gedcom7
 
         public void ResetComparison()
         {
-            foreach (GedcomStructure structure in this.Records)
+            foreach (var keyValuePair in this.Records)
             {
-                ClearMatch(structure);
+                ClearMatch(keyValuePair.Value);
             }
         }
 
@@ -352,7 +350,7 @@ namespace Gedcom7
         void SaveSharedNoteVsNoteMatch(GedcomStructure current, GedcomStructure note)
         {
             // Find the record that the shared note points to.
-            GedcomStructure sharedNoteRecord = FindRecord("SNOTE", current.LineVal);
+            GedcomStructure sharedNoteRecord = FindRecord(current.LineVal);
             GedcomStructureMatchInfo sharedNoteRecordMatch = GetMatchInfo(sharedNoteRecord);
             sharedNoteRecordMatch.MatchStructures.Add(new WeakReference<GedcomStructure>(note));
 
@@ -409,37 +407,18 @@ namespace Gedcom7
         public string Validate()
         {
             // The file must start with HEAD and end with TRLR.
-            if (this.Records.Count < 2)
+            if (!this.Records.ContainsKey("TRLR"))
             {
-                return "File contains fewer than 2 records";
+                return "Missing TRLR record";
             }
 
-            for (int i = 0; i < this.Records.Count; i++)
+            foreach (var keyValuePair in this.Records)
             {
-                var record = this.Records[i];
+                var record = keyValuePair.Value;
                 string error = record.Validate();
                 if (error != null)
                 {
                     return error;
-                }
-                string tag = record.Tag;
-                if ((tag == "HEAD") != (i == 0))
-                {
-                    return record.ErrorMessage("HEAD must be the first record");
-                }
-                if ((tag == "TRLR") != (i == this.Records.Count - 1))
-                {
-                    return record.ErrorMessage("TRLR must be the last record");
-                }
-
-                // An xref is disallowed for HEAD and TRLR and required for all others.
-                if ((tag == "HEAD" || tag == "TRLR") != (record.Xref == null))
-                {
-                    if (record.Xref == null)
-                    {
-                        return record.ErrorMessage("Missing Xref for this record");
-                    }
-                    return record.ErrorMessage("Xref is not valid for this record");
                 }
             }
 
