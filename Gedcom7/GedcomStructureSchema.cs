@@ -113,6 +113,7 @@ namespace Gedcom7
         public List<string> Specification { get; private set; }
         public string Label { get; private set; }
         public string Payload { get; private set; }
+        public bool HasPointer => (this.Payload != null) && this.Payload.StartsWith("@<") && this.Payload.EndsWith(">@");
         public Dictionary<string, GedcomStructureCountInfo> Substructures { get; private set; }
         public Dictionary<string, GedcomStructureCountInfo> Superstructures { get; private set; }
 

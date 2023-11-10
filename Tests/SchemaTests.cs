@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 using Gedcom7;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json.Linq;
 using System.IO;
 
 namespace Tests
@@ -140,10 +141,10 @@ namespace Tests
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
-", "File contains fewer than 2 records");
+", "Missing TRLR record");
 
             // Missing HEAD.
-            ValidateGedcomText("0 TRLR\n", "File contains fewer than 2 records");
+            ValidateGedcomText("0 TRLR\n", "Line 1: HEAD must be the first record");
 
             // Minimal70.
             ValidateGedcomText(@"0 HEAD
@@ -183,7 +184,10 @@ namespace Tests
 2 VERS 7.0
 0 TRLR
 0 TRLR
-", "Line 4: TRLR must be the last record");
+", "Line 5: Duplicate TRLR record");
+
+            // No records.
+            ValidateGedcomText("", "Missing TRLR record");
         }
 
         [TestMethod]
@@ -221,7 +225,7 @@ namespace Tests
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
-0 COPR
+0 @C0@ COPR
 0 TRLR
 ", "Line 4: Undocumented standard record");
 
@@ -485,6 +489,13 @@ namespace Tests
 0 @i1@ INDI
 0 TRLR
 ", "Line 4: Invalid Xref character");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+0 @I1@ INDI
+0 TRLR
+", "Line 5: Duplicate Xref @I1@");
         }
 
         [TestMethod]
@@ -512,6 +523,13 @@ namespace Tests
 1 NCHI -1
 0 TRLR
 ", "Line 5: \"-1\" is not a non-negative integer");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+1 NCHI
+0 TRLR
+", "Line 5: \"\" is not a non-negative integer");
 
             // Test Y|<NULL>.
             ValidateGedcomText(@"0 HEAD
@@ -522,7 +540,125 @@ namespace Tests
 0 TRLR
 ", "Line 5: BIRT payload must be 'Y' or empty");
 
-            // TODO: test payload types, including xref ptrs
+            // TODO: validate exact date payload
+            // TODO: validate Date payload
+            // TODO: validate date period payload
+            // TODO: validate Time payload
+            // TODO: validate Name payload
+            // TODO: validate Enum payload
+            // TODO: validate List of Text
+            // TODO: validate List of Enum
+            // TODO: validate Language payload
+            // TODO: parse Age payload
+
+            // We can't validate "standard" structures
+            // under an extension, since they may be
+            // ambiguous, such as "NAME" or "HUSB".
+            // TODO: We could perhaps try ALL possibilities.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 _UNKNOWN
+2 UNKNOWN
+0 TRLR
+");
+        }
+
+        private void ValidateInvalidFormPayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @O1@ OBJE
+1 FILE foo
+2 FORM " + value + @"
+0 TRLR
+", "Line 6: \"" + value + "\" is not a valid media type");
+        }
+
+        /// <summary>
+        /// Validate media type payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateMediaTypePayloadType()
+        {
+            // Validate a media type.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @O1@ OBJE
+1 FILE foo
+2 FORM
+0 TRLR
+", "Line 6: \"\" is not a valid media type");
+            ValidateInvalidFormPayload("invalid media type");
+            ValidateInvalidFormPayload("text/");
+            ValidateInvalidFormPayload("/text");
+            ValidateInvalidFormPayload("text/a/b");
+            ValidateInvalidFormPayload("text");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @N1@ SNOTE Test
+1 MIME text/unknown
+0 TRLR
+", "Line 5: MIME payload must be text/plain or text/html");
+        }
+
+        /// <summary>
+        /// Validate payload as a pointer to recordType.
+        /// </summary>
+        [TestMethod]
+        public void ValidateXrefPayloadType()
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SUBM @S1
+0 TRLR
+", "Line 4: Payload must be a pointer");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SUBM
+0 TRLR
+", "Line 4: Payload must be a pointer");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SUBM S1@
+0 TRLR
+", "Line 4: Payload must be a pointer");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SUBM @S1@
+0 TRLR
+", "Line 4: @S1@ has no associated record");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SUBM @I1@
+0 @I1@ INDI
+0 TRLR
+", "Line 4: SUBM points to a INDI record");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SUBM @I1@
+0 @I1@ _SUBM
+0 TRLR
+", "Line 4: SUBM points to a _SUBM record");
+
+            // We can't validate the record type for an
+            // undocumented extension.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 _SUBM @I1@
+0 @I1@ INDI
+0 TRLR
+");
         }
     }
 }
