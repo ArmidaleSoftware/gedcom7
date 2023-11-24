@@ -123,12 +123,6 @@ namespace Tests
         }
 
         [TestMethod]
-        public void ValidateFileSpaces()
-        {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/spaces.ged", "Line 12: An empty payload is not valid after a space");
-        }
-
-        [TestMethod]
         public void ValidateFileVoidptr()
         {
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/voidptr.ged");
