@@ -29,7 +29,7 @@ namespace Gedcom7
     }
     public class GedcomStructureSchema
     {
-        static void AddStrings(List<string> list, Object[] array)
+        public static void AddStrings(List<string> list, Object[] array)
         {
             if (array != null)
             {
@@ -46,24 +46,28 @@ namespace Gedcom7
                 foreach (var key in input.Keys)
                 {
                     var value = input[key] as string;
-                    var info = new GedcomStructureCountInfo();      
+                    var info = new GedcomStructureCountInfo();
                     if (value == "{0:1}")
                     {
                         info.Required = false;
                         info.Singleton = true;
-                    } else if (value == "{1:1}")
+                    }
+                    else if (value == "{1:1}")
                     {
                         info.Required = true;
                         info.Singleton = true;
-                    } else if (value == "{0:M}")
+                    }
+                    else if (value == "{0:M}")
                     {
                         info.Required = false;
                         info.Singleton = false;
-                    } else if (value == "{1:M}")
+                    }
+                    else if (value == "{1:M}")
                     {
                         info.Required = true;
                         info.Singleton = false;
-                    } else
+                    }
+                    else
                     {
                         throw new Exception();
                     }
@@ -99,6 +103,10 @@ namespace Gedcom7
             this.StandardTag = dictionary["standard tag"] as string;
             this.Label = dictionary["label"] as string;
             this.Payload = dictionary["payload"] as string;
+            if (dictionary.ContainsKey("enumeration set"))
+            {
+                this.EnumerationSetUri = dictionary["enumeration set"] as string;
+            }
             this.Specification = new List<string>();
             AddStrings(this.Specification, dictionary["specification"] as Object[]);
             this.Substructures = new Dictionary<string, GedcomStructureCountInfo>();
@@ -113,11 +121,14 @@ namespace Gedcom7
         public List<string> Specification { get; private set; }
         public string Label { get; private set; }
         public string Payload { get; private set; }
+        public string EnumerationSetUri { get; private set; }
+        public EnumerationSet EnumerationSet => EnumerationSet.GetEnumerationSet(EnumerationSetUri);
         public bool HasPointer => (this.Payload != null) && this.Payload.StartsWith("@<") && this.Payload.EndsWith(">@");
         public Dictionary<string, GedcomStructureCountInfo> Substructures { get; private set; }
         public Dictionary<string, GedcomStructureCountInfo> Superstructures { get; private set; }
 
         static Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
+        static Dictionary<string, GedcomStructureSchema> s_StructureSchemasByUri = new Dictionary<string, GedcomStructureSchema>();
         static void AddSchema(string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
         {
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
@@ -127,7 +138,7 @@ namespace Gedcom7
             Debug.Assert(!s_StructureSchemas.ContainsKey(structureSchemaKey));
             s_StructureSchemas[structureSchemaKey] = schema;
         }
-        
+
         public static void LoadAll()
         {
             if (s_StructureSchemas.Count > 0)
@@ -143,6 +154,7 @@ namespace Gedcom7
                 object[] myObject = serializer.DeserializeFromFile(filename);
                 var dictionary = myObject[0] as Dictionary<object, object>;
                 var schema = new GedcomStructureSchema(dictionary);
+                s_StructureSchemasByUri[schema.Uri] = schema;
                 if (schema.Superstructures.Count == 0)
                 {
                     AddSchema(null, null, schema.StandardTag, schema);
@@ -155,7 +167,11 @@ namespace Gedcom7
                     }
                 }
             }
+            EnumerationSet.LoadAll();
         }
+
+        public static GedcomStructureSchema GetSchema(string uri) => s_StructureSchemasByUri.ContainsKey(uri) ? s_StructureSchemasByUri[uri] : null;
+
         public static GedcomStructureSchema GetSchema(string sourceProgram, string superstructureUri, string tag)
         {
             // First look for a schema with a wildcard source program.

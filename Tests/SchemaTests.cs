@@ -539,9 +539,7 @@ namespace Tests
             // TODO: validate date period payload
             // TODO: validate Time payload
             // TODO: validate Name payload
-            // TODO: validate Enum payload
             // TODO: validate List of Text
-            // TODO: validate List of Enum
             // TODO: validate Language payload
             // TODO: parse Age payload
 
@@ -568,6 +566,58 @@ namespace Tests
 2 FORM " + value + @"
 0 TRLR
 ", "Line 6: \"" + value + "\" is not a valid media type");
+        }
+
+        /// <summary>
+        /// Validate enum payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateEnumPayloadType()
+        {
+            // Try a valid enum value.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 SEX U
+0 TRLR
+");
+
+            // Try an invalid enum value.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 SEX UNKNOWN
+0 TRLR
+", "Line 5: \"UNKNOWN\" is not a valid value for SEX");
+
+            // Try a valid structure name as an enum value.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 NO CENS
+0 TRLR
+");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 NO ADOP
+0 TRLR
+");
+
+            // Try an incorrect structure name as an enum value.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 NO FAM
+0 TRLR
+", "Line 5: \"FAM\" is not a valid value for NO");
+
+            // TODO: validate List of Enum
         }
 
         /// <summary>

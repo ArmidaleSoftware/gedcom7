@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Gedcom7
 {
@@ -416,8 +417,8 @@ namespace Gedcom7
                     }
                 }
 
-                    // TODO: use a payload-specific parser subclass instead of a string.
-                    string payloadType = this.Schema?.Payload;
+                // TODO: use a payload-specific parser subclass instead of a string.
+                string payloadType = this.Schema?.Payload;
                 switch (payloadType)
                 {
                     case "http://www.w3.org/2001/XMLSchema#nonNegativeInteger":
@@ -464,13 +465,16 @@ namespace Gedcom7
                         // TODO: validate Name payload
                         break;
                     case "https://gedcom.io/terms/v7/type-Enum":
-                        // TODO: validate Enum payload
+                        if (!this.Schema.EnumerationSet.IsValidValue(this.LineVal))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
                         break;
                     case "https://gedcom.io/terms/v7/type-List#Text":
-                        // TODO: validate List of Text
+                        // We currently don't do any further validation.
                         break;
                     case "https://gedcom.io/terms/v7/type-List#Enum":
-                        // TODO: validate List of Enum
+                        // TODO(#98): validate List of Enum
                         break;
                     case "http://www.w3.org/ns/dcat#mediaType":
                         {
