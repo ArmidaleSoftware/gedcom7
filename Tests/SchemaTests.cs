@@ -617,7 +617,35 @@ namespace Tests
 0 TRLR
 ", "Line 5: \"FAM\" is not a valid value for NO");
 
-            // TODO: validate List of Enum
+            // Validate List of Enum.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 RESN CONFIDENTIAL
+0 TRLR
+");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 RESN CONFIDENTIAL, LOCKED
+0 TRLR
+");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 RESN UNKNOWN
+0 TRLR
+", "Line 5: \"UNKNOWN\" is not a valid value for RESN");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 RESN CONFIDENTIAL,
+0 TRLR
+", "Line 5: \"\" is not a valid value for RESN");
         }
 
         /// <summary>

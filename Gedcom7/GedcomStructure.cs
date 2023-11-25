@@ -474,7 +474,17 @@ namespace Gedcom7
                         // We currently don't do any further validation.
                         break;
                     case "https://gedcom.io/terms/v7/type-List#Enum":
-                        // TODO(#98): validate List of Enum
+                        {
+                            string[] values = this.LineVal.Split(',');
+                            foreach (var value in values)
+                            {
+                                string trimmedValue = value.Trim();
+                                if (!this.Schema.EnumerationSet.IsValidValue(trimmedValue))
+                                {
+                                    return ErrorMessage("\"" + trimmedValue + "\" is not a valid value for " + this.Tag);
+                                }
+                            }
+                        }
                         break;
                     case "http://www.w3.org/ns/dcat#mediaType":
                         {
