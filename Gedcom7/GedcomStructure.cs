@@ -58,7 +58,7 @@ namespace Gedcom7
             set
             {
                 string sourceProgram = this.File.SourceProduct?.LineVal;
-                string superstructureUri = this.Superstructure?.Schema.Uri;
+                string superstructureUri = (this.Level == 0) ? GedcomStructureSchema.RecordSuperstructureUri : this.Superstructure?.Schema.Uri;
                 this.Schema = GedcomStructureSchema.GetSchema(sourceProgram, superstructureUri, value);
             }
         }

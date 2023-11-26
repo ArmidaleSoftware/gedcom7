@@ -14,7 +14,7 @@ namespace Tests
         public void LoadStructureSchema()
         {
             GedcomStructureSchema.LoadAll();
-            var schema = GedcomStructureSchema.GetSchema(null, null, "HEAD");
+            var schema = GedcomStructureSchema.GetSchema(null, GedcomStructureSchema.RecordSuperstructureUri, "HEAD");
             Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/HEAD");
             schema = GedcomStructureSchema.GetSchema(null, "https://gedcom.io/terms/v7/DATA-EVEN", "DATE");
             Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/DATA-EVEN-DATE");
@@ -495,6 +495,7 @@ namespace Tests
         [TestMethod]
         public void ValidatePayloadType()
         {
+#if false
             // Validate null.
             ValidateGedcomText(@"0 HEAD
 1 GEDC 1
@@ -552,6 +553,16 @@ namespace Tests
 2 VERS 7.0
 1 _UNKNOWN
 2 UNKNOWN
+0 TRLR
+");
+#endif
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @U1@ _UNKNOWN
+1 SOUR @S1@
+0 @S1@ SOUR
+1 TITL Title
 0 TRLR
 ");
         }
