@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Yaml.Serialization;
 
 namespace Gedcom7
@@ -145,8 +146,8 @@ namespace Gedcom7
             {
                 return;
             }
-            string currentDirectory = Directory.GetCurrentDirectory();
-            var path = Path.Combine(currentDirectory, "../../../../external/GEDCOM-registries/structure/standard");
+            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var path = Path.Combine(baseDirectory, "../../../../../gedcom7/external/GEDCOM-registries/structure/standard");
             string[] files = Directory.GetFiles(path);
             foreach (string filename in files)
             {
