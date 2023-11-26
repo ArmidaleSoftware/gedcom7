@@ -3,4 +3,4 @@
 	url = https://github.com/FamilySearch/GEDCOM.io.git
 [submodule "external/GEDCOM-registries"]
 	path = external/GEDCOM-registries
-	url = https://github.com/FamilySearch/GEDCOM-registries.git
+	url = https://github.com/dthaler/GEDCOM-registries.git
