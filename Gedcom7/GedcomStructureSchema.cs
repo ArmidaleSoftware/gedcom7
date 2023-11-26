@@ -20,8 +20,8 @@ namespace Gedcom7
     }
     public struct GedcomStructureSchemaKey
     {
-        public string SourceProgram; // null for standard tags.
-        public string SuperstructureUri;
+        public string SourceProgram; // null (wildcard) for standard tags.
+        public string SuperstructureUri; // null (wildcard) for undocumented extensions, "-" for records.
         public string Tag;
         public override string ToString()
         {
@@ -130,6 +130,16 @@ namespace Gedcom7
 
         static Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
         static Dictionary<string, GedcomStructureSchema> s_StructureSchemasByUri = new Dictionary<string, GedcomStructureSchema>();
+
+        public const string RecordSuperstructureUri = "TOP";
+
+        /// <summary>
+        /// Add a schema.
+        /// </summary>
+        /// <param name="sourceProgram">null (wildcard) for standard tags, else extension</param>
+        /// <param name="superstructureUri">null (wildcard) for undocumented tags, RecordSuperstructureUri for records, else URI of superstructure schema</param>
+        /// <param name="tag">Tag</param>
+        /// <param name="schema">Schema</param>
         static void AddSchema(string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
         {
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
@@ -158,7 +168,7 @@ namespace Gedcom7
                 s_StructureSchemasByUri[schema.Uri] = schema;
                 if (schema.Superstructures.Count == 0)
                 {
-                    AddSchema(null, null, schema.StandardTag, schema);
+                    AddSchema(null, RecordSuperstructureUri, schema.StandardTag, schema);
                 }
                 else
                 {
@@ -173,6 +183,13 @@ namespace Gedcom7
 
         public static GedcomStructureSchema GetSchema(string uri) => s_StructureSchemasByUri.ContainsKey(uri) ? s_StructureSchemasByUri[uri] : null;
 
+        /// <summary>
+        /// Get a GEDCOM structure schema.
+        /// </summary>
+        /// <param name="sourceProgram">source program string, or null for wildcard</param>
+        /// <param name="superstructureUri">superstructure URI, or null for wildcard</param>
+        /// <param name="tag"></param>
+        /// <returns></returns>
         public static GedcomStructureSchema GetSchema(string sourceProgram, string superstructureUri, string tag)
         {
             // First look for a schema with a wildcard source program.
@@ -187,6 +204,10 @@ namespace Gedcom7
             // Now look for a schema specific to the source program
             // and superstructure URI, which would be a documented
             // extension tag.
+            if (sourceProgram == null)
+            {
+                sourceProgram = "Unknown";
+            }
             structureSchemaKey.SourceProgram = sourceProgram;
             if (s_StructureSchemas.ContainsKey(structureSchemaKey))
             {
@@ -203,11 +224,7 @@ namespace Gedcom7
             }
 
             // Create a new schema for it.
-            if (sourceProgram == null)
-            {
-                sourceProgram = "Unknown";
-            }
-            structureSchemaKey.SuperstructureUri = null;
+            structureSchemaKey.SuperstructureUri = superstructureUri;
             var schema = new GedcomStructureSchema(sourceProgram, tag);
             s_StructureSchemas[structureSchemaKey] = schema;
             return s_StructureSchemas[structureSchemaKey];
