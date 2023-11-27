@@ -56,7 +56,8 @@ namespace Gedcom7
         private GedcomComparisonReport Compare(string url, GedcomFile file)
         {
             var baselineFile = new GedcomFile();
-            if (baselineFile.LoadFromUrl(url) != null) {
+            List<string> errors = baselineFile.LoadFromUrl(url);
+            if (errors.Count > 0) {
                 return null;
             }
             return CompareFiles(baselineFile, file);
@@ -65,7 +66,8 @@ namespace Gedcom7
         public GedcomCompatibilityReport(GedcomFile file)
         {
             var baselineFile = new GedcomFile();
-            if (baselineFile.LoadFromUrl("https://gedcom.io/testfiles/gedcom70/maximal70.ged") != null)
+            List<string> errors = baselineFile.LoadFromUrl("https://gedcom.io/testfiles/gedcom70/maximal70.ged");
+            if (errors.Count > 0)
             {
                 return;
             }

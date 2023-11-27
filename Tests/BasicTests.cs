@@ -3,6 +3,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Gedcom7;
 using System;
+using System.Collections.Generic;
 
 namespace Tests
 {
@@ -35,8 +36,8 @@ namespace Tests
             // Removed the following check since it is unreliable.
             // Assert.IsTrue(used <= 608);
 
-            string error = note.LoadFromPath(fileName);
-            Assert.IsNull(error);
+            List<string> errors = note.LoadFromPath(fileName);
+            Assert.AreEqual(0, errors.Count);
 
             // Fetch new process information.
             GC.Collect();

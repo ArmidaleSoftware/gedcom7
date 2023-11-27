@@ -75,8 +75,8 @@ namespace Gedcom7
         /// Load a GEDCOM file from a stream.
         /// </summary>
         /// <param name="reader">The stream to read from</param>
-        /// <returns>Error message, or null on success</returns>
-        private string LoadFromStreamReader(StreamReader reader)
+        /// <returns>List of 0 or more error messages</returns>
+        private List<string> LoadFromStreamReader(StreamReader reader)
         {
             // Do GEDCOM version detection.
             string line;
@@ -114,6 +114,7 @@ namespace Gedcom7
             }
 
             // Now read the contents.
+            var errors = new List<string>();
             var structurePath = new List<GedcomStructure>();
             this.LineCount = 0;
             while ((line = reader.ReadLine()) != null)
@@ -123,23 +124,23 @@ namespace Gedcom7
                 string error = s.Parse(this, this.LineCount, line, structurePath);
                 if (error != null)
                 {
-                    return error;
+                    errors.Add(error);
                 }
             }
-            return null;
+            return errors;
         }
 
         /// <summary>
         /// Load a GEDCOM file from a specified path.
         /// </summary>
         /// <param name="pathToFile">Path to file to load</param>
-        /// <returns>Error message, or null on success</returns>
-        public string LoadFromPath(string pathToFile)
+        /// <returns>List of 0 or more error messages</returns>
+        public List<string> LoadFromPath(string pathToFile)
         {
             this.Path = pathToFile;
             if (!File.Exists(pathToFile))
             {
-                return "File not found: " + pathToFile;
+                return new List<string>() { "File not found: " + pathToFile };
             }
             using (var reader = new StreamReader(pathToFile))
             {
@@ -151,8 +152,8 @@ namespace Gedcom7
         /// Load a GEDCOM file from a specified URL.
         /// </summary>
         /// <param name="url">URL to file to load</param>
-        /// <returns>Error message, or null on success</returns>
-        public string LoadFromUrl(string url)
+        /// <returns>List of 0 or more error messages</returns>
+        public List<string> LoadFromUrl(string url)
         {
             this.Path = url;
 
@@ -171,8 +172,8 @@ namespace Gedcom7
         /// Load a set of string content into this GEDCOM file.
         /// </summary>
         /// <param name="stringContent">File content</param>
-        /// <returns>Error message, or null on success</returns>
-        public string LoadFromString(string stringContent)
+        /// <returns>List of 0 or more error messages</returns>
+        public List<string> LoadFromString(string stringContent)
         {
             using (var content = new MemoryStream(Encoding.UTF8.GetBytes(stringContent ?? "")))
             {
@@ -408,26 +409,25 @@ namespace Gedcom7
         /// <summary>
         /// Check whether this file is valid GEDCOM.
         /// </summary>
-        /// <returns>Error message, or null on success</returns>
-        public string Validate()
+        /// <returns>List of 0 or more error messages</returns>
+        public List<string> Validate()
         {
+            var errors = new List<string>();
+
             // The file must start with HEAD and end with TRLR.
             if (!this.Records.ContainsKey("TRLR"))
             {
-                return "Missing TRLR record";
+                errors.Add("Missing TRLR record");
             }
 
             foreach (var keyValuePair in this.Records)
             {
                 var record = keyValuePair.Value;
-                string error = record.Validate();
-                if (error != null)
-                {
-                    return error;
-                }
+                var recordErrors = record.Validate();
+                errors.AddRange(recordErrors);
             }
 
-            return null;
+            return errors;
         }
     }
 }

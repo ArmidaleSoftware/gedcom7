@@ -3,7 +3,9 @@
 using Gedcom7;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Tests
 {
@@ -25,10 +27,15 @@ namespace Tests
         void ValidateGedcomFile(string path, string expected_result = null)
         {
             var file = new GedcomFile();
-            string error = file.LoadFromPath(path);
-            if (error == null)
+            List<string> errors = file.LoadFromPath(path);
+            string error = null;
+            if (errors.Count == 0)
             {
-                error = file.Validate();
+                errors.AddRange(file.Validate());
+            }
+            else
+            {
+                error = string.Join("\n", errors);
             }
             Assert.AreEqual(expected_result, error);
         }
@@ -36,10 +43,15 @@ namespace Tests
         void ValidateGedcomText(string text, string expected_result = null)
         {
             var file = new GedcomFile();
-            string error = file.LoadFromString(text);
-            if (error == null)
+            List<string> errors = file.LoadFromString(text);
+            string error = null;
+            if (errors.Count == 0)
             {
-                error = file.Validate();
+                errors.AddRange(file.Validate());
+            }
+            if (errors.Count > 0)
+            {
+                error = string.Join("\n", errors);
             }
             Assert.AreEqual(expected_result, error);
         }
@@ -232,8 +244,12 @@ namespace Tests
 ", "Line 4: PHON is not a valid substructure of HEAD");
 
             // Try a CONT in the wrong place.
-            ValidateGedcomText("0 HEAD\n1 CONT bad\n0 TRLR\n",
-                "Line 2: CONT is not a valid substructure of HEAD");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 CONT bad
+0 TRLR
+", "Line 4: CONT is not a valid substructure of HEAD");
         }
 
         [TestMethod]
@@ -250,6 +266,11 @@ namespace Tests
  2 VERS 7.0
 0 TRLR
 ", "Line 3: Line must start with an integer");
+            ValidateGedcomText(@"0 HEAD
+ 1 GEDC
+ 2 VERS 7.0
+0 TRLR
+", "Line 2: Line must start with an integer\nLine 3: Line must start with an integer");
 
             // Extra space before the tag is not valid.
             ValidateGedcomText(@"0 HEAD

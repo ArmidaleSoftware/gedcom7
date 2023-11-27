@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Gedcom7;
+using System.Collections.Generic;
 
 namespace Tests
 {
@@ -11,13 +12,13 @@ namespace Tests
         void CompareFileWithSelf(string path)
         {
             var file = new GedcomFile();
-            string error = file.LoadFromPath(path);
-            Assert.IsNull(error);
+            List<string> errors = file.LoadFromPath(path);
+            Assert.AreEqual(0, errors.Count);
 
             GedcomComparisonReport report = file.Compare(file);
-            Assert.AreEqual(report.StructuresAdded.Count, 0);
-            Assert.AreEqual(report.StructuresRemoved.Count, 0);
-            Assert.AreEqual(report.CompatibilityPercentage, 100);
+            Assert.AreEqual(0, report.StructuresAdded.Count);
+            Assert.AreEqual(0, report.StructuresRemoved.Count);
+            Assert.AreEqual(100, report.CompatibilityPercentage);
         }
 
         [TestMethod]
@@ -35,12 +36,12 @@ namespace Tests
         private void CompareSubsetWithSuperset(string subset, string superset, int structuresAdded, int percentage)
         {
             var subsetFile = new GedcomFile();
-            string error = subsetFile.LoadFromPath("../../../../external/GEDCOM.io/testfiles/gedcom70/" + subset + ".ged");
-            Assert.IsNull(error);
+            List<string> errors = subsetFile.LoadFromPath("../../../../external/GEDCOM.io/testfiles/gedcom70/" + subset + ".ged");
+            Assert.AreEqual(0, errors.Count);
 
             var supersetFile = new GedcomFile();
-            error = supersetFile.LoadFromPath("../../../../external/GEDCOM.io/testfiles/gedcom70/" + superset + ".ged");
-            Assert.IsNull(error);
+            errors = supersetFile.LoadFromPath("../../../../external/GEDCOM.io/testfiles/gedcom70/" + superset + ".ged");
+            Assert.AreEqual(0, errors.Count);
 
             // Adding information is ok.
             GedcomComparisonReport report = subsetFile.Compare(supersetFile);
@@ -113,65 +114,65 @@ namespace Tests
         public void CompareNoteWithSharedNote()
         {
             var note = new GedcomFile();
-            string error = note.LoadFromPath("../../../samples/note.ged");
-            Assert.IsNull(error);
+            List<string> errors = note.LoadFromPath("../../../samples/note.ged");
+            Assert.AreEqual(0, errors.Count);
 
             var snote = new GedcomFile();
-            error = snote.LoadFromPath("../../../samples/snote.ged");
-            Assert.IsNull(error);
+            errors = snote.LoadFromPath("../../../samples/snote.ged");
+            Assert.AreEqual(0, errors.Count);
 
             GedcomComparisonReport report = note.Compare(snote);
-            Assert.AreEqual(report.StructuresAdded.Count, 0);
-            Assert.AreEqual(report.StructuresRemoved.Count, 0);
-            Assert.AreEqual(report.CompatibilityPercentage, 100);
+            Assert.AreEqual(0, report.StructuresAdded.Count);
+            Assert.AreEqual(0, report.StructuresRemoved.Count);
+            Assert.AreEqual(100, report.CompatibilityPercentage);
         }
 
         [TestMethod]
         public void CompareSingleNamePiecesWithMultipleNamePieces()
         {
             var singles = new GedcomFile();
-            string error = singles.LoadFromPath("../../../samples/name-pieces-single.ged");
-            Assert.IsNull(error);
+            List<string> errors = singles.LoadFromPath("../../../samples/name-pieces-single.ged");
+            Assert.AreEqual(0, errors.Count);
 
             var multiples = new GedcomFile();
-            error = multiples.LoadFromPath("../../../samples/name-pieces-multiple.ged");
-            Assert.IsNull(error);
+            errors = multiples.LoadFromPath("../../../samples/name-pieces-multiple.ged");
+            Assert.AreEqual(0, errors.Count);
 
             // Verify that both compare equally.
             GedcomComparisonReport report = singles.Compare(multiples);
-            Assert.AreEqual(report.StructuresAdded.Count, 0);
-            Assert.AreEqual(report.StructuresRemoved.Count, 0);
-            Assert.AreEqual(report.CompatibilityPercentage, 100);
+            Assert.AreEqual(0, report.StructuresAdded.Count);
+            Assert.AreEqual(0, report.StructuresRemoved.Count);
+            Assert.AreEqual(100, report.CompatibilityPercentage);
 
             report = multiples.Compare(singles);
-            Assert.AreEqual(report.StructuresAdded.Count, 0);
-            Assert.AreEqual(report.StructuresRemoved.Count, 0);
-            Assert.AreEqual(report.CompatibilityPercentage, 100);
+            Assert.AreEqual(0, report.StructuresAdded.Count);
+            Assert.AreEqual(0, report.StructuresRemoved.Count);
+            Assert.AreEqual(100, report.CompatibilityPercentage);
 
             var mismatch = new GedcomFile();
-            error = mismatch.LoadFromPath("../../../samples/name-pieces-multiple-mismatch.ged");
-            Assert.IsNull(error);
+            errors = mismatch.LoadFromPath("../../../samples/name-pieces-multiple-mismatch.ged");
+            Assert.AreEqual(0, errors.Count);
 
             // Verify that mismatch does not compare equally.
             report = singles.Compare(mismatch);
-            Assert.AreEqual(report.StructuresAdded.Count, 6);
-            Assert.AreEqual(report.StructuresRemoved.Count, 6);
-            Assert.AreEqual(report.CompatibilityPercentage, 50);
+            Assert.AreEqual(6, report.StructuresAdded.Count);
+            Assert.AreEqual(6, report.StructuresRemoved.Count);
+            Assert.AreEqual(50, report.CompatibilityPercentage);
 
             report = mismatch.Compare(singles);
-            Assert.AreEqual(report.StructuresAdded.Count, 6);
-            Assert.AreEqual(report.StructuresRemoved.Count, 6);
-            Assert.AreEqual(report.CompatibilityPercentage, 66);
+            Assert.AreEqual(6, report.StructuresAdded.Count);
+            Assert.AreEqual(6, report.StructuresRemoved.Count);
+            Assert.AreEqual(66, report.CompatibilityPercentage);
 
             report = multiples.Compare(mismatch);
-            Assert.AreEqual(report.StructuresAdded.Count, 6);
-            Assert.AreEqual(report.StructuresRemoved.Count, 6);
-            Assert.AreEqual(report.CompatibilityPercentage, 66);
+            Assert.AreEqual(6, report.StructuresAdded.Count);
+            Assert.AreEqual(6, report.StructuresRemoved.Count);
+            Assert.AreEqual(66, report.CompatibilityPercentage);
 
             report = mismatch.Compare(multiples);
-            Assert.AreEqual(report.StructuresAdded.Count, 6);
-            Assert.AreEqual(report.StructuresRemoved.Count, 6);
-            Assert.AreEqual(report.CompatibilityPercentage, 66);
+            Assert.AreEqual(6, report.StructuresAdded.Count);
+            Assert.AreEqual(6, report.StructuresRemoved.Count);
+            Assert.AreEqual(66, report.CompatibilityPercentage);
         }
     }
 }

@@ -169,22 +169,20 @@ namespace Gedcom7
         /// <summary>
         /// Validate this structure.
         /// </summary>
-        /// <returns>Error message, or null on success</returns>
-        public string Validate()
+        /// <returns>List of 0 or more error messages</returns>
+        public List<string> Validate()
         {
-            string error = ValidatePlacement();
-            if (error != null)
+            var errors = new List<string>();
+            string placementError = ValidatePlacement();
+            if (placementError != null)
             {
-                return error;
+                errors.Add(placementError);
             }
+
             Dictionary<string, int> foundCount = new Dictionary<string, int>();
             foreach (var substructure in this.Substructures)
             {
-                error = substructure.Validate();
-                if (error != null)
-                {
-                    return error;
-                }
+                errors.AddRange(substructure.Validate());
                 if (substructure.Schema.IsDocumented)
                 {
                     if (foundCount.ContainsKey(substructure.Schema.Uri))
@@ -202,7 +200,7 @@ namespace Gedcom7
             if ((this.Tag == "CONT" || this.Tag == "TRLR")
                 && (this.Substructures.Count > 0))
             {
-                return ErrorMessage(this.Tag + " must not contain substructures");
+                errors.Add(ErrorMessage(this.Tag + " must not contain substructures"));
             }
 
             // Check cardinality of permitted substructures.
@@ -213,13 +211,13 @@ namespace Gedcom7
                 if (countInfo.Required && !foundCount.ContainsKey(uri))
                 {
                     // Missing required substructure.
-                    return ErrorMessage(this.Tag + " is missing a substructure of type " + uri);
+                    errors.Add(ErrorMessage(this.Tag + " is missing a substructure of type " + uri));
                 }
                 if (countInfo.Singleton && foundCount.ContainsKey(uri) &&
                     (foundCount[uri] > 1))
                 {
                     // Contains multiple when only a singleton is permitted.
-                    return ErrorMessage(this.Tag + " does not permit multiple substructures of type " + uri);
+                    errors.Add(ErrorMessage(this.Tag + " does not permit multiple substructures of type " + uri));
                 }
             }
 
@@ -232,19 +230,21 @@ namespace Gedcom7
                 GedcomStructure record = file.FindRecord(xref);
                 if (record == null)
                 {
-                    return ErrorMessage(xref + " has no associated record");
+                    errors.Add(ErrorMessage(xref + " has no associated record"));
                 }
-
-                string expectedRecordUri = this.Schema.Payload.Substring(2, this.Schema.Payload.Length - 4);
-
-                // Verify the record type.
-                if (record.Schema.Uri != expectedRecordUri)
+                else
                 {
-                    return ErrorMessage(this.Tag + " points to a " + record.Tag + " record");
+                    string expectedRecordUri = this.Schema.Payload.Substring(2, this.Schema.Payload.Length - 4);
+
+                    // Verify the record type.
+                    if (record.Schema.Uri != expectedRecordUri)
+                    {
+                        errors.Add(ErrorMessage(this.Tag + " points to a " + record.Tag + " record"));
+                    }
                 }
             }
 
-            return null;
+            return errors;
         }
 
         public string LineWithPath
@@ -518,6 +518,7 @@ namespace Gedcom7
                 }
             }
 
+            string error = null;
             if (this.Level == 0)
             {
                 if ((this.Tag == "HEAD") != (file.Records.Count == 0))
@@ -535,9 +536,11 @@ namespace Gedcom7
                 {
                     if (this.Xref == null)
                     {
-                        return ErrorMessage("Missing Xref for this record");
+                        error = ErrorMessage("Missing Xref for this record");
+                    } else
+                    {
+                        error = ErrorMessage("Xref is not valid for this record");
                     }
-                    return ErrorMessage("Xref is not valid for this record");
                 }
                 if (this.Xref != null)
                 {
@@ -553,7 +556,7 @@ namespace Gedcom7
                 }
             }
 
-            return null;
+            return error;
         }
 
         public string ErrorMessage(string message)
