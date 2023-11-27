@@ -15,9 +15,10 @@ namespace Gedcom7
         static GedcomFile LoadFile(string filename)
         {
             var file = new GedcomFile();
-            string error = file.LoadFromPath(filename);
-            if (error != null)
+            List<string> errors = file.LoadFromPath(filename);
+            if (errors.Count > 0)
             {
+                string error = string.Join("\n", errors);
                 Console.WriteLine("Failed to load " + filename + ": " + error + "\n");
                 return null;
             }

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Gedcom7;
+using System.Collections.Generic;
 
 namespace Tests
 {
@@ -14,8 +15,8 @@ namespace Tests
             int memories1Percentage, int memories2Percentage, int ldsPercentage)
         {
             var file = new GedcomFile();
-            string error = file.LoadFromPath(BaselinePath + filename + ".ged");
-            Assert.IsNull(error);
+            List<string> errors = file.LoadFromPath(BaselinePath + filename + ".ged");
+            Assert.AreEqual(0, errors.Count);
             GedcomCompatibilityReport report = new GedcomCompatibilityReport(file);
 
             Assert.AreEqual(tree1Percentage, report.Tree1CompatibilityPercentage);
