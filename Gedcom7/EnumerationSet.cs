@@ -38,15 +38,14 @@ namespace Gedcom7
 
         static Dictionary<string, EnumerationSet> s_EnumerationSets = new Dictionary<string, EnumerationSet>();
 
-        public static void LoadAll()
+        public static void LoadAll(string gedcomRegistriesPath)
         {
             if (s_EnumerationSets.Count > 0)
             {
                 return;
             }
-            EnumerationValue.LoadAll();
-            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            var path = Path.Combine(baseDirectory, "../../../../../gedcom7/external/GEDCOM-registries/enumeration-set/standard");
+            EnumerationValue.LoadAll(gedcomRegistriesPath);
+            var path = Path.Combine(gedcomRegistriesPath, "enumeration-set/standard");
             string[] files = Directory.GetFiles(path);
             foreach (string filename in files)
             {
