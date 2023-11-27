@@ -58,7 +58,7 @@ namespace Gedcom7
             set
             {
                 string sourceProgram = this.File.SourceProduct?.LineVal;
-                string superstructureUri = (this.Level == 0) ? GedcomStructureSchema.RecordSuperstructureUri : this.Superstructure?.Schema.Uri;
+                string superstructureUri = (this.Level == 0) ? GedcomStructureSchema.RecordSuperstructureUri : this.Superstructure?.Schema?.Uri;
                 this.Schema = GedcomStructureSchema.GetSchema(sourceProgram, superstructureUri, value);
             }
         }
@@ -365,7 +365,7 @@ namespace Gedcom7
                         {
                             if (!(Char.IsUpper(c) || Char.IsDigit(c) || c == '_'))
                             {
-                                return ErrorMessage("Invalid Xref character");
+                                return ErrorMessage("Invalid character '" + c + "' in Xref \"" + this.Xref + "\"");
                             }
                         }
                     }
@@ -373,11 +373,11 @@ namespace Gedcom7
                     {
                         if (!Char.IsLetterOrDigit(value[0]))
                         {
-                            return ErrorMessage("Xref must start with a letter or digit");
+                            return ErrorMessage("Xref \"" + this.Xref + "\" does not start with a letter or digit");
                         }
                         if (value.Contains('_'))
                         {
-                            return ErrorMessage("Invalid Xref character '_'");
+                            return ErrorMessage("Invalid character '_' in Xref \"" + this.Xref + "\"");
                         }
                     }
                 }

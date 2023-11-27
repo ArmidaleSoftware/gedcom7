@@ -469,13 +469,13 @@ namespace Tests
 2 VERS 5.5.1
 0 @#I1@ INDI
 0 TRLR
-", "Line 4: Xref must start with a letter or digit");
+", "Line 4: Xref \"@#I1@\" does not start with a letter or digit");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
 0 @I#1@ INDI
 0 TRLR
-", "Line 4: Invalid Xref character");
+", "Line 4: Invalid character '#' in Xref \"@I#1@\"");
 
             // Underscore is ok in GEDCOM 7.0 but not 5.5.1.
             ValidateGedcomText(@"0 HEAD
@@ -483,7 +483,7 @@ namespace Tests
 2 VERS 5.5.1
 0 @I_1@ INDI
 0 TRLR
-", "Line 4: Invalid Xref character '_'");
+", "Line 4: Invalid character '_' in Xref \"@I_1@\"");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
@@ -503,7 +503,7 @@ namespace Tests
 2 VERS 7.0
 0 @i1@ INDI
 0 TRLR
-", "Line 4: Invalid Xref character");
+", "Line 4: Invalid character 'i' in Xref \"@i1@\"");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
