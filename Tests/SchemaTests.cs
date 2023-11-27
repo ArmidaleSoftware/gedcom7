@@ -188,7 +188,7 @@ namespace Tests
         public void ValidateStructureCardinality()
         {
             // Try zero GEDC which should be {1:1}.
-            ValidateGedcomText("0 HEAD\n0 TRLR\n", "Line 1: Missing substructure https://gedcom.io/terms/v7/GEDC");
+            ValidateGedcomText("0 HEAD\n0 TRLR\n", "Line 1: HEAD is missing a substructure of type https://gedcom.io/terms/v7/GEDC");
 
             // Try two VERS which should be {1:1}.
             ValidateGedcomText(@"0 HEAD
@@ -196,7 +196,7 @@ namespace Tests
 2 VERS 7.0
 2 VERS 7.0
 0 TRLR
-", "Line 2: Multiple substructures of https://gedcom.io/terms/v7/GEDC-VERS");
+", "Line 2: GEDC does not permit multiple substructures of type https://gedcom.io/terms/v7/GEDC-VERS");
 
             // Try two SCHMA which should be {0:1}.
             ValidateGedcomText(@"0 HEAD
@@ -205,7 +205,7 @@ namespace Tests
 1 SCHMA
 1 SCHMA
 0 TRLR
-", "Line 1: Multiple substructures of https://gedcom.io/terms/v7/SCHMA");
+", "Line 1: HEAD does not permit multiple substructures of type https://gedcom.io/terms/v7/SCHMA");
 
             // Try zero FILE which should be {1:M}.
             ValidateGedcomText(@"0 HEAD
@@ -213,7 +213,7 @@ namespace Tests
 2 VERS 7.0
 0 @O1@ OBJE
 0 TRLR
-", "Line 4: Missing substructure https://gedcom.io/terms/v7/FILE");
+", "Line 4: OBJE is missing a substructure of type https://gedcom.io/terms/v7/FILE");
 
             // Try a COPR at level 0.
             ValidateGedcomText(@"0 HEAD

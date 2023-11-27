@@ -213,13 +213,13 @@ namespace Gedcom7
                 if (countInfo.Required && !foundCount.ContainsKey(uri))
                 {
                     // Missing required substructure.
-                    return ErrorMessage("Missing substructure " + uri);
+                    return ErrorMessage(this.Tag + " is missing a substructure of type " + uri);
                 }
                 if (countInfo.Singleton && foundCount.ContainsKey(uri) &&
                     (foundCount[uri] > 1))
                 {
                     // Contains multiple when only a singleton is permitted.
-                    return ErrorMessage("Multiple substructures of " + uri);
+                    return ErrorMessage(this.Tag + " does not permit multiple substructures of type " + uri);
                 }
             }
 
@@ -434,7 +434,7 @@ namespace Gedcom7
                         {
                             if (this.LineVal != null)
                             {
-                                return ErrorMessage("Payload must be null");
+                                return ErrorMessage(this.Tag + " payload must be null");
                             }
                             break;
                         }
