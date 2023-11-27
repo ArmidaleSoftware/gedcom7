@@ -150,14 +150,18 @@ namespace Gedcom7
             s_StructureSchemas[structureSchemaKey] = schema;
         }
 
-        public static void LoadAll()
+        public static void LoadAll(string gedcomRegistriesPath = null)
         {
             if (s_StructureSchemas.Count > 0)
             {
                 return;
             }
-            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            var path = Path.Combine(baseDirectory, "../../../../../gedcom7/external/GEDCOM-registries/structure/standard");
+            if (gedcomRegistriesPath == null)
+            {
+                var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                gedcomRegistriesPath = Path.Combine(baseDirectory, "../../../../../gedcom7/external/GEDCOM-registries");
+            }
+            var path = Path.Combine(gedcomRegistriesPath, "structure/standard");
             string[] files = Directory.GetFiles(path);
             foreach (string filename in files)
             {
@@ -178,7 +182,7 @@ namespace Gedcom7
                     }
                 }
             }
-            EnumerationSet.LoadAll();
+            EnumerationSet.LoadAll(gedcomRegistriesPath);
         }
 
         public static GedcomStructureSchema GetSchema(string uri) => s_StructureSchemasByUri.ContainsKey(uri) ? s_StructureSchemasByUri[uri] : null;

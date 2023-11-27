@@ -17,10 +17,15 @@ namespace Gedcom7
     }
     public class GedcomFile
     {
-        public GedcomFile()
+        public GedcomFile(string gedcomRegistriesPath = null)
         {
             this.GedcomVersion = GedcomVersion.Unknown;
-            GedcomStructureSchema.LoadAll();
+            if (gedcomRegistriesPath == null)
+            {
+                var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                gedcomRegistriesPath = System.IO.Path.Combine(baseDirectory, "../../../../../gedcom7/external/GEDCOM-registries");
+            }
+            GedcomStructureSchema.LoadAll(gedcomRegistriesPath);
         }
 
         // Data members.
