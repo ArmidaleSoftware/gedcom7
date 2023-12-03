@@ -555,10 +555,6 @@ namespace Tests
 0 TRLR
 ", "Line 5: BIRT payload must be 'Y' or empty");
 
-            // TODO: validate exact date payload
-            // TODO: validate Date payload
-            // TODO: validate date period payload
-
             // We can't validate "standard" structures
             // under an extension, since they may be
             // ambiguous, such as "NAME" or "HUSB".
@@ -709,6 +705,174 @@ namespace Tests
             ValidateInvalidNamePayload("/");
             ValidateInvalidNamePayload("a/b/c/d");
             ValidateInvalidNamePayload("a\tb");
+        }
+
+        private void ValidateInvalidExactDatePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE " + value + @"
+", "Line 4: \"" + value + "\" is not a valid exact date");
+        }
+
+        private void ValidateValidExactDatePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE " + value + @"
+0 TRLR
+");
+        }
+
+        /// <summary>
+        /// Validate exact date payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateExactDatePayloadType()
+        {
+            // Try some valid name values.
+            ValidateValidExactDatePayload("3 DEC 2023");
+            ValidateValidExactDatePayload("03 DEC 2023");
+
+            // Try some invalid name values.
+            ValidateInvalidExactDatePayload("invalid");
+            ValidateInvalidExactDatePayload("3 dec 2023");
+            ValidateInvalidExactDatePayload("3 JUNE 2023");
+            ValidateInvalidExactDatePayload("DEC 2023");
+            ValidateInvalidExactDatePayload("2023");
+        }
+
+        private void ValidateInvalidDatePeriodPayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 NO MARR
+2 DATE " + value + @"
+0 TRLR
+", "Line 6: \"" + value + "\" is not a valid date period");
+        }
+
+        private void ValidateValidDatePeriodPayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 NO MARR
+2 DATE " + value + @"
+0 TRLR
+");
+        }
+
+        /// <summary>
+        /// Validate date period payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateDatePeriodPayloadType()
+        {
+            // Try some valid date period values.
+            ValidateValidDatePeriodPayload("TO 3 DEC 2023");
+            ValidateValidDatePeriodPayload("TO DEC 2023");
+            ValidateValidDatePeriodPayload("TO 2023");
+            ValidateValidDatePeriodPayload("TO GREGORIAN 20 BCE");
+            ValidateValidDatePeriodPayload("FROM 03 DEC 2023");
+            ValidateValidDatePeriodPayload("FROM 2000 TO 2020");
+            ValidateValidDatePeriodPayload("FROM MAR 2000 TO JUN 2000");
+            ValidateValidDatePeriodPayload("FROM 30 NOV 2000 TO 1 DEC 2000");
+            ValidateValidDatePeriodPayload("FROM HEBREW 1 TSH 1");
+            ValidateValidDatePeriodPayload("FROM GREGORIAN 20 BCE TO GREGORIAN 12 BCE");
+
+            // Try some invalid date period values.
+            ValidateInvalidDatePeriodPayload("2023");
+            ValidateInvalidDatePeriodPayload("TO 40 DEC 2023");
+            ValidateInvalidDatePeriodPayload("TO 3 dec 2023");
+            ValidateInvalidDatePeriodPayload("TO 3 JUNE 2023");
+            ValidateInvalidDatePeriodPayload("TO ABC 2023");
+            ValidateInvalidDatePeriodPayload("FROM HEBREW 1 TSH 1 BCE");
+        }
+
+        private void ValidateInvalidDateValuePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 DEAT
+2 DATE " + value + @"
+0 TRLR
+", "Line 6: \"" + value + "\" is not a valid date value");
+        }
+
+        private void ValidateValidDateValuePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 DEAT
+2 DATE " + value + @"
+0 TRLR
+");
+        }
+
+        /// <summary>
+        /// Validate date value payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateDateValuePayloadType()
+        {
+            // Try some valid dates.
+            ValidateValidDateValuePayload("3 DEC 2023");
+            ValidateValidDateValuePayload("DEC 2023");
+            ValidateValidDateValuePayload("2023");
+            ValidateValidDateValuePayload("GREGORIAN 20 BCE");
+            ValidateValidDateValuePayload("HEBREW 1 TSH 1");
+
+            // Try some valid date periods.
+            ValidateValidDateValuePayload("TO 3 DEC 2023");
+            ValidateValidDateValuePayload("TO DEC 2023");
+            ValidateValidDateValuePayload("TO 2023");
+            ValidateValidDateValuePayload("TO GREGORIAN 20 BCE");
+            ValidateValidDateValuePayload("FROM 03 DEC 2023");
+            ValidateValidDateValuePayload("FROM 2000 TO 2020");
+            ValidateValidDateValuePayload("FROM MAR 2000 TO JUN 2000");
+            ValidateValidDateValuePayload("FROM 30 NOV 2000 TO 1 DEC 2000");
+            ValidateValidDateValuePayload("FROM HEBREW 1 TSH 1");
+            ValidateValidDateValuePayload("FROM GREGORIAN 20 BCE TO GREGORIAN 12 BCE");
+
+            // Try some valid date ranges.
+            ValidateValidDateValuePayload("BEF 3 DEC 2023");
+            ValidateValidDateValuePayload("BEF DEC 2023");
+            ValidateValidDateValuePayload("BEF 2023");
+            ValidateValidDateValuePayload("BEF GREGORIAN 20 BCE");
+            ValidateValidDateValuePayload("AFT 03 DEC 2023");
+            ValidateValidDateValuePayload("AFT HEBREW 1 TSH 1");
+            ValidateValidDateValuePayload("BET 2000 AND 2020");
+            ValidateValidDateValuePayload("BET MAR 2000 AND JUN 2000");
+            ValidateValidDateValuePayload("BET 30 NOV 2000 AND 1 DEC 2000");
+            ValidateValidDateValuePayload("BET GREGORIAN 20 BCE AND GREGORIAN 12 BCE");
+
+            // Try some valid approximate dates.
+            ValidateValidDateValuePayload("ABT 3 DEC 2023");
+            ValidateValidDateValuePayload("CAL DEC 2023");
+            ValidateValidDateValuePayload("EST GREGORIAN 20 BCE");
+
+            // Try some invalid date values.
+            ValidateInvalidDateValuePayload("TO 40 DEC 2023");
+            ValidateInvalidDateValuePayload("TO 3 dec 2023");
+            ValidateInvalidDateValuePayload("TO 3 JUNE 2023");
+            ValidateInvalidDateValuePayload("TO ABC 2023");
+            ValidateInvalidDateValuePayload("BEF 40 DEC 2023");
+            ValidateInvalidDateValuePayload("BEF 3 dec 2023");
+            ValidateInvalidDateValuePayload("BEF 3 JUNE 2023");
+            ValidateInvalidDateValuePayload("BEF ABC 2023");
+            ValidateInvalidDateValuePayload("BET 2000");
+            ValidateInvalidDateValuePayload("FROM HEBREW 1 TSH 1 BCE");
+            ValidateInvalidDateValuePayload("AFT HEBREW 1 TSH 1 BCE");
         }
 
         private void ValidateInvalidTimePayload(string value)
