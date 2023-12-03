@@ -559,7 +559,6 @@ namespace Tests
             // TODO: validate exact date payload
             // TODO: validate Date payload
             // TODO: validate date period payload
-            // TODO: validate Time payload
             // TODO: validate Name payload
             // TODO: validate List of Text
             // TODO: validate Language payload
@@ -678,6 +677,63 @@ namespace Tests
 1 RESN CONFIDENTIAL,
 0 TRLR
 ", "Line 5: \"\" is not a valid value for RESN");
+        }
+
+        /// <summary>
+        /// Validate Time payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateTimePayloadType()
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE 1 DEC 2023
+2 TIME invalid
+0 TRLR
+", "Line 5: \"invalid\" is not a valid time");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE 1 DEC 2023
+2 TIME 02:50
+0 TRLR
+");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE 1 DEC 2023
+2 TIME 2:50
+0 TRLR
+");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE 1 DEC 2023
+2 TIME 2:50:00.00Z
+0 TRLR
+");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE 1 DEC 2023
+2 TIME 24:00:00
+0 TRLR
+", "Line 5: \"24:00:00\" is not a valid time");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE 1 DEC 2023
+2 TIME 2:60
+0 TRLR
+", "Line 5: \"2:60\" is not a valid time");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE 1 DEC 2023
+2 TIME 2:00:60
+0 TRLR
+", "Line 5: \"2:00:60\" is not a valid time");
         }
 
         /// <summary>
