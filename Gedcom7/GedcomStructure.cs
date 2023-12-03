@@ -291,6 +291,18 @@ namespace Gedcom7
         }
 
         /// <summary>
+        /// Test whether a given string is a valid language tag.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidLanguage(string value)
+        {
+            if (value == null || value.Length == 0) return false;
+            Regex regex = new Regex(@"^\w+(-\w+)*$");
+            return regex.IsMatch(value);
+        }
+
+        /// <summary>
         /// Test whether a given string is a valid age.
         /// </summary>
         /// <param name="value">String to test</param>
@@ -529,8 +541,13 @@ namespace Gedcom7
                             break;
                         }
                     case "http://www.w3.org/2001/XMLSchema#Language":
-                        // TODO: validate Language payload
-                        break;
+                        {
+                            if (!IsValidLanguage(this.LineVal))
+                            {
+                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid language");
+                            }
+                            break;
+                        }
                     case "https://gedcom.io/terms/v7/type-Age":
                         {
                             if (!IsValidAge(this.LineVal))
