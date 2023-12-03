@@ -555,7 +555,6 @@ namespace Tests
 0 TRLR
 ", "Line 5: BIRT payload must be 'Y' or empty");
 
-            // TODO: validate exact date payload
             // TODO: validate Date payload
             // TODO: validate date period payload
 
@@ -709,6 +708,43 @@ namespace Tests
             ValidateInvalidNamePayload("/");
             ValidateInvalidNamePayload("a/b/c/d");
             ValidateInvalidNamePayload("a\tb");
+        }
+
+        private void ValidateInvalidExactDatePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE " + value + @"
+", "Line 4: \"" + value + "\" is not a valid exact date");
+        }
+
+        private void ValidateValidExactDatePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE " + value + @"
+0 TRLR
+");
+        }
+
+        /// <summary>
+        /// Validate Name payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateExactDatePayloadType()
+        {
+            // Try some valid name values.
+            ValidateValidExactDatePayload("3 DEC 2023");
+            ValidateValidExactDatePayload("03 DEC 2023");
+
+            // Try some invalid name values.
+            ValidateInvalidExactDatePayload("invalid");
+            ValidateInvalidExactDatePayload("3 dec 2023");
+            ValidateInvalidExactDatePayload("3 JUNE 2023");
+            ValidateInvalidExactDatePayload("DEC 2023");
+            ValidateInvalidExactDatePayload("2023");
         }
 
         private void ValidateInvalidTimePayload(string value)

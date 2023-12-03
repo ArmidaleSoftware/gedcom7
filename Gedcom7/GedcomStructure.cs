@@ -327,6 +327,30 @@ namespace Gedcom7
         }
 
         /// <summary>
+        /// Test whether a given string is a valid exact date.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidExactDate(string value)
+        {
+            // First verify that the string is in the GEDCOM exact date syntax.
+            if (value == null || value.Length == 0) return false;
+            Regex regex = new Regex(@"^(\d{1,2}) ([_A-Z]{3}) (\d{1,4})$");
+            Match match = regex.Match(value);
+            if (!match.Success) return false;
+
+            // Now try to parse it via the more general C# date parser.
+            DateTime result;
+            if (!DateTime.TryParse(value, out result))
+            {
+                // Couldn't parse date.
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Test whether a given string is a valid name.
         /// </summary>
         /// <param name="value">String to test</param>
@@ -495,7 +519,10 @@ namespace Gedcom7
                         // We currently don't do any further validation.
                         break;
                     case "https://gedcom.io/terms/v7/type-Date#exact":
-                        // TODO: validate exact date payload
+                        if (!IsValidExactDate(this.LineVal))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid exact date");
+                        }
                         break;
                     case "https://gedcom.io/terms/v7/type-Date":
                         // TODO: validate Date payload
