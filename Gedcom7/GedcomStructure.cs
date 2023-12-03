@@ -326,6 +326,18 @@ namespace Gedcom7
             return regex.IsMatch(value);
         }
 
+        /// <summary>
+        /// Test whether a given string is a valid name.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidName(string value)
+        {
+            if (value == null || value.Length == 0) return false;
+            Regex regex = new Regex(@"^([\x20-\x2E\u0030-\uFFFF]+|[\x20-\x2E\u0030-\uFFFF]*/[\x20-\x2E\u0030-\uFFFF]*/[\x20-\x2E\u0030-\uFFFF]*)$");
+            return regex.IsMatch(value);
+        }
+
         public string SpacedLineVal => " " + this.LineVal + " ";
 
         /// <summary>
@@ -468,21 +480,17 @@ namespace Gedcom7
                             break;
                         }
                     case null:
+                        if (this.LineVal != null)
                         {
-                            if (this.LineVal != null)
-                            {
-                                return ErrorMessage(this.Tag + " payload must be null");
-                            }
-                            break;
+                            return ErrorMessage(this.Tag + " payload must be null");
                         }
+                        break;
                     case "Y|<NULL>":
+                        if (this.LineVal != null && this.LineVal != "Y")
                         {
-                            if (this.LineVal != null && this.LineVal != "Y")
-                            {
-                                return ErrorMessage(this.Tag + " payload must be 'Y' or empty");
-                            }
-                            break;
+                            return ErrorMessage(this.Tag + " payload must be 'Y' or empty");
                         }
+                        break;
                     case "http://www.w3.org/2001/XMLSchema#string":
                         // We currently don't do any further validation.
                         break;
@@ -496,15 +504,16 @@ namespace Gedcom7
                         // TODO: validate date period payload
                         break;
                     case "https://gedcom.io/terms/v7/type-Time":
+                        if (!IsValidTime(this.LineVal))
                         {
-                            if (!IsValidTime(this.LineVal))
-                            {
-                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid time");
-                            }
-                            break;
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid time");
                         }
+                        break;
                     case "https://gedcom.io/terms/v7/type-Name":
-                        // TODO: validate Name payload
+                        if (!IsValidName(this.LineVal))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid name");
+                        }
                         break;
                     case "https://gedcom.io/terms/v7/type-Enum":
                         if (!this.Schema.EnumerationSet.IsValidValue(this.LineVal))
@@ -529,33 +538,27 @@ namespace Gedcom7
                         }
                         break;
                     case "http://www.w3.org/ns/dcat#mediaType":
+                        if (!IsValidMediaType(this.LineVal))
                         {
-                            if (!IsValidMediaType(this.LineVal))
-                            {
-                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid media type");
-                            }
-                            if (this.Tag == "MIME" && this.LineVal != "text/plain" && this.LineVal != "text/html")
-                            {
-                                return ErrorMessage(this.Tag + " payload must be text/plain or text/html");
-                            }
-                            break;
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid media type");
                         }
+                        if (this.Tag == "MIME" && this.LineVal != "text/plain" && this.LineVal != "text/html")
+                        {
+                            return ErrorMessage(this.Tag + " payload must be text/plain or text/html");
+                        }
+                        break;
                     case "http://www.w3.org/2001/XMLSchema#Language":
+                        if (!IsValidLanguage(this.LineVal))
                         {
-                            if (!IsValidLanguage(this.LineVal))
-                            {
-                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid language");
-                            }
-                            break;
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid language");
                         }
+                        break;
                     case "https://gedcom.io/terms/v7/type-Age":
+                        if (!IsValidAge(this.LineVal))
                         {
-                            if (!IsValidAge(this.LineVal))
-                            {
-                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid age");
-                            }
-                            break;
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid age");
                         }
+                        break;
                     default:
                         if (this.Schema?.HasPointer ?? false)
                         {
