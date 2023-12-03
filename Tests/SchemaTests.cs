@@ -516,13 +516,12 @@ namespace Tests
         [TestMethod]
         public void ValidatePayloadType()
         {
-#if false
             // Validate null.
             ValidateGedcomText(@"0 HEAD
 1 GEDC 1
 2 VERS 5.5.1
 0 TRLR
-", "Line 2: Payload must be null");
+", "Line 2: GEDC payload must be null");
 
             // Validate an integer.
             ValidateGedcomText(@"0 HEAD
@@ -575,7 +574,6 @@ namespace Tests
 2 UNKNOWN
 0 TRLR
 ");
-#endif
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
@@ -679,61 +677,103 @@ namespace Tests
 ", "Line 5: \"\" is not a valid value for RESN");
         }
 
+        private void ValidateInvalidTimePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE 1 DEC 2023
+2 TIME " + value + @"
+0 TRLR
+", "Line 5: \"" + value + "\" is not a valid time");
+        }
+
+        private void ValidateValidTimePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 DATE 1 DEC 2023
+2 TIME " + value + @"
+0 TRLR
+");
+        }
+
         /// <summary>
         /// Validate Time payload type.
         /// </summary>
         [TestMethod]
         public void ValidateTimePayloadType()
         {
+            // Try some valid time values.
+            ValidateValidTimePayload("02:50");
+            ValidateValidTimePayload("2:50");
+            ValidateValidTimePayload("2:50:00.00Z");
+
+            // Try some invalid time values.
+            ValidateInvalidTimePayload("invalid");
+            ValidateInvalidTimePayload("000:00");
+            ValidateInvalidTimePayload("24:00:00");
+            ValidateInvalidTimePayload("2:5");
+            ValidateInvalidTimePayload("2:60");
+            ValidateInvalidTimePayload("2:00:60");
+        }
+
+        private void ValidateInvalidAgePayload(string value)
+        {
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
-1 DATE 1 DEC 2023
-2 TIME invalid
+0 @I1@ INDI
+1 DEAT
+2 AGE " + value + @"
 0 TRLR
-", "Line 5: \"invalid\" is not a valid time");
+", "Line 6: \"" + value + "\" is not a valid age");
+        }
+
+        private void ValidateValidAgePayload(string value)
+        {
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
-1 DATE 1 DEC 2023
-2 TIME 02:50
+0 @I1@ INDI
+1 DEAT
+2 AGE " + value + @"
 0 TRLR
 ");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 DATE 1 DEC 2023
-2 TIME 2:50
-0 TRLR
-");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 DATE 1 DEC 2023
-2 TIME 2:50:00.00Z
-0 TRLR
-");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 DATE 1 DEC 2023
-2 TIME 24:00:00
-0 TRLR
-", "Line 5: \"24:00:00\" is not a valid time");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 DATE 1 DEC 2023
-2 TIME 2:60
-0 TRLR
-", "Line 5: \"2:60\" is not a valid time");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 DATE 1 DEC 2023
-2 TIME 2:00:60
-0 TRLR
-", "Line 5: \"2:00:60\" is not a valid time");
+        }
+
+        /// <summary>
+        /// Validate Age payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateAgePayloadType()
+        {
+            // Try some valid age values.
+            ValidateValidAgePayload("79y");
+            ValidateValidAgePayload("79y 1d");
+            ValidateValidAgePayload("79y 1w");
+            ValidateValidAgePayload("79y 1w 1d");
+            ValidateValidAgePayload("79y 1m");
+            ValidateValidAgePayload("79y 1m 1d");
+            ValidateValidAgePayload("79y 1m 1w");
+            ValidateValidAgePayload("79y 1m 1w 1d");
+            ValidateValidAgePayload("79m");
+            ValidateValidAgePayload("1m 1d");
+            ValidateValidAgePayload("1m 1w");
+            ValidateValidAgePayload("1m 1w 1d");
+            ValidateValidAgePayload("79w");
+            ValidateValidAgePayload("79w 1d");
+            ValidateValidAgePayload("79d");
+            ValidateValidAgePayload(">79y");
+            ValidateValidAgePayload("<79y 1m 1w 1d");
+
+            // Try some invalid age values.
+            ValidateInvalidAgePayload("invalid");
+            ValidateInvalidAgePayload("d");
+            ValidateInvalidAgePayload("79");
+            ValidateInvalidAgePayload("1d 1m");
+            ValidateInvalidAgePayload("<>1y");
         }
 
         /// <summary>
