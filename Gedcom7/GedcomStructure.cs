@@ -291,6 +291,18 @@ namespace Gedcom7
         }
 
         /// <summary>
+        /// Test whether a given string is a valid age.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidAge(string value)
+        {
+            if (value == null || value.Length == 0) return false;
+            Regex regex = new Regex(@"^([<>])?(\d+y( \d+m)?( \d+w)?( \d+d)?|\d+m( \d+w)?( \d+d)?|\d+w( \d+d)?|\d+d)$");
+            return regex.IsMatch(value);
+        }
+
+        /// <summary>
         /// Test whether a given string is a valid time.
         /// </summary>
         /// <param name="value">String to test</param>
@@ -520,8 +532,13 @@ namespace Gedcom7
                         // TODO: validate Language payload
                         break;
                     case "https://gedcom.io/terms/v7/type-Age":
-                        // TODO: parse Age payload
-                        break;
+                        {
+                            if (!IsValidAge(this.LineVal))
+                            {
+                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid age");
+                            }
+                            break;
+                        }
                     default:
                         if (this.Schema?.HasPointer ?? false)
                         {
