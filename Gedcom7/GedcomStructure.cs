@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions;
 
 namespace Gedcom7
 {
@@ -289,6 +290,18 @@ namespace Gedcom7
             return true;
         }
 
+        /// <summary>
+        /// Test whether a given string is a valid time.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidTime(string value)
+        {
+            if (value == null || value.Length == 0) return false;
+            Regex regex = new Regex(@"^(\d|[01]\d|2[0-3]):[0-5]\d(:[0-5]\d(.\d+)?)?(Z)?$");
+            return regex.IsMatch(value);
+        }
+
         public string SpacedLineVal => " " + this.LineVal + " ";
 
         /// <summary>
@@ -459,8 +472,13 @@ namespace Gedcom7
                         // TODO: validate date period payload
                         break;
                     case "https://gedcom.io/terms/v7/type-Time":
-                        // TODO: validate Time payload
-                        break;
+                        {
+                            if (!IsValidTime(this.LineVal))
+                            {
+                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid time");
+                            }
+                            break;
+                        }
                     case "https://gedcom.io/terms/v7/type-Name":
                         // TODO: validate Name payload
                         break;
