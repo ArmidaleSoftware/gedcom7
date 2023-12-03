@@ -558,7 +558,6 @@ namespace Tests
             // TODO: validate exact date payload
             // TODO: validate Date payload
             // TODO: validate date period payload
-            // TODO: validate Name payload
 
             // We can't validate "standard" structures
             // under an extension, since they may be
@@ -672,6 +671,44 @@ namespace Tests
 1 RESN CONFIDENTIAL,
 0 TRLR
 ", "Line 5: \"\" is not a valid value for RESN");
+        }
+
+        private void ValidateInvalidNamePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 NAME " + value + @"
+", "Line 5: \"" + value + "\" is not a valid name");
+        }
+
+        private void ValidateValidNamePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 NAME " + value + @"
+0 TRLR
+");
+        }
+
+        /// <summary>
+        /// Validate Name payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateNamePayloadType()
+        {
+            // Try some valid name values.
+            ValidateValidNamePayload("John Smith");
+            ValidateValidNamePayload("John /Smith/");
+            ValidateValidNamePayload("John /Smith/ Jr.");
+
+            // Try some invalid name values.
+            ValidateInvalidNamePayload("/");
+            ValidateInvalidNamePayload("a/b/c/d");
+            ValidateInvalidNamePayload("a\tb");
         }
 
         private void ValidateInvalidTimePayload(string value)
