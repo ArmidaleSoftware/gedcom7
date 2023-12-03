@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: MIT
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 
 namespace Gedcom7
@@ -291,6 +289,18 @@ namespace Gedcom7
         }
 
         /// <summary>
+        /// Test whether a given string is a valid language tag.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidLanguage(string value)
+        {
+            if (value == null || value.Length == 0) return false;
+            Regex regex = new Regex(@"^\w+(-\w+)*$");
+            return regex.IsMatch(value);
+        }
+
+        /// <summary>
         /// Test whether a given string is a valid age.
         /// </summary>
         /// <param name="value">String to test</param>
@@ -311,6 +321,211 @@ namespace Gedcom7
         {
             if (value == null || value.Length == 0) return false;
             Regex regex = new Regex(@"^(\d|[01]\d|2[0-3]):[0-5]\d(:[0-5]\d(.\d+)?)?(Z)?$");
+            return regex.IsMatch(value);
+        }
+
+        /// <summary>
+        /// Test whether a given string is a valid exact date.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidExactDate(string value)
+        {
+            // First verify that the string is in the GEDCOM exact date syntax.
+            if (value == null || value.Length == 0) return false;
+            Regex regex = new Regex(@"^(\d{1,2}) ([_A-Z]{3}) (\d{1,4})$");
+            Match match = regex.Match(value);
+            if (!match.Success) return false;
+
+            // Now try to parse it via the more general C# date parser.
+            DateTime result;
+            if (!DateTime.TryParse(value, out result))
+            {
+                // Couldn't parse date.
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsValidDate(string calendar, uint day, string month, uint year, string epoch)
+        {
+            if (calendar.StartsWith('_') || epoch.StartsWith('_'))
+            {
+                // No further validation is possible since the details are extension defined.
+                return true;
+            }
+
+            if (day > 36)
+            {
+                return false;
+            }
+
+            // Get calendar schema.
+            if (string.IsNullOrEmpty(calendar))
+            {
+                calendar = "GREGORIAN";
+            }
+            CalendarSchema calendarSchema = CalendarSchema.GetCalendarByTag(calendar);
+
+            // See if month is in the list.
+            if (!string.IsNullOrEmpty(month) && !calendarSchema.IsValidMonth(month))
+            {
+                return false;
+            }
+
+            // See if epoch is in the list.
+            if (!string.IsNullOrEmpty(epoch) && !calendarSchema.IsValidEpoch(epoch))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        // date        = [calendar D] [[day D] month D] year [D epoch]
+        private const string TagCharRegex = @"([A-Z0-9_])";
+        private const string StdTagRegex = @"[A-Z]" + TagCharRegex + "*";
+        private const string ExtTagRegex = @"_" + TagCharRegex + "+";
+        private const string CalendarRegex = @"(GREGORIAN|JULIAN|FRENCH_R|HEBREW|" + ExtTagRegex + ")";
+        private const string MonthRegex = @"(" + StdTagRegex + "|" + ExtTagRegex + ")";
+        private const string EpochRegex = @"(BCE|" + ExtTagRegex + ")";
+        private const string DateRegex = @"(" + CalendarRegex + @" )?(((\d{1,2}) )?" + MonthRegex + @" )?(\d{1,4})( " + EpochRegex + @")?";
+
+        /// <summary>
+        /// Test whether a given string is a valid date period.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidDatePeriod(string value)
+        {
+            // Empty payload is ok.
+            if (value == null || value.Length == 0) return true;
+
+            // Next check for a "TO" period.
+            Regex regex = new Regex("^TO " + DateRegex + "$");
+            Match match = regex.Match(value);
+            if (match.Success)
+            {
+                string calendar = match.Groups[2].Value;
+                uint day = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
+                string month = match.Groups[7].Value;
+                uint year = uint.Parse(match.Groups[10].Value);
+                string epoch = match.Groups[12].Value;
+                return IsValidDate(calendar, day, month, year, epoch);
+            }
+
+            // Now check for a "FROM" period.
+            regex = new Regex("^FROM " + DateRegex + "( TO " + DateRegex + @")?$");
+            match = regex.Match(value);
+            if (match.Success)
+            {
+                string calendar1 = match.Groups[2].Value;
+                uint day1 = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
+                string month1 = match.Groups[7].Value;
+                uint year1 = uint.Parse(match.Groups[10].Value);
+                string epoch1 = match.Groups[12].Value;
+
+                string calendar2 = match.Groups[16].Value;
+                uint day2 = match.Groups[20].Success ? uint.Parse(match.Groups[20].Value) : 0;
+                string month2 = match.Groups[21].Value;
+                uint year2 = match.Groups[24].Success ? uint.Parse(match.Groups[24].Value) : 0;
+                string epoch2 = match.Groups[26].Value;
+
+                return IsValidDate(calendar1, day1, month1, year1, epoch1) &&
+                       IsValidDate(calendar2, day2, month2, year2, epoch2);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Test whether a given string is a valid date value.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidDateValue(string value)
+        {
+            // Check for a valid date period.
+            if (IsValidDatePeriod(value))
+            {
+                return true;
+            }
+
+            // Check for a valid dateRange.
+            Regex regex = new Regex("^(AFT|BEF) " + DateRegex + "$");
+            Match match = regex.Match(value);
+            if (match.Success)
+            {
+                string modifier = match.Groups[1].Value;
+                string calendar = match.Groups[3].Value;
+                uint day = match.Groups[7].Success ? uint.Parse(match.Groups[7].Value) : 0;
+                string month = match.Groups[8].Value;
+                uint year = uint.Parse(match.Groups[11].Value);
+                string epoch = match.Groups[13].Value;
+                return IsValidDate(calendar, day, month, year, epoch);
+            }
+            regex = new Regex("^BET " + DateRegex + " AND " + DateRegex + @"$");
+            match = regex.Match(value);
+            if (match.Success)
+            {
+                string calendar1 = match.Groups[2].Value;
+                uint day1 = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
+                string month1 = match.Groups[7].Value;
+                uint year1 = uint.Parse(match.Groups[10].Value);
+                string epoch1 = match.Groups[12].Value;
+
+                string calendar2 = match.Groups[15].Value;
+                uint day2 = match.Groups[19].Success ? uint.Parse(match.Groups[19].Value) : 0;
+                string month2 = match.Groups[20].Value;
+                uint year2 = match.Groups[23].Success ? uint.Parse(match.Groups[23].Value) : 0;
+                string epoch2 = match.Groups[25].Value;
+
+                return IsValidDate(calendar1, day1, month1, year1, epoch1) &&
+                       IsValidDate(calendar2, day2, month2, year2, epoch2);
+            }
+
+            // Check for a valid dateApprox.
+            regex = new Regex("^(ABT|CAL|EST) " + DateRegex + "$");
+            match = regex.Match(value);
+            if (match.Success)
+            {
+                string modifier = match.Groups[1].Value;
+                string calendar = match.Groups[3].Value;
+                uint day = match.Groups[7].Success ? uint.Parse(match.Groups[7].Value) : 0;
+                string month = match.Groups[8].Value;
+                uint year = uint.Parse(match.Groups[11].Value);
+                string epoch = match.Groups[13].Value;
+                return IsValidDate(calendar, day, month, year, epoch);
+            }
+
+            // Check for a valid date.
+            // This must be done after the other checks so that we don't try to parse
+            // a keyword like "BEF" or "FROM" as a month.
+            regex = new Regex("^" + DateRegex + "$");
+            match = regex.Match(value);
+            if (match.Success)
+            {
+                string calendar = match.Groups[2].Value;
+                uint day = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
+                string month = match.Groups[7].Value;
+                uint year = uint.Parse(match.Groups[10].Value);
+                string epoch = match.Groups[12].Value;
+                return IsValidDate(calendar, day, month, year, epoch);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Test whether a given string is a valid name.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidName(string value)
+        {
+            if (value == null || value.Length == 0) return false;
+            Regex regex = new Regex(@"^([\x20-\x2E\u0030-\uFFFF]+|[\x20-\x2E\u0030-\uFFFF]*/[\x20-\x2E\u0030-\uFFFF]*/[\x20-\x2E\u0030-\uFFFF]*)$");
             return regex.IsMatch(value);
         }
 
@@ -456,43 +671,50 @@ namespace Gedcom7
                             break;
                         }
                     case null:
+                        if (this.LineVal != null)
                         {
-                            if (this.LineVal != null)
-                            {
-                                return ErrorMessage(this.Tag + " payload must be null");
-                            }
-                            break;
+                            return ErrorMessage(this.Tag + " payload must be null");
                         }
+                        break;
                     case "Y|<NULL>":
+                        if (this.LineVal != null && this.LineVal != "Y")
                         {
-                            if (this.LineVal != null && this.LineVal != "Y")
-                            {
-                                return ErrorMessage(this.Tag + " payload must be 'Y' or empty");
-                            }
-                            break;
+                            return ErrorMessage(this.Tag + " payload must be 'Y' or empty");
                         }
+                        break;
                     case "http://www.w3.org/2001/XMLSchema#string":
                         // We currently don't do any further validation.
                         break;
                     case "https://gedcom.io/terms/v7/type-Date#exact":
-                        // TODO: validate exact date payload
+                        if (!IsValidExactDate(this.LineVal))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid exact date");
+                        }
                         break;
                     case "https://gedcom.io/terms/v7/type-Date":
-                        // TODO: validate Date payload
+                        if (!IsValidDateValue(this.LineVal))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid date value");
+                        }
+                        break;
                         break;
                     case "https://gedcom.io/terms/v7/type-Date#period":
-                        // TODO: validate date period payload
+                        if (!IsValidDatePeriod(this.LineVal))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid date period");
+                        }
                         break;
                     case "https://gedcom.io/terms/v7/type-Time":
+                        if (!IsValidTime(this.LineVal))
                         {
-                            if (!IsValidTime(this.LineVal))
-                            {
-                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid time");
-                            }
-                            break;
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid time");
                         }
+                        break;
                     case "https://gedcom.io/terms/v7/type-Name":
-                        // TODO: validate Name payload
+                        if (!IsValidName(this.LineVal))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid name");
+                        }
                         break;
                     case "https://gedcom.io/terms/v7/type-Enum":
                         if (!this.Schema.EnumerationSet.IsValidValue(this.LineVal))
@@ -517,28 +739,27 @@ namespace Gedcom7
                         }
                         break;
                     case "http://www.w3.org/ns/dcat#mediaType":
+                        if (!IsValidMediaType(this.LineVal))
                         {
-                            if (!IsValidMediaType(this.LineVal))
-                            {
-                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid media type");
-                            }
-                            if (this.Tag == "MIME" && this.LineVal != "text/plain" && this.LineVal != "text/html")
-                            {
-                                return ErrorMessage(this.Tag + " payload must be text/plain or text/html");
-                            }
-                            break;
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid media type");
                         }
+                        if (this.Tag == "MIME" && this.LineVal != "text/plain" && this.LineVal != "text/html")
+                        {
+                            return ErrorMessage(this.Tag + " payload must be text/plain or text/html");
+                        }
+                        break;
                     case "http://www.w3.org/2001/XMLSchema#Language":
-                        // TODO: validate Language payload
+                        if (!IsValidLanguage(this.LineVal))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid language");
+                        }
                         break;
                     case "https://gedcom.io/terms/v7/type-Age":
+                        if (!IsValidAge(this.LineVal))
                         {
-                            if (!IsValidAge(this.LineVal))
-                            {
-                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid age");
-                            }
-                            break;
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid age");
                         }
+                        break;
                     default:
                         if (this.Schema?.HasPointer ?? false)
                         {
