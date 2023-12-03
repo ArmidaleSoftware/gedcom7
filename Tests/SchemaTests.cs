@@ -559,9 +559,6 @@ namespace Tests
             // TODO: validate Date payload
             // TODO: validate date period payload
             // TODO: validate Name payload
-            // TODO: validate List of Text
-            // TODO: validate Language payload
-            // TODO: parse Age payload
 
             // We can't validate "standard" structures
             // under an extension, since they may be
@@ -711,6 +708,7 @@ namespace Tests
             ValidateValidTimePayload("2:50:00.00Z");
 
             // Try some invalid time values.
+            ValidateInvalidTimePayload(" ");
             ValidateInvalidTimePayload("invalid");
             ValidateInvalidTimePayload("000:00");
             ValidateInvalidTimePayload("24:00:00");
@@ -769,11 +767,53 @@ namespace Tests
             ValidateValidAgePayload("<79y 1m 1w 1d");
 
             // Try some invalid age values.
+            ValidateInvalidAgePayload(" ");
             ValidateInvalidAgePayload("invalid");
             ValidateInvalidAgePayload("d");
             ValidateInvalidAgePayload("79");
             ValidateInvalidAgePayload("1d 1m");
             ValidateInvalidAgePayload("<>1y");
+        }
+
+        private void ValidateInvalidLanguagePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 LANG " + value + @"
+0 TRLR
+", "Line 4: \"" + value + "\" is not a valid language");
+        }
+
+        private void ValidateValidLanguagePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 7.0
+1 LANG " + value + @"
+0 TRLR
+");
+        }
+
+        /// <summary>
+        /// Validate Language payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateLanguagePayloadType()
+        {
+            // Try some valid language values.
+            ValidateValidLanguagePayload("und");
+            ValidateValidLanguagePayload("mul");
+            ValidateValidLanguagePayload("en");
+            ValidateValidLanguagePayload("en-US");
+            ValidateValidLanguagePayload("und-Latn-pinyin");
+
+            // Try some invalid language values.
+            ValidateInvalidLanguagePayload(" ");
+            ValidateInvalidLanguagePayload("-");
+            ValidateInvalidLanguagePayload("und-");
+            ValidateInvalidLanguagePayload("-und");
+            ValidateInvalidLanguagePayload("en US");
         }
 
         /// <summary>
