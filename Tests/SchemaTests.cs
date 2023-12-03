@@ -555,9 +555,6 @@ namespace Tests
 0 TRLR
 ", "Line 5: BIRT payload must be 'Y' or empty");
 
-            // TODO: validate Date payload
-            // TODO: validate date period payload
-
             // We can't validate "standard" structures
             // under an extension, since they may be
             // ambiguous, such as "NAME" or "HUSB".
