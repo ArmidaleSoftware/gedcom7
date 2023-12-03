@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: MIT
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 
 namespace Gedcom7
@@ -350,6 +348,98 @@ namespace Gedcom7
             return true;
         }
 
+        private static bool IsValidDate(string calendar, uint day, string month, uint year, string epoch)
+        {
+            if (calendar.StartsWith('_') || epoch.StartsWith('_'))
+            {
+                // No further validation is possible since the details are extension defined.
+                return true;
+            }
+
+            if (day > 36)
+            {
+                return false;
+            }
+
+            // Get calendar schema.
+            if (string.IsNullOrEmpty(calendar))
+            {
+                calendar = "GREGORIAN";
+            }
+            CalendarSchema calendarSchema = CalendarSchema.GetCalendarByTag(calendar);
+
+            // See if month is in the list.
+            if (!string.IsNullOrEmpty(month) && !calendarSchema.IsValidMonth(month))
+            {
+                return false;
+            }
+
+            // See if epoch is in the list.
+            if (!string.IsNullOrEmpty(epoch) && !calendarSchema.IsValidEpoch(epoch))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Test whether a given string is a valid date period.
+        /// </summary>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidDatePeriod(string value)
+        {
+            // Empty payload is ok.
+            if (value == null || value.Length == 0) return true;
+
+            string tagCharRegex = @"([A-Z0-9_])";
+            string stdTagRegex = @"[A-Z]" + tagCharRegex + "*"; ;
+            string extTagRegex = @"_" + tagCharRegex + "+";
+            string calendarRegex = @"(GREGORIAN|JULIAN|FRENCH_R|HEBREW|" + extTagRegex + ")";
+            string monthRegex = @"(" + stdTagRegex + "|" + extTagRegex + ")";
+            string epochRegex = @"(BCE|" + extTagRegex + ")";
+
+            // date        = [calendar D] [[day D] month D] year [D epoch]
+            string dateRegex = @"(" + calendarRegex + @" )?(((\d{1,2}) )?" + monthRegex + @" )?(\d{1,4})( " + epochRegex + @")?";
+
+            // Next check for a "TO" period.
+            Regex regex = new Regex("^TO " + dateRegex + "$");
+            Match match = regex.Match(value);
+            if (match.Success)
+            {
+                string calendar = match.Groups[2].Value;
+                uint day = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
+                string month = match.Groups[7].Value;
+                uint year = uint.Parse(match.Groups[10].Value);
+                string epoch = match.Groups[12].Value;
+                return IsValidDate(calendar, day, month, year, epoch);
+            }
+
+            // Now check for a "FROM" period.
+            regex = new Regex("^FROM " + dateRegex + "( TO " + dateRegex + @")?$");
+            match = regex.Match(value);
+            if (match.Success)
+            {
+                string calendar1 = match.Groups[2].Value;
+                uint day1 = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
+                string month1 = match.Groups[7].Value;
+                uint year1 = uint.Parse(match.Groups[10].Value);
+                string epoch1 = match.Groups[12].Value;
+
+                string calendar2 = match.Groups[16].Value;
+                uint day2 = match.Groups[20].Success ? uint.Parse(match.Groups[20].Value) : 0;
+                string month2 = match.Groups[21].Value;
+                uint year2 = match.Groups[24].Success ? uint.Parse(match.Groups[24].Value) : 0;
+                string epoch2 = match.Groups[26].Value;
+
+                return IsValidDate(calendar1, day1, month1, year1, epoch1) &&
+                       IsValidDate(calendar2, day2, month2, year2, epoch2);
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Test whether a given string is a valid name.
         /// </summary>
@@ -528,7 +618,10 @@ namespace Gedcom7
                         // TODO: validate Date payload
                         break;
                     case "https://gedcom.io/terms/v7/type-Date#period":
-                        // TODO: validate date period payload
+                        if (!IsValidDatePeriod(this.LineVal))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid date period");
+                        }
                         break;
                     case "https://gedcom.io/terms/v7/type-Time":
                         if (!IsValidTime(this.LineVal))

@@ -183,6 +183,7 @@ namespace Gedcom7
                 }
             }
             EnumerationSet.LoadAll(gedcomRegistriesPath);
+            CalendarSchema.LoadAll(gedcomRegistriesPath);
         }
 
         public static GedcomStructureSchema GetSchema(string uri) => s_StructureSchemasByUri.ContainsKey(uri) ? s_StructureSchemasByUri[uri] : null;
