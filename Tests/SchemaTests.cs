@@ -24,7 +24,7 @@ namespace Tests
             Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/HEAD-DATE");
         }
 
-        void ValidateGedcomFile(string path, string expected_result = null)
+        public static void ValidateGedcomFile(string path, string expected_result = null)
         {
             var file = new GedcomFile();
             List<string> errors = file.LoadFromPath(path);
@@ -40,7 +40,7 @@ namespace Tests
             Assert.AreEqual(expected_result, error);
         }
 
-        void ValidateGedcomText(string text, string expected_result = null)
+        public static void ValidateGedcomText(string text, string expected_result = null)
         {
             var file = new GedcomFile();
             List<string> errors = file.LoadFromString(text);
@@ -1032,11 +1032,22 @@ namespace Tests
 2 FORM
 0 TRLR
 ", "Line 6: \"\" is not a valid media type");
+
+            // Validate FORM payload.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @O1@ OBJE
+1 FILE foo
+2 FORM application/x-other
+0 TRLR
+");
             ValidateInvalidFormPayload("invalid media type");
             ValidateInvalidFormPayload("text/");
             ValidateInvalidFormPayload("/text");
             ValidateInvalidFormPayload("text/a/b");
             ValidateInvalidFormPayload("text");
+
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 5.5.1
@@ -1100,6 +1111,109 @@ namespace Tests
 0 @I1@ INDI
 0 TRLR
 ");
+        }
+
+        // Test files from the test-files repository.
+
+        [TestMethod]
+        public void ValidateTestFileAtSign()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/atsign.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileChar()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/char_ascii_1.ged");
+            ValidateGedcomFile("../../../../external/test-files/7/char_ascii_2.ged");
+
+            ValidateGedcomFile("../../../../external/test-files/7/char_utf16be-1.ged");
+            ValidateGedcomFile("../../../../external/test-files/7/char_utf16be-2.ged");
+
+            ValidateGedcomFile("../../../../external/test-files/7/char_utf16le-1.ged");
+            ValidateGedcomFile("../../../../external/test-files/7/char_utf16le-2.ged");
+
+            ValidateGedcomFile("../../../../external/test-files/7/char_utf8-1.ged");
+            ValidateGedcomFile("../../../../external/test-files/7/char_utf8-2.ged");
+            ValidateGedcomFile("../../../../external/test-files/7/char_utf8-3.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileDateAll()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/date-all.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileDateDual()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/date-dual.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileEnumExt()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/enum-ext.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileFilename()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/filename-1.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileLangAll()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/lang-all.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileNotes()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/notes-1.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileObje()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/obje-1.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileObsolete()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/obsolete-1.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFilePedi()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/pedi-1.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileRela()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/rela_1.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileSour()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/sour-1.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileTiny()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/tiny-1.ged");
+        }
+
+        [TestMethod]
+        public void ValidateTestFileXrefCase()
+        {
+            ValidateGedcomFile("../../../../external/test-files/7/xref-case.ged");
         }
     }
 }

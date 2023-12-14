@@ -273,10 +273,16 @@ namespace Gedcom7
         {
             if (value == null || value.Length == 0) return false;
             int slashes = 0;
-            foreach (char c in value)
+            int token_offset = 0;
+            for (int i = 0; i < value.Length; i++)
             {
-                if (c == '/') slashes++;
-                else if (!Char.IsLetterOrDigit(c))
+                char c = value[i];
+                if (c == '/')
+                {
+                    slashes++;
+                    token_offset = i + 1;
+                }
+                else if (!Char.IsLetterOrDigit(c) && !(i == token_offset + 1 && c == '-'))
                 {
                     return false;
                 }
