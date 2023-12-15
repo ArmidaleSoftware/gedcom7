@@ -577,6 +577,30 @@ namespace Tests
 ");
         }
 
+        private void ValidateValidFilePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @O1@ OBJE
+1 FILE " + value + @"
+2 FORM application/x-other
+0 TRLR
+");
+        }
+
+        private void ValidateInvalidFilePayload(string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @O1@ OBJE
+1 FILE " + value + @"
+2 FORM application/x-other
+0 TRLR
+", "Line 5: \"" + value + "\" is not a valid URI reference");
+        }
+
         private void ValidateInvalidFormPayload(string value)
         {
             ValidateGedcomText(@"0 HEAD
@@ -1015,6 +1039,28 @@ namespace Tests
             ValidateInvalidLanguagePayload("und-");
             ValidateInvalidLanguagePayload("-und");
             ValidateInvalidLanguagePayload("en US");
+        }
+
+        /// <summary>
+        /// Validate file path payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateFilePathPayloadType()
+        {
+            // Test some valid values, including some file: URIs
+            // from RFC 8089.
+            ValidateValidFilePayload("media/filename");
+            ValidateValidFilePayload("http://www.contoso.com/path/filename");
+            ValidateValidFilePayload("file://host.example.com/path/to/file");
+            ValidateValidFilePayload("file:///path/to/file");
+
+            // Test invalid values.  These test strings are taken from
+            // https://learn.microsoft.com/en-us/dotnet/api/system.uri.iswellformeduristring?view=net-8.0
+            ValidateInvalidFilePayload("http://www.contoso.com/path???/file name");
+            ValidateInvalidFilePayload("c:\\\\directory\\filename");
+            ValidateInvalidFilePayload("file://c:/directory/filename");
+            ValidateInvalidFilePayload("http:\\\\\\host/path/file");
+            ValidateInvalidFilePayload("2013.05.29_14:33:41");
         }
 
         /// <summary>
