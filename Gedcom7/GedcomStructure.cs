@@ -781,6 +781,13 @@ namespace Gedcom7
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid age");
                         }
                         break;
+                    case "https://gedcom.io/terms/v7/type-FilePath":
+                        // The value must be a URI reference.
+                        if (!Uri.IsWellFormedUriString(this.LineVal, UriKind.RelativeOrAbsolute))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid URI reference");
+                        }
+                        break;
                     default:
                         if (this.Schema?.HasPointer ?? false)
                         {
