@@ -4,3 +4,6 @@
 [submodule "external/GEDCOM-registries"]
 	path = external/GEDCOM-registries
 	url = https://github.com/dthaler/GEDCOM-registries.git
+[submodule "external/test-files"]
+	path = external/test-files
+	url = https://github.com/dthaler/test-files.git

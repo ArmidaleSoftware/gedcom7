@@ -273,10 +273,16 @@ namespace Gedcom7
         {
             if (value == null || value.Length == 0) return false;
             int slashes = 0;
-            foreach (char c in value)
+            int token_offset = 0;
+            for (int i = 0; i < value.Length; i++)
             {
-                if (c == '/') slashes++;
-                else if (!Char.IsLetterOrDigit(c))
+                char c = value[i];
+                if (c == '/')
+                {
+                    slashes++;
+                    token_offset = i + 1;
+                }
+                else if (!Char.IsLetterOrDigit(c) && !(i == token_offset + 1 && c == '-'))
                 {
                     return false;
                 }
@@ -415,8 +421,10 @@ namespace Gedcom7
                 return IsValidDate(calendar, day, month, year, epoch);
             }
 
-            // Now check for a "FROM" period.
-            regex = new Regex("^FROM " + DateRegex + "( TO " + DateRegex + @")?$");
+            // Check for a "FROM" and "TO" period.
+            // This must be done before checking for a "FROM"-only period, to avoid
+            // parsing "TO" as a month.
+            regex = new Regex("^FROM " + DateRegex + " TO " + DateRegex + "$");
             match = regex.Match(value);
             if (match.Success)
             {
@@ -426,14 +434,27 @@ namespace Gedcom7
                 uint year1 = uint.Parse(match.Groups[10].Value);
                 string epoch1 = match.Groups[12].Value;
 
-                string calendar2 = match.Groups[16].Value;
-                uint day2 = match.Groups[20].Success ? uint.Parse(match.Groups[20].Value) : 0;
-                string month2 = match.Groups[21].Value;
-                uint year2 = match.Groups[24].Success ? uint.Parse(match.Groups[24].Value) : 0;
-                string epoch2 = match.Groups[26].Value;
+                string calendar2 = match.Groups[15].Value;
+                uint day2 = match.Groups[19].Success ? uint.Parse(match.Groups[19].Value) : 0;
+                string month2 = match.Groups[20].Value;
+                uint year2 = match.Groups[23].Success ? uint.Parse(match.Groups[23].Value) : 0;
+                string epoch2 = match.Groups[25].Value;
 
                 return IsValidDate(calendar1, day1, month1, year1, epoch1) &&
                        IsValidDate(calendar2, day2, month2, year2, epoch2);
+            }
+
+            // Now check for a "FROM"-only period.
+            regex = new Regex("^FROM " + DateRegex + "$");
+            match = regex.Match(value);
+            if (match.Success)
+            {
+                string calendar = match.Groups[2].Value;
+                uint day = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
+                string month = match.Groups[7].Value;
+                uint year = uint.Parse(match.Groups[10].Value);
+                string epoch = match.Groups[12].Value;
+                return IsValidDate(calendar, day, month, year, epoch);
             }
 
             return false;
