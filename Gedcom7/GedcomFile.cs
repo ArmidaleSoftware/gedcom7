@@ -75,37 +75,46 @@ namespace Gedcom7
         /// Load a GEDCOM file from a stream.
         /// </summary>
         /// <param name="reader">The stream to read from</param>
+        /// <param name="gedcomVersion">GEDCOM version to read, if known</param>
         /// <returns>List of 0 or more error messages</returns>
-        private List<string> LoadFromStreamReader(StreamReader reader)
+        public List<string> LoadFromStreamReader(StreamReader reader, GedcomVersion gedcomVersion = GedcomVersion.Unknown)
         {
-            // Do GEDCOM version detection.
             string line;
-            while ((line = reader.ReadLine()) != null)
-            {
-                if (line.Contains("1 GEDC"))
-                {
-                    break;
-                }
-            }
-            while ((line = reader.ReadLine()) != null)
-            {
-                if (line.Contains("2 VERS"))
-                {
-                    if (line.Contains("7.0"))
-                    {
-                        this.GedcomVersion = GedcomVersion.V70;
-                    }
-                    else if (line.Contains("5.5.1"))
-                    {
-                        this.GedcomVersion = GedcomVersion.V551;
-                    }
-                    break;
-                }
-            }
 
-            // Reset the stream to the beginning.
-            reader.BaseStream.Position = 0;
-            reader.DiscardBufferedData();
+            if (gedcomVersion != GedcomVersion.Unknown)
+            {
+                this.GedcomVersion = gedcomVersion;
+            }
+            else
+            {
+                // Do GEDCOM version detection.
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line.Contains("1 GEDC"))
+                    {
+                        break;
+                    }
+                }
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line.Contains("2 VERS"))
+                    {
+                        if (line.Contains("7.0"))
+                        {
+                            this.GedcomVersion = GedcomVersion.V70;
+                        }
+                        else if (line.Contains("5.5.1"))
+                        {
+                            this.GedcomVersion = GedcomVersion.V551;
+                        }
+                        break;
+                    }
+                }
+
+                // Reset the stream to the beginning.
+                reader.BaseStream.Position = 0;
+                reader.DiscardBufferedData();
+            }
 
             // Consume the BOM if any.
             if (reader.Peek() == 65279)
@@ -137,6 +146,12 @@ namespace Gedcom7
         /// <returns>List of 0 or more error messages</returns>
         public List<string> LoadFromPath(string pathToFile)
         {
+            // Validate that extension is .ged.
+            if (!pathToFile.EndsWith(".ged", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return new List<string>() { pathToFile + " must have a .ged extension" };
+            }
+
             this.Path = pathToFile;
             if (!File.Exists(pathToFile))
             {
@@ -428,6 +443,22 @@ namespace Gedcom7
             }
 
             return errors;
+        }
+
+        /// <summary>
+        /// Get a list of URI references used by the GEDCOM file.
+        /// </summary>
+        /// <returns></returns>
+        public List<string> GetReferencedFiles()
+        {
+            var referencedFiles = new List<string>();
+
+            List<GedcomStructure> records = GetRecordsAsList();
+            foreach (var record in records)
+            {
+                record.AddReferencedFiles(referencedFiles);
+            }
+            return referencedFiles;
         }
     }
 }
