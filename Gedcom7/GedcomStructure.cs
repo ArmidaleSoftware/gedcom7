@@ -718,7 +718,6 @@ namespace Gedcom7
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid date value");
                         }
                         break;
-                        break;
                     case "https://gedcom.io/terms/v7/type-Date#period":
                         if (!IsValidDatePeriod(this.LineVal))
                         {
@@ -993,6 +992,25 @@ namespace Gedcom7
             }
             returnScore = bestScore;
             return bestOther;
+        }
+
+        /// <summary>
+        /// Add any files referenced by this structure or its substructures
+        /// to a list of files.
+        /// </summary>
+        /// <param name="referencedFiles">List to append to</param>
+        public void AddReferencedFiles(List<string> referencedFiles)
+        {
+            string payloadType = this.Schema?.Payload;
+            if (payloadType == "https://gedcom.io/terms/v7/type-FilePath")
+            {
+                referencedFiles.Add(this.LineVal);
+            }
+
+            foreach (var substructure in Substructures)
+            {
+                substructure.AddReferencedFiles(referencedFiles);
+            }
         }
     }
 

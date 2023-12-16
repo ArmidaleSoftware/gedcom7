@@ -33,7 +33,23 @@ namespace Tests
             {
                 errors.AddRange(file.Validate());
             }
-            else
+            if (errors.Count > 0)
+            {
+                error = string.Join("\n", errors);
+            }
+            Assert.AreEqual(expected_result, error);
+        }
+
+        public static void ValidateGedzipFile(string path, string expected_result = null)
+        {
+            var file = new GedzipFile();
+            List<string> errors = file.LoadFromPath(path);
+            string error = null;
+            if (errors.Count == 0)
+            {
+                errors.AddRange(file.Validate());
+            }
+            if (errors.Count > 0)
             {
                 error = string.Join("\n", errors);
             }
@@ -111,9 +127,26 @@ namespace Tests
         }
 
         [TestMethod]
+        public void ValidateFileMaximal70Zip()
+        {
+            // https://github.com/FamilySearch/GEDCOM.io/issues/130
+            ValidateGedzipFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.gdz",
+                "../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.gdz is missing file:///path/to/file1");
+        }
+
+        [TestMethod]
         public void ValidateFileMinimal70()
         {
+            ValidateGedcomFile("minimal70.txt", "minimal70.txt must have a .ged extension");
+
             ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged");
+        }
+
+        [TestMethod]
+        public void ValidateFileMinimal70Zip()
+        {
+            ValidateGedzipFile("minimal70.zip", "minimal70.zip must have a .gdz extension");
+            ValidateGedzipFile("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.gdz");
         }
 
         [TestMethod]
