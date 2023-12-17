@@ -6,4 +6,4 @@
 	url = https://github.com/FamilySearch/GEDCOM-registries.git
 [submodule "external/test-files"]
 	path = external/test-files
-	url = https://github.com/dthaler/test-files.git
+	url = https://github.com/gedcom7code/test-files.git
