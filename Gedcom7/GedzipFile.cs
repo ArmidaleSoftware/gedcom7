@@ -4,16 +4,19 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
 
 namespace Gedcom7
 {
-    public class GedzipFile
+    public class GedzipFile : IDisposable
     {
         // Data members.
         public string Path { get; private set; }
         public GedcomFile GedcomFile { get; private set; }
         private ZipArchive ZipArchive { get; set; }
+        public void Dispose()
+        {
+            ZipArchive.Dispose();
+        }
 
         /// <summary>
         /// Load a GEDZIP file from a specified path.
@@ -131,7 +134,7 @@ namespace Gedcom7
             {
                 if (IsLocalFileReference(filePath) && !this.ContainsReferencedFile(filePath))
                 {
-                    errors.Add(this.Path + " is missing " + filePath);
+                    errors.Add(System.IO.Path.GetFileName(this.Path) + " is missing " + filePath);
                 }
             }
 
