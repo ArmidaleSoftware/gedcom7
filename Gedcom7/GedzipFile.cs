@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
 
 namespace Gedcom7
 {
@@ -135,7 +134,7 @@ namespace Gedcom7
             {
                 if (IsLocalFileReference(filePath) && !this.ContainsReferencedFile(filePath))
                 {
-                    errors.Add(this.Path + " is missing " + filePath);
+                    errors.Add(System.IO.Path.GetFileName(this.Path) + " is missing " + filePath);
                 }
             }
 

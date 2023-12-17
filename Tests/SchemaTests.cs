@@ -131,7 +131,7 @@ namespace Tests
         {
             // https://github.com/FamilySearch/GEDCOM.io/issues/130
             ValidateGedzipFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.gdz",
-                "../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.gdz is missing file:///path/to/file1");
+                "maximal70.gdz is missing file:///path/to/file1");
         }
 
         [TestMethod]

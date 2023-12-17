@@ -20,11 +20,6 @@ namespace Gedcom7
         public GedcomFile(string gedcomRegistriesPath = null)
         {
             this.GedcomVersion = GedcomVersion.Unknown;
-            if (gedcomRegistriesPath == null)
-            {
-                var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                gedcomRegistriesPath = System.IO.Path.Combine(baseDirectory, "../../../../../gedcom7/external/GEDCOM-registries");
-            }
             GedcomStructureSchema.LoadAll(gedcomRegistriesPath);
         }
 
