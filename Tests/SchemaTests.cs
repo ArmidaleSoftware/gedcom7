@@ -333,19 +333,24 @@ namespace Tests
         [TestMethod]
         public void ValidateXref()
         {
-            // Test a HEAD record with an xref.
+            // HEAD pseudo-structure does not allow an xref.
             ValidateGedcomText(@"0 @H1@ HEAD
 1 GEDC
 2 VERS 5.5.1
 0 TRLR
-");
+", "Line 1: Xref is not valid for HEAD");
             ValidateGedcomText(@"0 @H1@ HEAD
 1 GEDC
 2 VERS 7.0
 0 TRLR
-");
+", "Line 1: Xref is not valid for HEAD");
 
-            // Test an INDI record without an xref.
+            // Test an INDI record without an xref.  The spec says:
+            // "Each record to which other structures point must have
+            // a cross-reference identifier. A record to which no
+            // structures point may have a cross-reference identifier,
+            // but does not need to have one. A substructure or pseudo-
+            // structure must not have a cross-reference identifier."
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 5.5.1
@@ -359,17 +364,17 @@ namespace Tests
 0 TRLR
 ");
 
-            // Test a TRLR record with an xref.
+            // TRLR pseudo-structure does not allow an xref.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 5.5.1
 0 @T1@ TRLR
-");
+", "Line 4: Xref is not valid for TRLR");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
 0 @T1@ TRLR
-");
+", "Line 4: Xref is not valid for TRLR");
 
             // Xref must start with @.
             ValidateGedcomText(@"0 HEAD
