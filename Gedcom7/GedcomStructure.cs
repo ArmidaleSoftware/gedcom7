@@ -831,6 +831,10 @@ namespace Gedcom7
                     {
                         return ErrorMessage("Duplicate Xref " + this.Xref);
                     }
+                    if (this.Tag == "HEAD" || this.Tag == "TRLR")
+                    {
+                        error = ErrorMessage("Xref is not valid for " + this.Tag);
+                    }
                     file.Records[this.Xref] = this;
                 }
                 else
