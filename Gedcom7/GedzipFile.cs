@@ -121,7 +121,7 @@ namespace Gedcom7
             }
 
             // Validate that the gedcom.ged file is actually a 7.0 file.
-            GedcomStructure head = this.GedcomFile.Records["HEAD"];
+            GedcomStructure head = this.GedcomFile.Head;
             GedcomStructure gedc = head.FindFirstSubstructure("GEDC");
             GedcomStructure vers = gedc.FindFirstSubstructure("VERS");
             if (vers.LineVal != "7.0") {

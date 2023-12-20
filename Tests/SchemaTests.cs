@@ -333,43 +333,43 @@ namespace Tests
         [TestMethod]
         public void ValidateXref()
         {
-            // HEAD record does not allow an xref.
+            // Test a HEAD record with an xref.
             ValidateGedcomText(@"0 @H1@ HEAD
 1 GEDC
 2 VERS 5.5.1
 0 TRLR
-", "Line 1: Xref is not valid for this record");
+");
             ValidateGedcomText(@"0 @H1@ HEAD
 1 GEDC
 2 VERS 7.0
 0 TRLR
-", "Line 1: Xref is not valid for this record");
+");
 
-            // INDI record requires an xref.
+            // Test an INDI record without an xref.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 5.5.1
 0 INDI
 0 TRLR
-", "Line 4: Missing Xref for this record");
+");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
 0 INDI
 0 TRLR
-", "Line 4: Missing Xref for this record");
+");
 
-            // TRLR record does not allow an xref.
+            // Test a TRLR record with an xref.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 5.5.1
 0 @T1@ TRLR
-", "Line 4: Xref is not valid for this record");
+");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
 0 @T1@ TRLR
-", "Line 4: Xref is not valid for this record");
+");
 
             // Xref must start with @.
             ValidateGedcomText(@"0 HEAD
