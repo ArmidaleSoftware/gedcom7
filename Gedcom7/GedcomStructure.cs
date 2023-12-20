@@ -808,23 +808,23 @@ namespace Gedcom7
                 {
                     return ErrorMessage("HEAD must be the first record");
                 }
-                if (file.Records.ContainsKey("TRLR"))
+                if (file.Trlr != null)
                 {
                     return ErrorMessage("Duplicate TRLR record");
                 }
 
-                // An xref is disallowed for HEAD and TRLR and required for all others.
+                // In FamilySearch/GEDCOM issue 408, Luther wrote:
+                // "The 5.5.1 spec used parallel syntax to describe the
+                // "optional_line_value:= delim + line_value" and
+                // "optional_xref_ID:= xref_ID + delim". Some tools treated both the
+                // same as mandatory: an xref_ID was included if and only if the
+                // grammar said so, and so was the trailing delim that distinguished
+                // an empty-string line_value from a no-line_value line. Some
+                // treated them differently, omitting the optional_line_value
+                // entirely if the line_value was empty but always keeping the
+                // xref_ID. And some treated them the same the other way, omitting
+                // both when they had no (meaningful) content."
                 string tag = this.Tag;
-                if ((tag == "HEAD" || tag == "TRLR") != (this.Xref == null))
-                {
-                    if (this.Xref == null)
-                    {
-                        error = ErrorMessage("Missing Xref for this record");
-                    } else
-                    {
-                        error = ErrorMessage("Xref is not valid for this record");
-                    }
-                }
                 if (this.Xref != null)
                 {
                     if (file.Records.ContainsKey(this.Xref))
@@ -836,6 +836,14 @@ namespace Gedcom7
                 else
                 {
                     file.Records[this.Tag] = this;
+                }
+                if (this.Tag == "HEAD")
+                {
+                    file.Head = this;
+                }
+                else if (this.Tag == "TRLR")
+                {
+                    file.Trlr = this;
                 }
             }
 

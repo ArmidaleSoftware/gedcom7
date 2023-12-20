@@ -29,8 +29,9 @@ namespace Gedcom7
         public int LineCount { get; private set; }
         public List<GedcomStructure> GetRecordsAsList() => Records.Values.ToList();
         public Dictionary<string, GedcomStructure> Records = new Dictionary<string, GedcomStructure>();
+        public GedcomStructure Head { get; set; }
+        public GedcomStructure Trlr { get; set; }
         public override string ToString() { return this.Path; }
-        GedcomStructure Head => (this.Records.ContainsKey("HEAD")) ? this.Records["HEAD"] : null;
         public GedcomStructure SourceProduct => Head?.FindFirstSubstructure("SOUR");
         public string SourceProductVersion => SourceProduct?.FindFirstSubstructure("VERS")?.LineVal;
         public string Date => Head?.FindFirstSubstructure("DATE")?.LineVal;
@@ -425,7 +426,7 @@ namespace Gedcom7
             var errors = new List<string>();
 
             // The file must start with HEAD and end with TRLR.
-            if (!this.Records.ContainsKey("TRLR"))
+            if (this.Trlr == null)
             {
                 errors.Add("Missing TRLR record");
             }
