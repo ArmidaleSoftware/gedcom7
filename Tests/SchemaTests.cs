@@ -129,9 +129,7 @@ namespace Tests
         [TestMethod]
         public void ValidateFileMaximal70Zip()
         {
-            // https://github.com/FamilySearch/GEDCOM.io/issues/130
-            ValidateGedzipFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.gdz",
-                "maximal70.gdz is missing file:///path/to/file1");
+            ValidateGedzipFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.gdz");
         }
 
         [TestMethod]
