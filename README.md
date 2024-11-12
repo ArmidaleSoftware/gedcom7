@@ -17,12 +17,24 @@ The same Gedcom7 library is used by the online web site tools:
 - Windows 10 or above
 - [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/), any edition (the free Community edition will do)
 
+# GedValidate Command-line Tool Usage
+
+GedValidate.exe is a command-line tool usable as follows.
+
+```
+usage: GedValidate <filename>
+          to check a file as being a valid FamilySearch GEDCOM 7 file
+```
+
 # GedCompare Command-line Tool Usage
 
 GedCompare.exe is a command-line tool usable as follows.
 
 ```
-Usage: GedCompare <filename1> <filename2>
+usage: GedCompare <filename1> <filename2>
+          to simply compare two GEDCOM files
+       GedCompare <filename>
+          to generate a FamilySearch GEDCOM 7 compatibility report
 ```
 
 For example to check GEDCOM 7 compatibility, filename1 should be the maximal70.ged file from the
