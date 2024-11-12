@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\gedcom7\Gedcom7.csproj" />
+    <ProjectReference Include="..\Gedcom7\Gedcom7.csproj" />
   </ItemGroup>
 
 </Project>

@@ -9,17 +9,23 @@ namespace Gedcom7
     {
         private const int MAX_ERRORS = 100;
 
+        /// <summary>
+        /// Displays validation errors to the console, limiting output to MAX_ERRORS.
+        /// </summary>
+        /// <param name="errors">List of error messages to display</param>
         static void ShowErrors(List<string> errors)
         {
             if (errors.Count == 0)
             {
                 Console.WriteLine("No errors found");
             }
-            string text = string.Join("\n", errors.Take(MAX_ERRORS));
-            Console.WriteLine(text);
+            for (int i = 0; i < MAX_ERRORS && i < errors.Count; i++)
+            {
+                Console.WriteLine(errors[i]);
+            }
             if (errors.Count >= MAX_ERRORS)
             {
-                Console.WriteLine("Stopped after " + MAX_ERRORS + " errors");
+                Console.WriteLine($"Stopped after {MAX_ERRORS} errors");
             }
         }
 
