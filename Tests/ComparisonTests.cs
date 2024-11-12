@@ -3,12 +3,15 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Gedcom7;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Tests
 {
     [TestClass]
     public class ComparisonTests
     {
+        private const string TEST_FILES_BASE_PATH = "../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70";
+
         void CompareFileWithSelf(string path)
         {
             var file = new GedcomFile();
@@ -24,23 +27,23 @@ namespace Tests
         [TestMethod]
         public void CompareMinimalWithSelf()
         {
-            CompareFileWithSelf("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/minimal70.ged");
+            CompareFileWithSelf(Path.Combine(TEST_FILES_BASE_PATH, "minimal70.ged"));
         }
 
         [TestMethod]
         public void CompareMaximalWithSelf()
         {
-            CompareFileWithSelf("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/maximal70.ged");
+            CompareFileWithSelf(Path.Combine(TEST_FILES_BASE_PATH, "maximal70.ged"));
         }
 
         private void CompareSubsetWithSuperset(string subset, string superset, int structuresAdded, int percentage)
         {
             var subsetFile = new GedcomFile();
-            List<string> errors = subsetFile.LoadFromPath("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/" + subset + ".ged");
+            List<string> errors = subsetFile.LoadFromPath(Path.Combine(TEST_FILES_BASE_PATH, subset + ".ged"));
             Assert.AreEqual(0, errors.Count);
 
             var supersetFile = new GedcomFile();
-            errors = supersetFile.LoadFromPath("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/" + superset + ".ged");
+            errors = supersetFile.LoadFromPath(Path.Combine(TEST_FILES_BASE_PATH, superset + ".ged"));
             Assert.AreEqual(0, errors.Count);
 
             // Adding information is ok.
