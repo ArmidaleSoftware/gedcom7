@@ -13,7 +13,7 @@ namespace Gedcom7
         {
             if (errors.Count == 0)
             {
-                errors.Add("No errors found");
+                Console.WriteLine("No errors found");
             }
             string text = string.Join("\n", errors.Take(MaxErrors));
             Console.WriteLine(text);
@@ -23,7 +23,7 @@ namespace Gedcom7
             }
         }
 
-        static int Validate(string sourcePath)
+        static int ValidateGedcom(string sourcePath)
         {
             var gedcomFile = new GedcomFile();
             List<string> errors = gedcomFile.LoadFromPath(sourcePath);
@@ -37,16 +37,40 @@ namespace Gedcom7
             return errors.Count;
         }
 
-        static int Main(string[] args)
+        static int ValidateGedzip(string sourcePath)
         {
-            if (args.Length == 1)
+            List<string> errors;
+            using (var gedzipFile = new GedzipFile())
             {
-                return Validate(args[0]);
+                errors = gedzipFile.LoadFromPath(sourcePath);
+                if (errors.Count < MaxErrors)
+                {
+                    errors.AddRange(gedzipFile.Validate());
+                }
             }
 
-            Console.WriteLine("usage: GedValidate <filename>");
-            Console.WriteLine("          to check a file as being a valid FamilySearch GEDCOM 7 or GEDZIP file");
-            return 1;
+            ShowErrors(errors);
+            return errors.Count;
+        }
+
+        static int Main(string[] args)
+        {
+            if (args.Length != 1)
+            {
+                Console.WriteLine("usage: GedValidate <filename>");
+                Console.WriteLine("          to check a file as being a valid FamilySearch GEDCOM 7 or GEDZIP file");
+                return 1;
+            }
+
+            string sourcePath = args[0];
+            if (sourcePath.EndsWith(".gdz", System.StringComparison.InvariantCultureIgnoreCase))
+            {
+                return ValidateGedzip(sourcePath);
+            }
+            else
+            {
+                return ValidateGedcom(sourcePath);
+            }
         }
     }
 }

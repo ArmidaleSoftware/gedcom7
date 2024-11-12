@@ -5,6 +5,7 @@ It contains:
 
 - Gedcom7 - a project that builds a GEDCOM parser library.
 - GedCompare - a project that builds a command-line interface that uses the above library to do file comparison.
+- GedValidate - a project that builds a command-line interface that uses the above library to do file validation.
 
 The same Gedcom7 library is used by the online web site tools:
 - [GEDCOM 5.5.1 to 7.0 converter](https://magikeygedcomconverter.azurewebsites.net)
@@ -23,8 +24,10 @@ GedValidate.exe is a command-line tool usable as follows.
 
 ```
 usage: GedValidate <filename>
-          to check a file as being a valid FamilySearch GEDCOM 7 file
+          to check a file as being a valid FamilySearch GEDCOM 7 or GEDZIP file
 ```
+
+The filename should end in .ged or .gdz.
 
 # GedCompare Command-line Tool Usage
 
