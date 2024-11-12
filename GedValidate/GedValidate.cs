@@ -5,9 +5,9 @@ using System.Collections.Generic;
 
 namespace Gedcom7
 {
-    class GedValidate
+    public class GedValidate
     {
-        const int MaxErrors = 100;
+        private const int MAX_ERRORS = 100;
 
         static void ShowErrors(List<string> errors)
         {
@@ -15,11 +15,11 @@ namespace Gedcom7
             {
                 Console.WriteLine("No errors found");
             }
-            string text = string.Join("\n", errors.Take(MaxErrors));
+            string text = string.Join("\n", errors.Take(MAX_ERRORS));
             Console.WriteLine(text);
-            if (errors.Count >= MaxErrors)
+            if (errors.Count >= MAX_ERRORS)
             {
-                Console.WriteLine("Stopped after " + MaxErrors + " errors");
+                Console.WriteLine("Stopped after " + MAX_ERRORS + " errors");
             }
         }
 
@@ -28,7 +28,7 @@ namespace Gedcom7
             var gedcomFile = new GedcomFile();
             List<string> errors = gedcomFile.LoadFromPath(sourcePath);
 
-            if (errors.Count < MaxErrors)
+            if (errors.Count < MAX_ERRORS)
             {
                 errors.AddRange(gedcomFile.Validate());
             }
@@ -43,7 +43,7 @@ namespace Gedcom7
             using (var gedzipFile = new GedzipFile())
             {
                 errors = gedzipFile.LoadFromPath(sourcePath);
-                if (errors.Count < MaxErrors)
+                if (errors.Count < MAX_ERRORS)
                 {
                     errors.AddRange(gedzipFile.Validate());
                 }
