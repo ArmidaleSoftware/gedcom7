@@ -9,7 +9,7 @@ namespace Tests
     [TestClass]
     public class CompatibilityTests
     {
-        static string BaselinePath = "../../../../external/GEDCOM.io/testfiles/gedcom70/";
+        static string BaselinePath = "../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/";
 
         private void TestCompatibility(string filename, int tree1Percentage, int tree2Percentage,
             int memories1Percentage, int memories2Percentage, int ldsPercentage)

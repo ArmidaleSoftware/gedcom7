@@ -52,13 +52,13 @@ namespace Tests
         [TestMethod]
         public void Minimal70MemoryUsage()
         {
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged", 9376);
+            TestMemoryUsage("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/minimal70.ged", 9376);
         }
 
         [TestMethod]
         public void Maximal70MemoryUsage()
         {
-            TestMemoryUsage("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 219336);
+            TestMemoryUsage("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/maximal70.ged", 219336);
         }
     }
 }

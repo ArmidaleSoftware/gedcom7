@@ -75,61 +75,61 @@ namespace Tests
         [TestMethod]
         public void ValidateFileEscapes()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/escapes.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/escapes.ged");
         }
 
         [TestMethod]
         public void ValidateFileExtensionRecord()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/extension-record.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/extension-record.ged");
         }
 
         [TestMethod]
         public void ValidateFileLongUrl()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/long-url.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/long-url.ged");
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Lds()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70-lds.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/maximal70-lds.ged");
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Memories1()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70-memories1.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/maximal70-memories1.ged");
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Memories2()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70-memories2.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/maximal70-memories2.ged");
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Tree1()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70-tree1.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/maximal70-tree1.ged");
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Tree2()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70-tree2.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/maximal70-tree2.ged");
         }
 
         [TestMethod]
         public void ValidateFileMaximal70()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/maximal70.ged");
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Zip()
         {
-            ValidateGedzipFile("../../../../external/GEDCOM.io/testfiles/gedcom70/maximal70.gdz");
+            ValidateGedzipFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/maximal70.gdz");
         }
 
         [TestMethod]
@@ -137,38 +137,38 @@ namespace Tests
         {
             ValidateGedcomFile("minimal70.txt", "minimal70.txt must have a .ged extension");
 
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/minimal70.ged");
         }
 
         [TestMethod]
         public void ValidateFileMinimal70Zip()
         {
             ValidateGedzipFile("minimal70.zip", "minimal70.zip must have a .gdz extension");
-            ValidateGedzipFile("../../../../external/GEDCOM.io/testfiles/gedcom70/minimal70.gdz");
+            ValidateGedzipFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/minimal70.gdz");
         }
 
         [TestMethod]
         public void ValidateFileRemarriage1()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/remarriage1.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/remarriage1.ged");
         }
 
         [TestMethod]
         public void ValidateFileRemarriage2()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/remarriage2.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/remarriage2.ged");
         }
 
         [TestMethod]
         public void ValidateFileSameSexMarriage()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/same-sex-marriage.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/same-sex-marriage.ged");
         }
 
         [TestMethod]
         public void ValidateFileVoidptr()
         {
-            ValidateGedcomFile("../../../../external/GEDCOM.io/testfiles/gedcom70/voidptr.ged");
+            ValidateGedcomFile("../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/voidptr.ged");
         }
 
         [TestMethod]
