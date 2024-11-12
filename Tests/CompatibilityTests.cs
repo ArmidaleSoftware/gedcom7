@@ -35,7 +35,7 @@ namespace Tests
         [TestMethod]
         public void Tree1Compatibility()
         {
-            TestCompatibility("maximal70-tree1", 100, 33, 84, 75, 65);
+            TestCompatibility("maximal70-tree1", 100, 34, 84, 75, 65);
         }
 
         [TestMethod]
@@ -47,19 +47,19 @@ namespace Tests
         [TestMethod]
         public void Memories1Compatibility()
         {
-            TestCompatibility("maximal70-memories1", 100, 33, 100, 89, 65);
+            TestCompatibility("maximal70-memories1", 100, 34, 100, 89, 65);
         }
 
         [TestMethod]
         public void Memories2Compatibility()
         {
-            TestCompatibility("maximal70-memories2", 100, 33, 100, 100, 65);
+            TestCompatibility("maximal70-memories2", 100, 34, 100, 100, 65);
         }
 
         [TestMethod]
         public void LdsCompatibility()
         {
-            TestCompatibility("maximal70-lds", 100, 33, 84, 75, 100);
+            TestCompatibility("maximal70-lds", 100, 34, 84, 75, 100);
         }
 
         [TestMethod]
