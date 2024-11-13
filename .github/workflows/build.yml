@@ -33,30 +33,51 @@ jobs:
       with:
         egress-policy: audit
 
+    - id: skip_check
+      uses: fkirc/skip-duplicate-actions@v5
+      with:
+        cancel_others: 'false'
+        paths_ignore: '["**.md"]'
+
     - uses: actions/checkout@v4
+      if: steps.skip_check.outputs.should_skip != 'true'
       with:
         submodules: 'recursive'
 
     - name: Add MSBuild to PATH
+      if: steps.skip_check.outputs.should_skip != 'true'
       uses: microsoft/setup-msbuild@v2
 
     - name: Setup VSTest Path
+      if: steps.skip_check.outputs.should_skip != 'true'
       uses: darenm/Setup-VSTest@v1
 
     - name: Restore NuGet packages
+      if: steps.skip_check.outputs.should_skip != 'true'
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
     - name: Build
+      if: steps.skip_check.outputs.should_skip != 'true'
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
       run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Analysis='True' ${{env.SOLUTION_FILE_PATH}}
 
     - name: Run Basic Unit Tests
+      if: steps.skip_check.outputs.should_skip != 'true'
       working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0
       run: vstest.console.exe Tests.dll /Logger:trx
 
     - name: Dump memory usage
+      if: steps.skip_check.outputs.should_skip != 'true'
       working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0/TestResults
       run: findstr bytes *.trx
+
+    - name: Upload GedValidate binary
+      if: steps.skip_check.outputs.should_skip != 'true'
+      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+      with:
+        name: Windows ${{matrix.configurations}} GedValidate.exe
+        path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/GedValidate.exe
+        retention-days: 5
