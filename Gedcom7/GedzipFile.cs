@@ -9,7 +9,13 @@ namespace Gedcom7
 {
     public class GedzipFile : IDisposable
     {
+        public GedzipFile(string gedcomRegistriesPath = null)
+        {
+            GedcomRegistriesPath = gedcomRegistriesPath;
+        }
+
         // Data members.
+        private string GedcomRegistriesPath { get; set; }
         public string Path { get; private set; }
         public GedcomFile GedcomFile { get; private set; }
         private ZipArchive ZipArchive { get; set; }
@@ -45,7 +51,7 @@ namespace Gedcom7
                 {
                     using (Stream stream = entry.Open())
                     {
-                        this.GedcomFile = new GedcomFile();
+                        this.GedcomFile = new GedcomFile(GedcomRegistriesPath);
                         using (StreamReader streamReader = new StreamReader(stream))
                         {
                             List<string> errors = this.GedcomFile.LoadFromStreamReader(streamReader, GedcomVersion.V70);
