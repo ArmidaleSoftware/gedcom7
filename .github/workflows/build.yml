@@ -78,6 +78,6 @@ jobs:
       if: steps.skip_check.outputs.should_skip != 'true'
       uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
       with:
-        name: Windows ${{matrix.configurations}} GedValidate.exe
-        path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/GedValidate.exe
+        name: Windows ${{matrix.configurations}} GedValidate
+        path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/
         retention-days: 5
