@@ -703,6 +703,11 @@ namespace Gedcom7
                             break;
                         }
                     case null:
+                        if (!this.Schema.IsStandard) // TODO: IsDocumented and resolved
+                        {
+                            // We can't tell whether an empty payload is legal or not.
+                            break;
+                        }
                         if (this.LineVal != null)
                         {
                             return ErrorMessage(this.Tag + " payload must be null");
