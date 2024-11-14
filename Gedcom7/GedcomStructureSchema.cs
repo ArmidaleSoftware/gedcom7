@@ -129,6 +129,7 @@ namespace Gedcom7
         public Dictionary<string, GedcomStructureCountInfo> Superstructures { get; private set; }
 
         static Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
+        static Dictionary<string, string> s_StructureSchemaAliases = new System.Collections.Generic.Dictionary<string, string>();
         static Dictionary<string, GedcomStructureSchema> s_StructureSchemasByUri = new Dictionary<string, GedcomStructureSchema>();
 
         public const string RecordSuperstructureUri = "TOP";
@@ -163,14 +164,21 @@ namespace Gedcom7
             // Leave SuperstructureUri as null for a wildcard.
             structureSchemaKey.Tag = tag;
 
-            var schema = new GedcomStructureSchema(sourceProgram, tag);
-            schema.Uri = uri;
-
             // The spec says:
             //    "The schema structure may contain the same tag more than once with different URIs.
             //    Reusing tags in this way must not be done unless the concepts identified by those
             //    URIs cannot appear in the same place in a dataset..."
             // But for now we just overwrite it in the index for SCHMA defined schemas.
+
+            if (s_StructureSchemasByUri.ContainsKey(uri))
+            {
+                // This is an alias.
+                s_StructureSchemaAliases[tag] = uri;
+                return;
+            }
+
+            var schema = new GedcomStructureSchema(sourceProgram, tag);
+            schema.Uri = uri;
             s_StructureSchemas[structureSchemaKey] = schema;
         }
 
@@ -250,6 +258,13 @@ namespace Gedcom7
             if (s_StructureSchemas.ContainsKey(structureSchemaKey))
             {
                 return s_StructureSchemas[structureSchemaKey];
+            }
+
+            // Now look for a schema alias defined in HEAD.SCHMA.
+            if (s_StructureSchemaAliases.ContainsKey(tag))
+            {
+                string uri = s_StructureSchemaAliases[tag];
+                return s_StructureSchemasByUri[uri];
             }
 
             // Create a new schema for it.

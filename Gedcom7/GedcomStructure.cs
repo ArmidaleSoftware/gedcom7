@@ -48,14 +48,17 @@ namespace Gedcom7
         public int Level { get; private set; }
         public string Xref { get; private set; }
         public GedcomStructureSchema Schema { get; private set; }
+        public string StandardTag => this.Schema?.StandardTag;
+        private string _tag { get; set; }
         public string Tag
         {
             get
             {
-                return this.Schema?.StandardTag;
+                return _tag;
             }
             set
             {
+                _tag = value;
                 string sourceProgram = this.File.SourceProduct?.LineVal;
                 string superstructureUri = (this.Level == 0) ? GedcomStructureSchema.RecordSuperstructureUri : this.Superstructure?.Schema?.Uri;
                 this.Schema = GedcomStructureSchema.GetSchema(sourceProgram, superstructureUri, value);
