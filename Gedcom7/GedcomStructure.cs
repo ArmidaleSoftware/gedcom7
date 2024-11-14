@@ -376,7 +376,7 @@ namespace Gedcom7
             CalendarSchema calendarSchema = CalendarSchema.GetCalendarByTag(calendar);
 
             // See if month is in the list.
-            if (!string.IsNullOrEmpty(month) && !calendarSchema.IsValidMonth(month))
+            if (!string.IsNullOrEmpty(month) && !calendarSchema.IsValidMonth(month) && !month.StartsWith('_'))
             {
                 return false;
             }
@@ -705,6 +705,14 @@ namespace Gedcom7
                         }
                         break;
                     case "http://www.w3.org/2001/XMLSchema#string":
+                        if ((this.Schema.Uri == "https://gedcom.io/terms/v7/TAG") && (tokens.Length > 3))
+                        {
+                            string sourceProgram = this.File.SourceProduct?.LineVal ?? "Unknown";
+                            string tag = tokens[2];
+                            string uri = tokens[3];
+                            GedcomStructureSchema.AddSchema(sourceProgram, tag, uri);
+                            break;
+                        }
                         // We currently don't do any further validation.
                         break;
                     case "https://gedcom.io/terms/v7/type-Date#exact":

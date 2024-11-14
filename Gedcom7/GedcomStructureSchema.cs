@@ -140,13 +140,37 @@ namespace Gedcom7
         /// <param name="superstructureUri">null (wildcard) for undocumented tags, RecordSuperstructureUri for records, else URI of superstructure schema</param>
         /// <param name="tag">Tag</param>
         /// <param name="schema">Schema</param>
-        static void AddSchema(string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
+        public static void AddSchema(string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
         {
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
             structureSchemaKey.SourceProgram = sourceProgram;
             structureSchemaKey.SuperstructureUri = superstructureUri;
             structureSchemaKey.Tag = tag;
             Debug.Assert(!s_StructureSchemas.ContainsKey(structureSchemaKey));
+            s_StructureSchemas[structureSchemaKey] = schema;
+        }
+
+        /// <summary>
+        /// Add a schema.
+        /// </summary>
+        /// <param name="sourceProgram">null (wildcard) for standard tags, else extension</param>
+        /// <param name="tag">Tag</param>
+        /// <param name="uri">Structure URI</param>
+        public static void AddSchema(string sourceProgram, string tag, string uri)
+        {
+            GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
+            structureSchemaKey.SourceProgram = sourceProgram;
+            // Leave SuperstructureUri as null for a wildcard.
+            structureSchemaKey.Tag = tag;
+
+            var schema = new GedcomStructureSchema(sourceProgram, tag);
+            schema.Uri = uri;
+
+            // The spec says:
+            //    "The schema structure may contain the same tag more than once with different URIs.
+            //    Reusing tags in this way must not be done unless the concepts identified by those
+            //    URIs cannot appear in the same place in a dataset..."
+            // But for now we just overwrite it in the index for SCHMA defined schemas.
             s_StructureSchemas[structureSchemaKey] = schema;
         }
 

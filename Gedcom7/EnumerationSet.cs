@@ -61,7 +61,7 @@ namespace Gedcom7
 
         public bool IsValidValue(string value)
         {
-            return this.ValueTags.Contains(value);
+            return this.ValueTags.Contains(value) || value.StartsWith('_');
         }
     }
 }
