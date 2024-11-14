@@ -314,8 +314,11 @@ namespace Gedcom7
         /// <returns>true if valid, false if not</returns>
         private static bool IsValidAge(string value)
         {
-            if (value == null || value.Length == 0) return false;
-            Regex regex = new Regex(@"^([<>])?(\d+y( \d+m)?( \d+w)?( \d+d)?|\d+m( \d+w)?( \d+d)?|\d+w( \d+d)?|\d+d)$");
+            if (value == null || value.Length == 0)
+            {
+                return true;
+            }
+            Regex regex = new Regex(@"^([<>] )?(\d+y( \d+m)?( \d+w)?( \d+d)?|\d+m( \d+w)?( \d+d)?|\d+w( \d+d)?|\d+d)$");
             return regex.IsMatch(value);
         }
 
