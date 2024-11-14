@@ -265,7 +265,8 @@ namespace Gedcom7
         }
 
         /// <summary>
-        /// Test whether a given string is a valid media type.
+        /// Test whether a given string is a valid media type as
+        /// defined in RFC 2045 section 5.1.
         /// </summary>
         /// <param name="value">String to test</param>
         /// <returns>true if valid, false if not</returns>
@@ -282,7 +283,7 @@ namespace Gedcom7
                     slashes++;
                     token_offset = i + 1;
                 }
-                else if (!Char.IsLetterOrDigit(c) && !(i == token_offset + 1 && c == '-'))
+                else if (!(Char.IsLetterOrDigit(c) || ".+".Contains(c)) && !(i == token_offset + 1 && c == '-'))
                 {
                     return false;
                 }
