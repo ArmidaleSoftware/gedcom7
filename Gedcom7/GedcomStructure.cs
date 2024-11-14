@@ -141,13 +141,17 @@ namespace Gedcom7
             }
 
             // See if this is an undocumented extension structure.
-            if (this.IsExtensionTag && !this.Schema.IsDocumented)
+            // TODO: Right now, any non-standard structure that was added in the SCHMA section
+            // is treated as undocumented since we don't resolve the URI, we only get
+            // sub/super-structures from GEDCOM-registries.
+            if (this.IsExtensionTag && /* !this.Schema.IsDocumented */ !this.Schema.IsStandard)
             {
                 return null;
             }
 
             // See if the superstructure is an undocumented extension structure.
-            if (this.Superstructure.IsExtensionTag && !this.Superstructure.Schema.IsDocumented)
+            // TODO: same as above TODO.
+            if (this.Superstructure.IsExtensionTag && !this.Superstructure.Schema.IsStandard /* !this.Superstructure.Schema.IsDocumented */)
             {
                 return null;
             }
