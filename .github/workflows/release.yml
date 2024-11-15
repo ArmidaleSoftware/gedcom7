@@ -12,6 +12,8 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+
 env:
   SOLUTION_FILE_PATH: Gedcom7.sln
   DOTNET_CORE_VERSION: 6.0.x
@@ -21,7 +23,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  deploy:
     runs-on: windows-2019
     steps:
       - name: Harden Runner
@@ -64,29 +66,6 @@ jobs:
         if: steps.skip_check.outputs.should_skip != 'true'
         working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0
         run: vstest.console.exe Tests.dll /Logger:trx
-
-      - name: Upload GedValidate binary
-        if: steps.skip_check.outputs.should_skip != 'true'
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
-        with:
-          name: Windows ${{env.BUILD_CONFIGURATION}} GedValidate
-          path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/
-          retention-days: 5
-
-  deploy:
-    runs-on: windows-latest
-    needs: build
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7  # v2.10.1
-        with:
-          egress-policy: audit
-
-      - name: Download artifact from build job
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16  # v4.1.8
-        with:
-          name: Windows ${{env.BUILD_CONFIGURATION}} GedValidate
-          path: ${{github.workspace}}
 
       - name: Get previous tag
         id: prev_tag
@@ -134,6 +113,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{github.workspace}}
+          path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/
           asset_name: Windows ${{env.BUILD_CONFIGURATION}} GedValidate
           asset_content_type: application/zip
