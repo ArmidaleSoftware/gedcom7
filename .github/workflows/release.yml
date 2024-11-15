@@ -68,7 +68,7 @@ jobs:
 
       - name: DEBUG show release notes
         if: steps.skip_check.outputs.should_skip != 'true'
-         run: type .\RELEASE_NOTES.md
+        run: type .\RELEASE_NOTES.md
 
       - name: Add MSBuild to PATH
         if: steps.skip_check.outputs.should_skip != 'true'
@@ -101,8 +101,9 @@ jobs:
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_TAG: $env:GITHUB_REF.Split('/')[-1]
         with:
-          tag_name: ${{ github.ref }}
+          tag_name: $CURRENT_TAG
           release_name: Release ${{ github.ref }}
           body_path: ./RELEASE_NOTES.md
           draft: false

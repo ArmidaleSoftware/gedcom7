@@ -61,9 +61,17 @@ jobs:
         run: |
           echo "::set-output name=prevtag::$(git describe --tags --abbrev=0 HEAD^1)"
 
+      - name: DEBUG Show GITHUB_REF
+        shell: pwsh
+        run: |
+          Write-Host "GITHUB_REF: $env:GITHUB_REF"
+
       - name: DEBUG Set CURRENT_TAG environment variable
-        run: echo "CURRENT_TAG=foo" >> $GITHUB_ENV
-        shell: bash
+        shell: pwsh
+        run: |
+          $CURRENT_TAG = $env:GITHUB_REF.Split('/')[-1]
+          echo "CURRENT_TAG=$CURRENT_TAG" >> $GITHUB_ENV
+          echo "CURRENT_TAG is $CURRENT_TAG"
 
       - name: DEBUG Show CURRENT_TAG value in bash
         run: echo "CURRENT_TAG is $CURRENT_TAG"
@@ -87,7 +95,7 @@ jobs:
         shell: pwsh
         run: |
           $PREV_TAG = "${{ steps.prev_tag.outputs.prevtag }}"
-          $CURRENT_TAG = $env:GITHUB_REF.Split('/')[-1]
+          $CURRENT_TAG = $env:CURRENT_TAG
           echo "## Changes since $PREV_TAG" > RELEASE_NOTES.md
           git log $PREV_TAG..$CURRENT_TAG --pretty=format:"- %s ([%h](%H))" >> RELEASE_NOTES.md
 
