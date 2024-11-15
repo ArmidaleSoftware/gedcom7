@@ -95,7 +95,7 @@ jobs:
 
       - name: Generate release notes
         id: generate_notes
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const previousTag = process.env.PREV_TAG;
