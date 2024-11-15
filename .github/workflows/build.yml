@@ -1,17 +1,25 @@
+# Copyright (c) Armidale Software
+# SPDX-License-Identifier: MIT
+#
 # For documentation on the github environment, see
 # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
 #
 # For documentation on the syntax of this file, see
 # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+---
 name: MSBuild
 
-on: pull_request
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 concurrency:
-    # Cancel any builds currently in progress for the same PR.
-    # Allow running concurrently for with any other commits.
-    group: ci-${{ github.event.pull_request.number || github.sha }}
-    cancel-in-progress: true
+  # Cancel any builds currently in progress for the same PR.
+  # Allow running concurrently for with any other commits.
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -29,55 +37,55 @@ jobs:
       BUILD_CONFIGURATION: ${{matrix.configurations}}
 
     steps:
-    - uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
-      with:
-        egress-policy: audit
+      - uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7  # v2.10.1
+        with:
+          egress-policy: audit
 
-    - id: skip_check
-      uses: fkirc/skip-duplicate-actions@v5
-      with:
-        cancel_others: 'false'
-        paths_ignore: '["**.md"]'
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          cancel_others: 'false'
+          paths_ignore: '["**.md"]'
 
-    - uses: actions/checkout@v4
-      if: steps.skip_check.outputs.should_skip != 'true'
-      with:
-        submodules: 'recursive'
+      - uses: actions/checkout@v4
+        if: steps.skip_check.outputs.should_skip != 'true'
+        with:
+          submodules: 'recursive'
 
-    - name: Add MSBuild to PATH
-      if: steps.skip_check.outputs.should_skip != 'true'
-      uses: microsoft/setup-msbuild@v2
+      - name: Add MSBuild to PATH
+        if: steps.skip_check.outputs.should_skip != 'true'
+        uses: microsoft/setup-msbuild@v2
 
-    - name: Setup VSTest Path
-      if: steps.skip_check.outputs.should_skip != 'true'
-      uses: darenm/Setup-VSTest@v1
+      - name: Setup VSTest Path
+        if: steps.skip_check.outputs.should_skip != 'true'
+        uses: darenm/Setup-VSTest@v1
 
-    - name: Restore NuGet packages
-      if: steps.skip_check.outputs.should_skip != 'true'
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+      - name: Restore NuGet packages
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Build
-      if: steps.skip_check.outputs.should_skip != 'true'
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      # Add additional options to the MSBuild command line here (like platform or verbosity level).
-      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Analysis='True' ${{env.SOLUTION_FILE_PATH}}
+      - name: Build
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        # Add additional options to the MSBuild command line here (like platform or verbosity level).
+        # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+        run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Analysis='True' ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Run Basic Unit Tests
-      if: steps.skip_check.outputs.should_skip != 'true'
-      working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0
-      run: vstest.console.exe Tests.dll /Logger:trx
+      - name: Run Basic Unit Tests
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0
+        run: vstest.console.exe Tests.dll /Logger:trx
 
-    - name: Dump memory usage
-      if: steps.skip_check.outputs.should_skip != 'true'
-      working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0/TestResults
-      run: findstr bytes *.trx
+      - name: Dump memory usage
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0/TestResults
+        run: findstr bytes *.trx
 
-    - name: Upload GedValidate binary
-      if: steps.skip_check.outputs.should_skip != 'true'
-      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
-      with:
-        name: Windows ${{matrix.configurations}} GedValidate
-        path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/
-        retention-days: 5
+      - name: Upload GedValidate binary
+        if: steps.skip_check.outputs.should_skip != 'true'
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+        with:
+          name: Windows ${{env.BUILD_CONFIGURATION}} GedValidate
+          path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/
+          retention-days: 5
