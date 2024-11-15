@@ -41,6 +41,20 @@ jobs:
         if: steps.skip_check.outputs.should_skip != 'true'
         with:
           submodules: 'recursive'
+          # fetch-depth of 0 means to fetch the entire history not just the latest commit,
+          # and this is necessary when a workflow is triggered by something other than pushing a tag
+          fetch-depth: 0
+
+      - name: Get previous tag
+        if: steps.skip_check.outputs.should_skip != 'true'
+        id: prev_tag
+        run: |
+          echo "::set-output name=prevtag::$(git describe --tags --abbrev=0 HEAD^1)"
+
+      - name: DEBUG echo previous tag
+        if: steps.skip_check.outputs.should_skip != 'true'
+        run: |
+          echo "prevtag: ${{steps.prev_tag.outputs.prevtag}}"
 
       - name: Add MSBuild to PATH
         if: steps.skip_check.outputs.should_skip != 'true'
@@ -67,12 +81,8 @@ jobs:
         working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0
         run: vstest.console.exe Tests.dll /Logger:trx
 
-      - name: Get previous tag
-        id: prev_tag
-        run: |
-          echo "::set-output name=prev-tag::$(git describe --tags --abbrev=0 HEAD^1)"
-
       - name: Generate release notes
+        if: steps.skip_check.outputs.should_skip != 'true'
         id: generate_notes
         uses: actions/github-script@v7
         with:
@@ -93,9 +103,10 @@ jobs:
 
             return notes;
         env:
-          PREV_TAG: ${{ steps.prev_tag.outputs['prev-tag'] }}
+          PREV_TAG: ${{ steps.prev_tag.outputs.prevtag }}
 
       - name: Create GitHub Release
+        if: steps.skip_check.outputs.should_skip != 'true'
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -108,6 +119,7 @@ jobs:
           prerelease: false
 
       - name: Upload Release Assets
+        if: steps.skip_check.outputs.should_skip != 'true'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
