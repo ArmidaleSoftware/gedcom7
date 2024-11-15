@@ -129,6 +129,7 @@ namespace Gedcom7
         public Dictionary<string, GedcomStructureCountInfo> Superstructures { get; private set; }
 
         static Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
+        static Dictionary<string, string> s_StructureSchemaAliases = new System.Collections.Generic.Dictionary<string, string>();
         static Dictionary<string, GedcomStructureSchema> s_StructureSchemasByUri = new Dictionary<string, GedcomStructureSchema>();
 
         public const string RecordSuperstructureUri = "TOP";
@@ -140,13 +141,44 @@ namespace Gedcom7
         /// <param name="superstructureUri">null (wildcard) for undocumented tags, RecordSuperstructureUri for records, else URI of superstructure schema</param>
         /// <param name="tag">Tag</param>
         /// <param name="schema">Schema</param>
-        static void AddSchema(string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
+        public static void AddSchema(string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
         {
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
             structureSchemaKey.SourceProgram = sourceProgram;
             structureSchemaKey.SuperstructureUri = superstructureUri;
             structureSchemaKey.Tag = tag;
             Debug.Assert(!s_StructureSchemas.ContainsKey(structureSchemaKey));
+            s_StructureSchemas[structureSchemaKey] = schema;
+        }
+
+        /// <summary>
+        /// Add a schema.
+        /// </summary>
+        /// <param name="sourceProgram">null (wildcard) for standard tags, else extension</param>
+        /// <param name="tag">Tag</param>
+        /// <param name="uri">Structure URI</param>
+        public static void AddSchema(string sourceProgram, string tag, string uri)
+        {
+            GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
+            structureSchemaKey.SourceProgram = sourceProgram;
+            // Leave SuperstructureUri as null for a wildcard.
+            structureSchemaKey.Tag = tag;
+
+            // The spec says:
+            //    "The schema structure may contain the same tag more than once with different URIs.
+            //    Reusing tags in this way must not be done unless the concepts identified by those
+            //    URIs cannot appear in the same place in a dataset..."
+            // But for now we just overwrite it in the index for SCHMA defined schemas.
+
+            if (s_StructureSchemasByUri.ContainsKey(uri))
+            {
+                // This is an alias.
+                s_StructureSchemaAliases[tag] = uri;
+                return;
+            }
+
+            var schema = new GedcomStructureSchema(sourceProgram, tag);
+            schema.Uri = uri;
             s_StructureSchemas[structureSchemaKey] = schema;
         }
 
@@ -228,9 +260,20 @@ namespace Gedcom7
                 return s_StructureSchemas[structureSchemaKey];
             }
 
+            // Now look for a schema alias defined in HEAD.SCHMA.
+            GedcomStructureSchema schema;
+            if (s_StructureSchemaAliases.ContainsKey(tag))
+            {
+                string uri = s_StructureSchemaAliases[tag];
+                if (s_StructureSchemasByUri.TryGetValue(uri, out schema))
+                {
+                    return schema;
+                }
+            }
+
             // Create a new schema for it.
             structureSchemaKey.SuperstructureUri = superstructureUri;
-            var schema = new GedcomStructureSchema(sourceProgram, tag);
+            schema = new GedcomStructureSchema(sourceProgram, tag);
             s_StructureSchemas[structureSchemaKey] = schema;
             return s_StructureSchemas[structureSchemaKey];
         }

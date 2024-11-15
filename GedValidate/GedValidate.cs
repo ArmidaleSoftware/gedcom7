@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Gedcom7
 {
@@ -27,11 +29,12 @@ namespace Gedcom7
             {
                 Console.WriteLine($"Stopped after {MAX_ERRORS} errors");
             }
+            Console.WriteLine();
         }
 
-        static int ValidateGedcom(string sourcePath)
+        static int ValidateGedcom(string sourcePath, string gedcomRegistriesPath)
         {
-            var gedcomFile = new GedcomFile();
+            var gedcomFile = new GedcomFile(gedcomRegistriesPath);
             List<string> errors = gedcomFile.LoadFromPath(sourcePath);
 
             if (errors.Count < MAX_ERRORS)
@@ -43,10 +46,10 @@ namespace Gedcom7
             return errors.Count;
         }
 
-        static int ValidateGedzip(string sourcePath)
+        static int ValidateGedzip(string sourcePath, string gedcomRegistriesPath)
         {
             List<string> errors;
-            using (var gedzipFile = new GedzipFile())
+            using (var gedzipFile = new GedzipFile(gedcomRegistriesPath))
             {
                 errors = gedzipFile.LoadFromPath(sourcePath);
                 if (errors.Count < MAX_ERRORS)
@@ -59,24 +62,69 @@ namespace Gedcom7
             return errors.Count;
         }
 
-        static int Main(string[] args)
+        static int ValidateFile(string sourcePath, string gedcomRegistriesPath)
         {
-            if (args.Length != 1)
-            {
-                Console.WriteLine("usage: GedValidate <filename>");
-                Console.WriteLine("          to check a file as being a valid FamilySearch GEDCOM 7 or GEDZIP file");
-                return 1;
-            }
-
-            string sourcePath = args[0];
+            Console.WriteLine($"Validating {sourcePath}:");
             if (sourcePath.EndsWith(".gdz", System.StringComparison.InvariantCultureIgnoreCase))
             {
-                return ValidateGedzip(sourcePath);
+                return ValidateGedzip(sourcePath, gedcomRegistriesPath);
             }
             else
             {
-                return ValidateGedcom(sourcePath);
+                return ValidateGedcom(sourcePath, gedcomRegistriesPath);
             }
+        }
+
+        static int ShowHelp()
+        {
+            Console.WriteLine("usage: GedValidate <gedcomRegistriesPath> <filename>");
+            Console.WriteLine("          to check a file as being a valid FamilySearch GEDCOM 7 or GEDZIP file");
+            Console.WriteLine("          <gedcomRegistriesPath> must be a local path to the GEDCOM-registries repository");
+            return 1;
+        }
+
+        static int Main(string[] args)
+        {
+            if (args.Length != 2)
+            {
+                return ShowHelp();
+            }
+
+            string gedcomRegistriesPath = args[0];
+            string sourcePath = args[1];
+            string searchPattern = @"(?i).*\.(ged|gdz)$"; // Case-insensitive regex pattern for .ged or .gdz files
+
+            try
+            {
+                if (File.Exists(sourcePath))
+                {
+                    // If the path is a file, check if it matches the pattern
+                    if (Regex.IsMatch(Path.GetFileName(sourcePath), searchPattern))
+                    {
+                        return ValidateFile(sourcePath, gedcomRegistriesPath);
+                    }
+                }
+                else if (Directory.Exists(sourcePath))
+                {
+                    // If the path is a directory, enumerate files matching the pattern
+                    string[] files = Directory.GetFiles(sourcePath);
+                    int errors = 0;
+                    foreach (string file in files)
+                    {
+                        if (Regex.IsMatch(Path.GetFileName(file), searchPattern))
+                        {
+                            errors += ValidateFile(file, gedcomRegistriesPath);
+                        }
+                    }
+                    return errors;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                return 1;
+            }
+            return ShowHelp();
         }
     }
 }

@@ -48,14 +48,17 @@ namespace Gedcom7
         public int Level { get; private set; }
         public string Xref { get; private set; }
         public GedcomStructureSchema Schema { get; private set; }
+        public string StandardTag => this.Schema?.StandardTag;
+        private string _tag;
         public string Tag
         {
             get
             {
-                return this.Schema?.StandardTag;
+                return _tag;
             }
             set
             {
+                _tag = value;
                 string sourceProgram = this.File.SourceProduct?.LineVal;
                 string superstructureUri = (this.Level == 0) ? GedcomStructureSchema.RecordSuperstructureUri : this.Superstructure?.Schema?.Uri;
                 this.Schema = GedcomStructureSchema.GetSchema(sourceProgram, superstructureUri, value);
@@ -138,13 +141,17 @@ namespace Gedcom7
             }
 
             // See if this is an undocumented extension structure.
-            if (this.IsExtensionTag && !this.Schema.IsDocumented)
+            // TODO: Right now, any non-standard structure that was added in the SCHMA section
+            // is treated as undocumented since we don't resolve the URI, we only get
+            // sub/super-structures from GEDCOM-registries.
+            if (this.IsExtensionTag && /* !this.Schema.IsDocumented */ !this.Schema.IsStandard)
             {
                 return null;
             }
 
             // See if the superstructure is an undocumented extension structure.
-            if (this.Superstructure.IsExtensionTag && !this.Superstructure.Schema.IsDocumented)
+            // TODO: same as above TODO.
+            if (this.Superstructure.IsExtensionTag && !this.Superstructure.Schema.IsStandard /* !this.Superstructure.Schema.IsDocumented */)
             {
                 return null;
             }
@@ -265,7 +272,8 @@ namespace Gedcom7
         }
 
         /// <summary>
-        /// Test whether a given string is a valid media type.
+        /// Test whether a given string is a valid media type as
+        /// defined in RFC 2045 section 5.1.
         /// </summary>
         /// <param name="value">String to test</param>
         /// <returns>true if valid, false if not</returns>
@@ -282,7 +290,7 @@ namespace Gedcom7
                     slashes++;
                     token_offset = i + 1;
                 }
-                else if (!Char.IsLetterOrDigit(c) && !(i == token_offset + 1 && c == '-'))
+                else if (!(Char.IsLetterOrDigit(c) || ".+".Contains(c)) && !(i == token_offset + 1 && c == '-'))
                 {
                     return false;
                 }
@@ -313,8 +321,11 @@ namespace Gedcom7
         /// <returns>true if valid, false if not</returns>
         private static bool IsValidAge(string value)
         {
-            if (value == null || value.Length == 0) return false;
-            Regex regex = new Regex(@"^([<>])?(\d+y( \d+m)?( \d+w)?( \d+d)?|\d+m( \d+w)?( \d+d)?|\d+w( \d+d)?|\d+d)$");
+            if (value == null || value.Length == 0)
+            {
+                return true;
+            }
+            Regex regex = new Regex(@"^([<>] )?(\d+y( \d+m)?( \d+w)?( \d+d)?|\d+m( \d+w)?( \d+d)?|\d+w( \d+d)?|\d+d)$");
             return regex.IsMatch(value);
         }
 
@@ -375,7 +386,7 @@ namespace Gedcom7
             CalendarSchema calendarSchema = CalendarSchema.GetCalendarByTag(calendar);
 
             // See if month is in the list.
-            if (!string.IsNullOrEmpty(month) && !calendarSchema.IsValidMonth(month))
+            if (!string.IsNullOrEmpty(month) && !calendarSchema.IsValidMonth(month) && !month.StartsWith('_'))
             {
                 return false;
             }
@@ -692,6 +703,11 @@ namespace Gedcom7
                             break;
                         }
                     case null:
+                        if (!this.Schema.IsStandard) // TODO: IsDocumented and resolved
+                        {
+                            // We can't tell whether an empty payload is legal or not.
+                            break;
+                        }
                         if (this.LineVal != null)
                         {
                             return ErrorMessage(this.Tag + " payload must be null");
@@ -704,6 +720,14 @@ namespace Gedcom7
                         }
                         break;
                     case "http://www.w3.org/2001/XMLSchema#string":
+                        if ((this.Schema.Uri == "https://gedcom.io/terms/v7/TAG") && (tokens.Length > 3))
+                        {
+                            string sourceProgram = this.File.SourceProduct?.LineVal ?? "Unknown";
+                            string tag = tokens[2];
+                            string uri = tokens[3];
+                            GedcomStructureSchema.AddSchema(sourceProgram, tag, uri);
+                            break;
+                        }
                         // We currently don't do any further validation.
                         break;
                     case "https://gedcom.io/terms/v7/type-Date#exact":
