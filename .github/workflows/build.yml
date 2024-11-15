@@ -77,6 +77,12 @@ jobs:
         working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0
         run: vstest.console.exe Tests.dll /Logger:trx
 
+      - name: Validate GEDCOM.io test files
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/
+        run: |
+          .\GedValidate.exe ${{github.workspace}}\external\GEDCOM-registries ${{github.workspace}}\external\GEDCOM-registries\registry_tools\GEDCOM.io\testfiles\gedcom70\
+
       - name: Dump memory usage
         if: steps.skip_check.outputs.should_skip != 'true'
         working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0/TestResults
