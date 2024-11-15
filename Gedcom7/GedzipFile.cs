@@ -9,8 +9,17 @@ namespace Gedcom7
 {
     public class GedzipFile : IDisposable
     {
+        /// <summary>
+        /// Initializes a new instance of the GedzipFile class.
+        /// </summary>
+        /// <param name="gedcomRegistriesPath">Optional path to GEDCOM registries. If null, default registries will be used.</param>
+
         public GedzipFile(string gedcomRegistriesPath = null)
         {
+            if (gedcomRegistriesPath != null && !Directory.Exists(gedcomRegistriesPath))
+            {
+                throw new DirectoryNotFoundException($"GEDCOM registries directory not found: {gedcomRegistriesPath}");
+            }
             GedcomRegistriesPath = gedcomRegistriesPath;
         }
 

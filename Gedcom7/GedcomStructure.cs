@@ -49,7 +49,7 @@ namespace Gedcom7
         public string Xref { get; private set; }
         public GedcomStructureSchema Schema { get; private set; }
         public string StandardTag => this.Schema?.StandardTag;
-        private string _tag { get; set; }
+        private string _tag;
         public string Tag
         {
             get

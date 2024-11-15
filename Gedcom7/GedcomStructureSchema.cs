@@ -261,15 +261,19 @@ namespace Gedcom7
             }
 
             // Now look for a schema alias defined in HEAD.SCHMA.
+            GedcomStructureSchema schema;
             if (s_StructureSchemaAliases.ContainsKey(tag))
             {
                 string uri = s_StructureSchemaAliases[tag];
-                return s_StructureSchemasByUri[uri];
+                if (s_StructureSchemasByUri.TryGetValue(uri, out schema))
+                {
+                    return schema;
+                }
             }
 
             // Create a new schema for it.
             structureSchemaKey.SuperstructureUri = superstructureUri;
-            var schema = new GedcomStructureSchema(sourceProgram, tag);
+            schema = new GedcomStructureSchema(sourceProgram, tag);
             s_StructureSchemas[structureSchemaKey] = schema;
             return s_StructureSchemas[structureSchemaKey];
         }
