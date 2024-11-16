@@ -54,13 +54,27 @@ jobs:
       - name: DEBUG echo previous tag
         if: steps.skip_check.outputs.should_skip != 'true'
         run: |
-          echo "prevtag: ${{steps.prev_tag.outputs.prevtag}}"
+          echo "::notice::Previous tag: ${{steps.prev_tag.outputs.prevtag}}"
+
+      - name: Generate release notes
+        if: steps.skip_check.outputs.should_skip != 'true'
+        id: generate_notes
+        shell: pwsh
+        run: |
+          $PREV_TAG = "${{ steps.prev_tag.outputs.prevtag }}"
+          $CURRENT_TAG = $env:GITHUB_REF.Split('/')[-1]
+          echo "## Changes since $PREV_TAG" > RELEASE_NOTES.md
+          git log $PREV_TAG..$CURRENT_TAG --pretty=format:"- %s ([%h](%H))" >> RELEASE_NOTES.md
+
+      - name: DEBUG show release notes
+        if: steps.skip_check.outputs.should_skip != 'true'
+        run: type .\RELEASE_NOTES.md
 
       - name: Add MSBuild to PATH
         if: steps.skip_check.outputs.should_skip != 'true'
         uses: microsoft/setup-msbuild@v2
 
-      - name: Setup VSTest Path
+      - name: Set up VSTest Path
         if: steps.skip_check.outputs.should_skip != 'true'
         uses: darenm/Setup-VSTest@v1
 
@@ -81,40 +95,17 @@ jobs:
         working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0
         run: vstest.console.exe Tests.dll /Logger:trx
 
-      - name: Generate release notes
-        if: steps.skip_check.outputs.should_skip != 'true'
-        id: generate_notes
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const previousTag = process.env.PREV_TAG;
-            const currentTag = context.ref.replace('refs/tags/', '');
-            const { data: commits } = await github.repos.compareCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              base: previousTag,
-              head: currentTag
-            });
-
-            let notes = `## Changes since ${previousTag}\n`;
-            commits.commits.forEach(commit => {
-              notes += `- ${commit.commit.message} ([${commit.sha.substring(0, 7)}](${commit.html_url}))\n`;
-            });
-
-            return notes;
-        env:
-          PREV_TAG: ${{ steps.prev_tag.outputs.prevtag }}
-
       - name: Create GitHub Release
         if: steps.skip_check.outputs.should_skip != 'true'
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_TAG: $env:GITHUB_REF.Split('/')[-1]
         with:
-          tag_name: ${{ github.ref }}
+          tag_name: $CURRENT_TAG
           release_name: Release ${{ github.ref }}
-          body: ${{ steps.generate_notes.outputs.result }}
+          body_path: ./RELEASE_NOTES.md
           draft: false
           prerelease: false
 
