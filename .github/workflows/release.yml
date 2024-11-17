@@ -112,7 +112,7 @@ jobs:
       - name: Zip the directory
         shell: pwsh
         run: |
-          $source = "${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/"
+          $source = "${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/*"
           $destination = "${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/Windows-${{env.BUILD_CONFIGURATION}}-GedValidate.zip"
           Compress-Archive -Path $source -DestinationPath $destination
 
