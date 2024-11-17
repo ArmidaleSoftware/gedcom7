@@ -51,11 +51,6 @@ jobs:
         run: |
           echo "::set-output name=prevtag::$(git describe --tags --abbrev=0 HEAD^1)"
 
-      - name: DEBUG echo previous tag
-        if: steps.skip_check.outputs.should_skip != 'true'
-        run: |
-          echo "::notice::Previous tag: ${{steps.prev_tag.outputs.prevtag}}"
-
       - name: Generate release notes
         if: steps.skip_check.outputs.should_skip != 'true'
         id: generate_notes
@@ -63,6 +58,10 @@ jobs:
         run: |
           $PREV_TAG = "${{ steps.prev_tag.outputs.prevtag }}"
           $CURRENT_TAG = $env:GITHUB_REF.Split('/')[-1]
+
+          # Set env.CURRENT_TAG for subsequent steps. See
+          # https://stackoverflow.com/questions/71333335/github-action-set-github-env-not-saving
+          Add-Content -Path ${env:GITHUB_ENV} -Value "CURRENT_TAG=$CURRENT_TAG"
 
           # Handle first release case
           if ([string]::IsNullOrEmpty($PREV_TAG)) {
@@ -73,8 +72,8 @@ jobs:
 
           # Validate tags exist
           try {
-              git rev-parse $PREV_TAG > $null
-              git rev-parse $CURRENT_TAG > $null
+              git rev-parse "$PREV_TAG" > $null
+              git rev-parse "$CURRENT_TAG" > $null
           } catch {
               echo "Error: Invalid tags"
               exit 1
@@ -82,9 +81,9 @@ jobs:
 
           echo "## Changes since $PREV_TAG" > RELEASE_NOTES.md
           # Format commit messages, handle multi-line messages and escape markdown
-          git log --pretty=format:"- %s ([%h](%H))" $PREV_TAG..$CURRENT_TAG >> RELEASE_NOTES.md
+          git log --pretty=format:"- %s ([%h](%H))" "$PREV_TAG..$CURRENT_TAG" >> RELEASE_NOTES.md
 
-      - name: DEBUG Show release notes
+      - name: Show release notes
         if: steps.skip_check.outputs.should_skip != 'true'
         run: |
           type .\RELEASE_NOTES.md
@@ -120,7 +119,6 @@ jobs:
         uses: actions/create-release@0cb9c9b65d5d1901c1f53e5e66eaf4afd635f39c  # v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CURRENT_TAG: $env:GITHUB_REF.Split('/')[-1]
         with:
           tag_name: ${{ env.CURRENT_TAG }}
           release_name: Release ${{ github.ref }}
