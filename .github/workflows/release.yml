@@ -63,12 +63,31 @@ jobs:
         run: |
           $PREV_TAG = "${{ steps.prev_tag.outputs.prevtag }}"
           $CURRENT_TAG = $env:GITHUB_REF.Split('/')[-1]
-          echo "## Changes since $PREV_TAG" > RELEASE_NOTES.md
-          git log $PREV_TAG..$CURRENT_TAG --pretty=format:"- %s ([%h](%H))" >> RELEASE_NOTES.md
 
-      - name: DEBUG show release notes
+          # Handle first release case
+          if ([string]::IsNullOrEmpty($PREV_TAG)) {
+              echo "## Initial Release" > RELEASE_NOTES.md
+              git log --pretty=format:"- %s ([%h](%H))" >> RELEASE_NOTES.md
+              exit 0
+          }
+
+          # Validate tags exist
+          try {
+              git rev-parse $PREV_TAG > $null
+              git rev-parse $CURRENT_TAG > $null
+          } catch {
+              echo "Error: Invalid tags"
+              exit 1
+          }
+
+          echo "## Changes since $PREV_TAG" > RELEASE_NOTES.md
+          # Format commit messages, handle multi-line messages and escape markdown
+          git log --pretty=format:"- %s ([%h](%H))" $PREV_TAG..$CURRENT_TAG >> RELEASE_NOTES.md
+
+      - name: DEBUG Show release notes
         if: steps.skip_check.outputs.should_skip != 'true'
-        run: type .\RELEASE_NOTES.md
+        run: |
+          type .\RELEASE_NOTES.md
 
       - name: Add MSBuild to PATH
         if: steps.skip_check.outputs.should_skip != 'true'
@@ -98,12 +117,12 @@ jobs:
       - name: Create GitHub Release
         if: steps.skip_check.outputs.should_skip != 'true'
         id: create_release
-        uses: actions/create-release@v1
+        uses: actions/create-release@0cb9c9b65d5d1901c1f53e5e66eaf4afd635f39c  # v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CURRENT_TAG: $env:GITHUB_REF.Split('/')[-1]
         with:
-          tag_name: $CURRENT_TAG
+          tag_name: ${{ env.CURRENT_TAG }}
           release_name: Release ${{ github.ref }}
           body_path: ./RELEASE_NOTES.md
           draft: false
@@ -111,7 +130,7 @@ jobs:
 
       - name: Upload Release Assets
         if: steps.skip_check.outputs.should_skip != 'true'
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@e8f9f06c4b078e705bd2ea027f0926603fc9b4d5  # v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

@@ -37,7 +37,8 @@ jobs:
       BUILD_CONFIGURATION: ${{matrix.configurations}}
 
     steps:
-      - uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7  # v2.10.1
+      - name: Harden Runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7  # v2.10.1
         with:
           egress-policy: audit
 
@@ -47,7 +48,7 @@ jobs:
           cancel_others: 'false'
           paths_ignore: '["**.md"]'
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871  # v4.2.1
         if: steps.skip_check.outputs.should_skip != 'true'
         with:
           submodules: 'recursive'
@@ -66,27 +67,65 @@ jobs:
         run: |
           Write-Host "GITHUB_REF: $env:GITHUB_REF"
 
-      - name: DEBUG Set CURRENT_TAG environment variable
+      # https://stackoverflow.com/questions/71333335/github-action-set-github-env-not-saving
+      - name: DEBUG Set CURRENT_TAG environment variable in pwsh
         shell: pwsh
         run: |
           $CURRENT_TAG = $env:GITHUB_REF.Split('/')[-1]
-          echo "CURRENT_TAG=$CURRENT_TAG" >> $GITHUB_ENV
           echo "CURRENT_TAG is $CURRENT_TAG"
+          echo "MY_ENV_VAR=myValue" >> $GITHUB_ENV
+          Add-Content -Path ${env:GITHUB_ENV} -Value "CURRENT_TAG=$CURRENT_TAG"
+
+      - name: DEBUG Set environment variable in cmd
+        shell: cmd
+        run: |
+          printf "sleep_state2=purple" >> %GITHUB_ENV%
+
+      - name: DEBUG Set in bash
+        shell: bash
+        run: |
+          echo "action_state=yellow" >> $GITHUB_ENV
+
+      - name: DEBUG Show CURRENT_TAG value in pwsh
+        shell: pwsh
+        run: |
+          echo "env action_state is ${{ env.action_state }}"
+          echo "env CURRENT_TAG is ${{ env.CURRENT_TAG }}"
+          echo "env MY_ENV_VAR is ${{ env.MY_ENV_VAR }}"
+          echo "env sleep_state1 is ${{ env.sleep_state1 }}"
+          echo "env sleep_state2 is ${{ env.sleep_state2 }}"
 
       - name: DEBUG Show CURRENT_TAG value in bash
-        run: echo "CURRENT_TAG is $CURRENT_TAG"
         shell: bash
+        run: |
+          echo "MY_ENV_VAR is $MY_ENV_VAR"
+          echo "CURRENT_TAG is $CURRENT_TAG"
+          echo "action_state is $action_state"
+          echo "sleep_state1 is $sleep_state1"
+          echo "sleep_state2 is $sleep_state2"
+          echo "env action_state is ${{ env.action_state }}"
+          echo "env CURRENT_TAG is ${{ env.CURRENT_TAG }}"
+          echo "env MY_ENV_VAR is ${{ env.MY_ENV_VAR }}"
+          echo "env sleep_state1 is ${{ env.sleep_state1 }}"
+          echo "env sleep_state2 is ${{ env.sleep_state2 }}"
 
       - name: DEBUG Show CURRENT_TAG value in cmd
-        run: |
-          echo "CURRENT_TAG is %CURRENT_TAG%"
-          echo "env CURRENT_TAG is ${{ env.CURRENT_TAG }}"
         shell: cmd
+        run: |
+          echo "MY_ENV_VAR is %MY_ENV_VAR%"
+          echo "CURRENT_TAG is %CURRENT_TAG%"
+          echo "action_state is %action_state%"
+          echo "sleep_state1 is %sleep_state1%"
+          echo "sleep_state2 is %sleep_state2%"
+          echo "env CURRENT_TAG is ${{ env.CURRENT_TAG }}"
+          echo "env MY_ENV_VAR is ${{ env.MY_ENV_VAR }}"
+          echo "env action_state is ${{ env.action_state }}"
+          echo "env sleep_state1 is ${{ env.sleep_state1 }}"
+          echo "env sleep_state2 is ${{ env.sleep_state2 }}"
 
       - name: DEBUG echo previous tag
         if: steps.skip_check.outputs.should_skip != 'true'
         run: |
-          echo "::notice::Previous tag: ${{steps.prev_tag.outputs.prevtag}}"
           echo "::notice::Previous tag: ${{steps.prev_tag.outputs.prevtag}}"
 
       - name: DEBUG Generate release notes
@@ -94,10 +133,15 @@ jobs:
         id: generate_notes
         shell: pwsh
         run: |
-          $PREV_TAG = "${{ steps.prev_tag.outputs.prevtag }}"
-          $CURRENT_TAG = $env:CURRENT_TAG
-          echo "## Changes since $PREV_TAG" > RELEASE_NOTES.md
-          git log $PREV_TAG..$CURRENT_TAG --pretty=format:"- %s ([%h](%H))" >> RELEASE_NOTES.md
+          echo "## Initial Release" > RELEASE_NOTES.md
+          git log --pretty=format:"- %s ([%h](%H))" >> RELEASE_NOTES.md
+          #$PREV_TAG = "${{ steps.prev_tag.outputs.prevtag }}"
+          #$CURRENT_TAG = $env:CURRENT_TAG
+          #echo "::notice::Previous tag: ${{steps.prev_tag.outputs.prevtag}}"
+          #echo "PREV_TAG is $PREV_TAG"
+          #echo "CURRENT_TAG is $CURRENT_TAG"
+          #echo "## Changes since $PREV_TAG" > RELEASE_NOTES.md
+          #git log --pretty=format:"- %s ([%h](%H))" $PREV_TAG..$CURRENT_TAG >> RELEASE_NOTES.md
 
       - name: DEBUG Show release notes
         if: steps.skip_check.outputs.should_skip != 'true'
@@ -108,7 +152,7 @@ jobs:
         if: steps.skip_check.outputs.should_skip != 'true'
         uses: microsoft/setup-msbuild@v2
 
-      - name: Setup VSTest Path
+      - name: Set up VSTest Path
         if: steps.skip_check.outputs.should_skip != 'true'
         uses: darenm/Setup-VSTest@v1
 
