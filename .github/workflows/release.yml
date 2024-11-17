@@ -51,16 +51,49 @@ jobs:
         run: |
           echo "::set-output name=prevtag::$(git describe --tags --abbrev=0 HEAD^1)"
 
-      - name: DEBUG echo previous tag
+      - name: Generate release notes
         if: steps.skip_check.outputs.should_skip != 'true'
+        id: generate_notes
+        shell: pwsh
         run: |
-          echo "prevtag: ${{steps.prev_tag.outputs.prevtag}}"
+          $PREV_TAG = "${{ steps.prev_tag.outputs.prevtag }}"
+          $CURRENT_TAG = "${{ github.ref_name }}"
+
+          # Set env.CURRENT_TAG for subsequent steps. See
+          # https://stackoverflow.com/questions/71333335/github-action-set-github-env-not-saving
+          Add-Content -Path ${env:GITHUB_ENV} -Value "CURRENT_TAG=$CURRENT_TAG"
+
+          # Handle first release case
+          if ([string]::IsNullOrEmpty($PREV_TAG)) {
+              echo "## Initial Release" > RELEASE_NOTES.md
+              git log --pretty=format:"- %s ([%h](%H))" >> RELEASE_NOTES.md
+              exit 0
+          }
+
+          # Validate tags exist
+          try {
+              git rev-parse "$PREV_TAG" > $null
+              git rev-parse "$CURRENT_TAG" > $null
+          } catch {
+              echo "Error: Invalid tags"
+              exit 1
+          }
+
+          echo "## Changes since $PREV_TAG" > RELEASE_NOTES.md
+          # Format commit messages, handle multi-line messages and escape markdown
+          git log --pretty=format:"- %s ([%h](%H))" "$PREV_TAG..$CURRENT_TAG" >> RELEASE_NOTES.md
+
+      - name: Show release notes
+        if: steps.skip_check.outputs.should_skip != 'true'
+        shell: pwsh
+        run: |
+          Get-Content .\RELEASE_NOTES.md
 
       - name: Add MSBuild to PATH
         if: steps.skip_check.outputs.should_skip != 'true'
         uses: microsoft/setup-msbuild@v2
 
-      - name: Setup VSTest Path
+      - name: Set up VSTest Path
         if: steps.skip_check.outputs.should_skip != 'true'
         uses: darenm/Setup-VSTest@v1
 
@@ -81,46 +114,22 @@ jobs:
         working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0
         run: vstest.console.exe Tests.dll /Logger:trx
 
-      - name: Generate release notes
-        if: steps.skip_check.outputs.should_skip != 'true'
-        id: generate_notes
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const previousTag = process.env.PREV_TAG;
-            const currentTag = context.ref.replace('refs/tags/', '');
-            const { data: commits } = await github.repos.compareCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              base: previousTag,
-              head: currentTag
-            });
-
-            let notes = `## Changes since ${previousTag}\n`;
-            commits.commits.forEach(commit => {
-              notes += `- ${commit.commit.message} ([${commit.sha.substring(0, 7)}](${commit.html_url}))\n`;
-            });
-
-            return notes;
-        env:
-          PREV_TAG: ${{ steps.prev_tag.outputs.prevtag }}
-
       - name: Create GitHub Release
         if: steps.skip_check.outputs.should_skip != 'true'
         id: create_release
-        uses: actions/create-release@v1
+        uses: actions/create-release@0cb9c9b65d5d1901c1f53e5e66eaf4afd635f39c  # v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: ${{ steps.generate_notes.outputs.result }}
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body_path: ./RELEASE_NOTES.md
           draft: false
           prerelease: false
 
       - name: Upload Release Assets
         if: steps.skip_check.outputs.should_skip != 'true'
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@e8f9f06c4b078e705bd2ea027f0926603fc9b4d5  # v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
