@@ -57,7 +57,7 @@ jobs:
         shell: pwsh
         run: |
           $PREV_TAG = "${{ steps.prev_tag.outputs.prevtag }}"
-          $CURRENT_TAG = $env:GITHUB_REF.Split('/')[-1]
+          $CURRENT_TAG = "${{ github.ref_name }}"
 
           # Set env.CURRENT_TAG for subsequent steps. See
           # https://stackoverflow.com/questions/71333335/github-action-set-github-env-not-saving
@@ -85,8 +85,9 @@ jobs:
 
       - name: Show release notes
         if: steps.skip_check.outputs.should_skip != 'true'
+        shell: pwsh
         run: |
-          type .\RELEASE_NOTES.md
+          Get-Content .\RELEASE_NOTES.md
 
       - name: Add MSBuild to PATH
         if: steps.skip_check.outputs.should_skip != 'true'
@@ -120,8 +121,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.CURRENT_TAG }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
           body_path: ./RELEASE_NOTES.md
           draft: false
           prerelease: false
