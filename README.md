@@ -10,7 +10,7 @@ It contains:
 The same Gedcom7 library is used by the online web site tools:
 - [GEDCOM 5.5.1 to 7.0 converter](https://magikeygedcomconverter.azurewebsites.net)
 - [GEDCOM Validator](https://magikeygedcomconverter.azurewebsites.net/Validate)
-- [FamilySearch GEDCOM 7 Compatability web tool](https://magikeygedcomconverter.azurewebsites.net/Compatability)
+- [FamilySearch GEDCOM 7 Compatibility web tool](https://magikeygedcomconverter.azurewebsites.net/Compatibility)
   which should give the same results as the GedCompare command-line tool here.
 
 # Prerequisites
