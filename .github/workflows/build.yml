@@ -91,7 +91,7 @@ jobs:
 
       - name: Upload GedValidate binary
         if: steps.skip_check.outputs.should_skip != 'true'
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b
         with:
           name: Windows ${{env.BUILD_CONFIGURATION}} GedValidate
           path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/
