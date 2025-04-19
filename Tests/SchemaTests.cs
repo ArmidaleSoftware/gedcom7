@@ -794,11 +794,11 @@ namespace Tests
         [TestMethod]
         public void ValidateExactDatePayloadType()
         {
-            // Try some valid name values.
+            // Try some valid date values.
             ValidateValidExactDatePayload("3 DEC 2023");
             ValidateValidExactDatePayload("03 DEC 2023");
 
-            // Try some invalid name values.
+            // Try some invalid date values.
             ValidateInvalidExactDatePayload("invalid");
             ValidateInvalidExactDatePayload("3 dec 2023");
             ValidateInvalidExactDatePayload("3 JUNE 2023");
@@ -1140,7 +1140,14 @@ namespace Tests
 0 @N1@ SNOTE Test
 1 MIME text/unknown
 0 TRLR
-", "Line 5: MIME payload must be text/plain or text/html");
+");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @N1@ SNOTE Test
+1 MIME image/unknown
+0 TRLR
+", "Line 5: MIME payload must be a text type");
         }
 
         /// <summary>
