@@ -787,9 +787,9 @@ namespace Gedcom7
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid media type");
                         }
-                        if (this.Tag == "MIME" && this.LineVal != "text/plain" && this.LineVal != "text/html")
+                        if (this.Tag == "MIME" && !this.LineVal.StartsWith("text/"))
                         {
-                            return ErrorMessage(this.Tag + " payload must be text/plain or text/html");
+                            return ErrorMessage(this.Tag + " payload must be a text type");
                         }
                         break;
                     case "http://www.w3.org/2001/XMLSchema#Language":
