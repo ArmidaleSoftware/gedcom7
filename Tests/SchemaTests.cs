@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
+using GedcomCommon;
 using Gedcom7;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System;
 
 namespace Tests
 {
@@ -17,12 +19,12 @@ namespace Tests
         [TestMethod]
         public void LoadStructureSchema()
         {
-            GedcomStructureSchema.LoadAll();
-            var schema = GedcomStructureSchema.GetSchema(null, GedcomStructureSchema.RecordSuperstructureUri, "HEAD");
+            GedcomStructureSchema.LoadAll(GedcomVersion.V70);
+            var schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, GedcomStructureSchema.RecordSuperstructureUri, "HEAD", false);
             Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/HEAD");
-            schema = GedcomStructureSchema.GetSchema(null, "https://gedcom.io/terms/v7/DATA-EVEN", "DATE");
+            schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, "https://gedcom.io/terms/v7/DATA-EVEN", "DATE", false);
             Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/DATA-EVEN-DATE");
-            schema = GedcomStructureSchema.GetSchema(null, "https://gedcom.io/terms/v7/HEAD", "DATE");
+            schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, "https://gedcom.io/terms/v7/HEAD", "DATE", false);
             Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/HEAD-DATE");
         }
 
@@ -643,7 +645,7 @@ namespace Tests
         {
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
+2 VERS 7.0
 0 @O1@ OBJE
 1 FILE foo
 2 FORM " + value + @"
@@ -1112,7 +1114,7 @@ namespace Tests
             // Validate a media type.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
+2 VERS 7.0
 0 @O1@ OBJE
 1 FILE foo
 2 FORM
@@ -1122,7 +1124,7 @@ namespace Tests
             // Validate FORM payload.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
+2 VERS 7.0
 0 @O1@ OBJE
 1 FILE foo
 2 FORM application/x-other
@@ -1136,14 +1138,14 @@ namespace Tests
 
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
+2 VERS 7.0
 0 @N1@ SNOTE Test
 1 MIME text/unknown
 0 TRLR
 ");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
+2 VERS 7.0
 0 @N1@ SNOTE Test
 1 MIME image/unknown
 0 TRLR

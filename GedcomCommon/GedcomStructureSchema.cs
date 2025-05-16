@@ -4,18 +4,17 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Yaml.Serialization;
 
-namespace Gedcom7
+namespace GedcomCommon
 {
     public struct GedcomStructureCountInfo
     {
         public bool Required; // True: Minimum = 1, False: Minimum = 0.
-        public bool Singleton; // True: Maximum = 1, False: Maximum = M.
+        public int Maximum; // 1, 3, int.MaxValue
         public override string ToString()
         {
-            return "{" + (Required ? "1" : "0") + ":" + (Singleton ? "1" : "M") + "}";
+            return "{" + (Required ? "1" : "0") + ":" + (Maximum == int.MaxValue ? "M" : Maximum.ToString()) + "}";
         }
     }
     public struct GedcomStructureSchemaKey
@@ -23,6 +22,9 @@ namespace Gedcom7
         public string SourceProgram; // null (wildcard) for standard tags.
         public string SuperstructureUri; // null (wildcard) for undocumented extensions, "-" for records.
         public string Tag;
+
+        // GEDCOM 5.5.1 can have two URIs per superstructure+tag pair, one for a pointer and a non-pointer.
+        public bool IsPointer;
         public override string ToString()
         {
             return SourceProgram + "|" + SuperstructureUri + "|" + Tag;
@@ -51,22 +53,27 @@ namespace Gedcom7
                     if (value == "{0:1}")
                     {
                         info.Required = false;
-                        info.Singleton = true;
+                        info.Maximum = 1;
                     }
                     else if (value == "{1:1}")
                     {
                         info.Required = true;
-                        info.Singleton = true;
+                        info.Maximum = 1;
                     }
                     else if (value == "{0:M}")
                     {
                         info.Required = false;
-                        info.Singleton = false;
+                        info.Maximum = int.MaxValue;
                     }
                     else if (value == "{1:M}")
                     {
                         info.Required = true;
-                        info.Singleton = false;
+                        info.Maximum = int.MaxValue;
+                    }
+                    else if (value == "{0:3}")
+                    {
+                        info.Required = false;
+                        info.Maximum = 3;
                     }
                     else
                     {
@@ -137,16 +144,18 @@ namespace Gedcom7
         /// <summary>
         /// Add a schema.
         /// </summary>
+        /// <param name="version">GEDCOM version</param>
         /// <param name="sourceProgram">null (wildcard) for standard tags, else extension</param>
         /// <param name="superstructureUri">null (wildcard) for undocumented tags, RecordSuperstructureUri for records, else URI of superstructure schema</param>
         /// <param name="tag">Tag</param>
         /// <param name="schema">Schema</param>
-        public static void AddSchema(string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
+        public static void AddSchema(GedcomVersion version, string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
         {
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
             structureSchemaKey.SourceProgram = sourceProgram;
             structureSchemaKey.SuperstructureUri = superstructureUri;
             structureSchemaKey.Tag = tag;
+            structureSchemaKey.IsPointer = (version == GedcomVersion.V551) && (schema.Payload != null) && schema.Payload.StartsWith('@');
             Debug.Assert(!s_StructureSchemas.ContainsKey(structureSchemaKey));
             s_StructureSchemas[structureSchemaKey] = schema;
         }
@@ -159,10 +168,11 @@ namespace Gedcom7
         /// <param name="uri">Structure URI</param>
         public static void AddSchema(string sourceProgram, string tag, string uri)
         {
-            GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
+            var structureSchemaKey = new GedcomStructureSchemaKey();
             structureSchemaKey.SourceProgram = sourceProgram;
             // Leave SuperstructureUri as null for a wildcard.
             structureSchemaKey.Tag = tag;
+            structureSchemaKey.IsPointer = false;
 
             // The spec says:
             //    "The schema structure may contain the same tag more than once with different URIs.
@@ -182,7 +192,7 @@ namespace Gedcom7
             s_StructureSchemas[structureSchemaKey] = schema;
         }
 
-        public static void LoadAll(string gedcomRegistriesPath = null)
+        public static void LoadAll(GedcomVersion version, string gedcomRegistriesPath = null)
         {
             if (s_StructureSchemas.Count > 0)
             {
@@ -190,7 +200,7 @@ namespace Gedcom7
             }
             if (gedcomRegistriesPath == null)
             {
-                var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 gedcomRegistriesPath = Path.Combine(baseDirectory, "../../../../../gedcom7/external/GEDCOM-registries");
             }
             var path = Path.Combine(gedcomRegistriesPath, "structure/standard");
@@ -204,13 +214,13 @@ namespace Gedcom7
                 s_StructureSchemasByUri[schema.Uri] = schema;
                 if (schema.Superstructures.Count == 0)
                 {
-                    AddSchema(null, RecordSuperstructureUri, schema.StandardTag, schema);
+                    AddSchema(version, null, RecordSuperstructureUri, schema.StandardTag, schema);
                 }
                 else
                 {
                     foreach (var superstructureUri in schema.Superstructures.Keys)
                     {
-                        AddSchema(null, superstructureUri, schema.StandardTag, schema);
+                        AddSchema(version, null, superstructureUri, schema.StandardTag, schema);
                     }
                 }
             }
@@ -223,16 +233,19 @@ namespace Gedcom7
         /// <summary>
         /// Get a GEDCOM structure schema.
         /// </summary>
+        /// <param name="version">GEDCOM version</param>
         /// <param name="sourceProgram">source program string, or null for wildcard</param>
         /// <param name="superstructureUri">superstructure URI, or null for wildcard</param>
-        /// <param name="tag"></param>
-        /// <returns></returns>
-        public static GedcomStructureSchema GetSchema(string sourceProgram, string superstructureUri, string tag)
+        /// <param name="tag">GEDCOM tag</param>
+        /// <param name="isPointer">True if payload is a pointer</param>
+        /// <returns>Schema object</returns>
+        public static GedcomStructureSchema GetSchema(GedcomVersion version, string sourceProgram, string superstructureUri, string tag, bool isPointer)
         {
             // First look for a schema with a wildcard source program.
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
             structureSchemaKey.SuperstructureUri = superstructureUri;
             structureSchemaKey.Tag = tag;
+            structureSchemaKey.IsPointer = (version == GedcomVersion.V551) ? isPointer : false;
             if (s_StructureSchemas.ContainsKey(structureSchemaKey))
             {
                 return s_StructureSchemas[structureSchemaKey];
