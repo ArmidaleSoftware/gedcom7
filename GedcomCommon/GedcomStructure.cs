@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Gedcom7
+namespace GedcomCommon
 {
     public class GedcomStructure
     {
@@ -61,7 +61,34 @@ namespace Gedcom7
                 _tag = value;
                 string sourceProgram = this.File.SourceProduct?.LineVal;
                 string superstructureUri = (this.Level == 0) ? GedcomStructureSchema.RecordSuperstructureUri : this.Superstructure?.Schema?.Uri;
-                this.Schema = GedcomStructureSchema.GetSchema(sourceProgram, superstructureUri, value);
+
+                string[] tokens = OriginalLine.Split(' ');
+                int index = 0;
+                GedcomVersion gedcomVersion = this.File.GedcomVersion;
+                if (gedcomVersion != GedcomVersion.V70)
+                {
+                    // Prior to GEDCOM 7, leading whitespace was allowed.
+                    while (tokens[index].Length == 0)
+                    {
+                        index++;
+                    }
+                }
+
+                // Skip level.
+                index++;
+
+                if ((tokens.Length > index) && (tokens[index].Length > 0) && (tokens[index][0] == '@'))
+                {
+                    // Skip Xref.
+                    index++;
+                }
+
+                // Skip tag.
+                index++;
+
+                bool isPointer = (tokens.Length > index) && (tokens[index].Length > 0) && IsPointer(tokens[index]);
+
+                this.Schema = GedcomStructureSchema.GetSchema(this.File.GedcomVersion, sourceProgram, superstructureUri, value, isPointer);
             }
         }
         public bool IsExtensionTag => (this.Tag.Length > 0) && (this.Tag[0] == '_');
@@ -218,12 +245,19 @@ namespace Gedcom7
                 {
                     // Missing required substructure.
                     errors.Add(ErrorMessage(this.Tag + " is missing a substructure of type " + uri));
+                    continue;
                 }
-                if (countInfo.Singleton && foundCount.ContainsKey(uri) &&
+                if ((countInfo.Maximum == 1) && foundCount.ContainsKey(uri) &&
                     (foundCount[uri] > 1))
                 {
                     // Contains multiple when only a singleton is permitted.
                     errors.Add(ErrorMessage(this.Tag + " does not permit multiple substructures of type " + uri));
+                    continue;
+                }
+                if (foundCount.ContainsKey(uri) && foundCount[uri] > countInfo.Maximum)
+                {
+                    errors.Add(ErrorMessage(this.Tag + " has too many substructures of type " + uri));
+                    continue;
                 }
             }
 
@@ -316,17 +350,44 @@ namespace Gedcom7
 
         /// <summary>
         /// Test whether a given string is a valid age.
+        /// TODO: use subclassing or interfaces instead of version param.
         /// </summary>
+        /// <param name="version">GEDCOM version</param>
         /// <param name="value">String to test</param>
         /// <returns>true if valid, false if not</returns>
-        private static bool IsValidAge(string value)
+        private static bool IsValidAge(GedcomVersion version, string value)
         {
             if (value == null || value.Length == 0)
             {
                 return true;
             }
-            Regex regex = new Regex(@"^([<>] )?(\d+y( \d+m)?( \d+w)?( \d+d)?|\d+m( \d+w)?( \d+d)?|\d+w( \d+d)?|\d+d)$");
-            return regex.IsMatch(value);
+
+            if (version == GedcomVersion.V70)
+            {
+                Regex regex = new Regex(@"^([<>] )?(\d+y( \d+m)?( \d+w)?( \d+d)?|\d+m( \d+w)?( \d+d)?|\d+w( \d+d)?|\d+d)$");
+                return regex.IsMatch(value);
+            }
+            else
+            {
+                // The GEDCOM 5.5.1 spec says:
+                // "All controlled line_value choices should be considered as case insensitive.
+                // This means that the values should be converted to all uppercase or all lowercase prior to comparing."
+                string lower = value.ToLower();
+
+                // GEDCOM 5.5.1 allows some specific words.
+                if (lower == "child" || lower == "infant" || lower == "stillborn")
+                {
+                    return true;
+                }
+
+                Regex regex = new Regex(@"^([<>])?(\d+y( \d+m)?( \d+w)?( \d+d)?|\d+m( \d+w)?( \d+d)?|\d+w( \d+d)?|\d+d)$");
+                if (regex.IsMatch(lower))
+                {
+                    return true;
+                }
+
+                return false;
+            }
         }
 
         /// <summary>
@@ -365,7 +426,7 @@ namespace Gedcom7
             return true;
         }
 
-        private static bool IsValidDate(string calendar, uint day, string month, uint year, string epoch)
+        private static bool IsValidDate(GedcomVersion version, string calendar, uint day, string month, uint year, string epoch)
         {
             if (calendar.StartsWith('_') || epoch.StartsWith('_'))
             {
@@ -381,7 +442,14 @@ namespace Gedcom7
             // Get calendar schema.
             if (string.IsNullOrEmpty(calendar))
             {
-                calendar = "GREGORIAN";
+                if (version == GedcomVersion.V70)
+                {
+                    calendar = "GREGORIAN";
+                }
+                else
+                {
+                    calendar = "@#DGREGORIAN@"; // GEDCOM 5.5.1 specific calendar tag.
+                }
             }
             CalendarSchema calendarSchema = CalendarSchema.GetCalendarByTag(calendar);
 
@@ -404,32 +472,31 @@ namespace Gedcom7
         private const string TagCharRegex = @"([A-Z0-9_])";
         private const string StdTagRegex = @"[A-Z]" + TagCharRegex + "*";
         private const string ExtTagRegex = @"_" + TagCharRegex + "+";
-        private const string CalendarRegex = @"(GREGORIAN|JULIAN|FRENCH_R|HEBREW|" + ExtTagRegex + ")";
+        private const string Calendar551Regex = @"(@#DGREGORIAN@|@#DJULIAN@|@#DFRENCH R@|@#DHEBREW@|@#DROMAN@|@#DUNKNOWN@)";
         private const string MonthRegex = @"(" + StdTagRegex + "|" + ExtTagRegex + ")";
-        private const string EpochRegex = @"(BCE|" + ExtTagRegex + ")";
-        private const string DateRegex = @"(" + CalendarRegex + @" )?(((\d{1,2}) )?" + MonthRegex + @" )?(\d{1,4})( " + EpochRegex + @")?";
+        private const string Epoch551Regex = @"(B.C.|" + ExtTagRegex + ")";
+        private const string DayRegex = @"((\d{1,2}) )?";
+        private const string YearRegex = @"(\d{1,4})(/(\d{2}))?";
+        private const string DateRegex = @"(" + Calendar551Regex + @" )?(" + DayRegex + MonthRegex + @" )?" + YearRegex + @"( " + Epoch551Regex + @")?";
 
         /// <summary>
         /// Test whether a given string is a valid date period.
+        /// TODO: use subclassing or an interface instead of using a version param.
         /// </summary>
+        /// <param name="version">GEDCOM version</param>
         /// <param name="value">String to test</param>
         /// <returns>true if valid, false if not</returns>
-        private static bool IsValidDatePeriod(string value)
+        private static bool IsValidDatePeriod(GedcomVersion version, string value)
         {
             // Empty payload is ok.
             if (value == null || value.Length == 0) return true;
 
             // Next check for a "TO" period.
-            Regex regex = new Regex("^TO " + DateRegex + "$");
+            var regex = new Regex("^TO " + DateRegex + "$");
             Match match = regex.Match(value);
             if (match.Success)
             {
-                string calendar = match.Groups[2].Value;
-                uint day = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
-                string month = match.Groups[7].Value;
-                uint year = uint.Parse(match.Groups[10].Value);
-                string epoch = match.Groups[12].Value;
-                return IsValidDate(calendar, day, month, year, epoch);
+                return IsValidDateRegex(version, match.Groups, 2);
             }
 
             // Check for a "FROM" and "TO" period.
@@ -439,20 +506,15 @@ namespace Gedcom7
             match = regex.Match(value);
             if (match.Success)
             {
-                string calendar1 = match.Groups[2].Value;
-                uint day1 = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
-                string month1 = match.Groups[7].Value;
-                uint year1 = uint.Parse(match.Groups[10].Value);
-                string epoch1 = match.Groups[12].Value;
-
-                string calendar2 = match.Groups[15].Value;
-                uint day2 = match.Groups[19].Success ? uint.Parse(match.Groups[19].Value) : 0;
-                string month2 = match.Groups[20].Value;
-                uint year2 = match.Groups[23].Success ? uint.Parse(match.Groups[23].Value) : 0;
-                string epoch2 = match.Groups[25].Value;
-
-                return IsValidDate(calendar1, day1, month1, year1, epoch1) &&
-                       IsValidDate(calendar2, day2, month2, year2, epoch2);
+                if (!IsValidDateRegex(version, match.Groups, 2))
+                {
+                    return false;
+                }
+                if (!IsValidDateRegex(version, match.Groups, 16))
+                {
+                    return false;
+                }
+                return true;
             }
 
             // Now check for a "FROM"-only period.
@@ -460,90 +522,129 @@ namespace Gedcom7
             match = regex.Match(value);
             if (match.Success)
             {
-                string calendar = match.Groups[2].Value;
-                uint day = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
-                string month = match.Groups[7].Value;
-                uint year = uint.Parse(match.Groups[10].Value);
-                string epoch = match.Groups[12].Value;
-                return IsValidDate(calendar, day, month, year, epoch);
+                return IsValidDateRegex(version, match.Groups, 2);
             }
 
             return false;
         }
 
         /// <summary>
-        /// Test whether a given string is a valid date value.
+        /// Test whether a given string is a valid date range.
         /// </summary>
+        /// <param name="version">GEDCOM version</param>
         /// <param name="value">String to test</param>
         /// <returns>true if valid, false if not</returns>
-        private static bool IsValidDateValue(string value)
+        private static bool IsValidDateRange(GedcomVersion version, string value)
         {
-            // Check for a valid date period.
-            if (IsValidDatePeriod(value))
-            {
-                return true;
-            }
-
             // Check for a valid dateRange.
-            Regex regex = new Regex("^(AFT|BEF) " + DateRegex + "$");
+            var regex = new Regex("^(AFT|BEF) " + DateRegex + "$");
             Match match = regex.Match(value);
             if (match.Success)
             {
                 string modifier = match.Groups[1].Value;
-                string calendar = match.Groups[3].Value;
-                uint day = match.Groups[7].Success ? uint.Parse(match.Groups[7].Value) : 0;
-                string month = match.Groups[8].Value;
-                uint year = uint.Parse(match.Groups[11].Value);
-                string epoch = match.Groups[13].Value;
-                return IsValidDate(calendar, day, month, year, epoch);
+                return IsValidDateRegex(version, match.Groups, 3);
             }
             regex = new Regex("^BET " + DateRegex + " AND " + DateRegex + @"$");
             match = regex.Match(value);
             if (match.Success)
             {
-                string calendar1 = match.Groups[2].Value;
-                uint day1 = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
-                string month1 = match.Groups[7].Value;
-                uint year1 = uint.Parse(match.Groups[10].Value);
-                string epoch1 = match.Groups[12].Value;
-
-                string calendar2 = match.Groups[15].Value;
-                uint day2 = match.Groups[19].Success ? uint.Parse(match.Groups[19].Value) : 0;
-                string month2 = match.Groups[20].Value;
-                uint year2 = match.Groups[23].Success ? uint.Parse(match.Groups[23].Value) : 0;
-                string epoch2 = match.Groups[25].Value;
-
-                return IsValidDate(calendar1, day1, month1, year1, epoch1) &&
-                       IsValidDate(calendar2, day2, month2, year2, epoch2);
+                if (!IsValidDateRegex(version, match.Groups, 2))
+                {
+                    return false;
+                }
+                if (!IsValidDateRegex(version, match.Groups, 16))
+                {
+                    return false;
+                }
+                return true;
             }
 
-            // Check for a valid dateApprox.
-            regex = new Regex("^(ABT|CAL|EST) " + DateRegex + "$");
-            match = regex.Match(value);
+            return false;
+        }
+
+        /// <summary>
+        /// Test whether a given string is a valid date approximated.
+        /// </summary>
+        /// <param name="version">GEDCOM version</param>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidDateApproximated(GedcomVersion version, string value)
+        {
+            var regex = new Regex("^(ABT|CAL|EST) " + DateRegex + "$");
+            Match match = regex.Match(value);
             if (match.Success)
             {
                 string modifier = match.Groups[1].Value;
-                string calendar = match.Groups[3].Value;
-                uint day = match.Groups[7].Success ? uint.Parse(match.Groups[7].Value) : 0;
-                string month = match.Groups[8].Value;
-                uint year = uint.Parse(match.Groups[11].Value);
-                string epoch = match.Groups[13].Value;
-                return IsValidDate(calendar, day, month, year, epoch);
+                return IsValidDateRegex(version, match.Groups, 3);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Test whether a given set of DateRegex groups is a valid date value.
+        /// </summary>
+        /// <param name="version">GEDCOM version</param>
+        /// <param name="groups">Group collection to test</param>
+        /// <param name="calendarIndex">Index of calendar in group collection</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidDateRegex(GedcomVersion version, GroupCollection groups, int calendarIndex)
+        {
+            int offset = calendarIndex - 2;
+            string calendar = groups[offset + 2].Value;
+            uint day = groups[offset + 5].Success ? uint.Parse(groups[offset + 5].Value) : 0;
+            string month = groups[offset + 6].Value;
+            uint year = uint.Parse(groups[offset + 9].Value);
+            string epoch = groups[offset + 13].Value;
+            if (!IsValidDate(version, calendar, day, month, year, epoch))
+            {
+                return false;
+            }
+            if (!string.IsNullOrEmpty(groups[offset + 11].Value))
+            {
+                uint altyear = uint.Parse(groups[offset + 11].Value);
+                if ((year + 1) % 100 == altyear)
+                {
+                    return IsValidDate(version, calendar, day, month, year + 1, epoch);
+                }
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Test whether a given string is a valid date value.
+        /// </summary>
+        /// <param name="version">GEDCOM version</param>
+        /// <param name="value">String to test</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidDateValue(GedcomVersion version, string value)
+        {
+            // Check for a valid date period.
+            if (IsValidDatePeriod(version, value))
+            {
+                return true;
+            }
+
+            // Check for a valid dateRange.
+            if (IsValidDateRange(version, value))
+            {
+                return true;
+            }
+
+            // Check for a valid dateApprox.
+            if (IsValidDateApproximated(version, value))
+            {
+                return true;
             }
 
             // Check for a valid date.
             // This must be done after the other checks so that we don't try to parse
             // a keyword like "BEF" or "FROM" as a month.
-            regex = new Regex("^" + DateRegex + "$");
-            match = regex.Match(value);
+            var regex = new Regex("^" + DateRegex + "$");
+            Match match = regex.Match(value);
             if (match.Success)
             {
-                string calendar = match.Groups[2].Value;
-                uint day = match.Groups[6].Success ? uint.Parse(match.Groups[6].Value) : 0;
-                string month = match.Groups[7].Value;
-                uint year = uint.Parse(match.Groups[10].Value);
-                string epoch = match.Groups[12].Value;
-                return IsValidDate(calendar, day, month, year, epoch);
+                return IsValidDateRegex(version, match.Groups, 2);
             }
 
             return false;
@@ -578,7 +679,7 @@ namespace Gedcom7
             this.Substructures = new List<GedcomStructure>();
 
             // Parse line into Level, Xref, Tag, Pointer, and LineVal.
-            if (line == null)
+            if (line == null || line == "")
             {
                 return ErrorMessage("No line text");
             }
@@ -622,6 +723,10 @@ namespace Gedcom7
                 if ((tokens.Length > index) && (tokens[index].Length > 0) && (tokens[index][0] == '@'))
                 {
                     this.Xref = tokens[index++];
+                    if (!this.Xref.EndsWith('@') && (tokens.Length > index) && tokens[index].EndsWith('@')) {
+                        // GEDCOM 5.5.1 permits space inside Xref.
+                        this.Xref += " " + tokens[index++];
+                    }
                     if ((this.Xref.Length < 3) || !this.Xref.EndsWith('@'))
                     {
                         return ErrorMessage("Xref must start and end with @");
@@ -719,6 +824,16 @@ namespace Gedcom7
                             return ErrorMessage(this.Tag + " payload must be 'Y' or empty");
                         }
                         break;
+                    case "https://gedcom.io/terms/v5.5.1/type-NAME_TYPE": // TODO
+                    case "https://gedcom.io/terms/v5.5.1/type-SUBMITTER_TEXT": // TODO
+                    case "https://gedcom.io/terms/v5.5.1/type-TEXT_FROM_SOURCE": // TODO
+                    case "https://gedcom.io/terms/v5.5.1/type-ROLE_IN_EVENT": // TODO
+                    case "https://gedcom.io/terms/v5.5.1/type-EVENT_TYPE_CITED_FROM": // TODO complex validation
+                    case "https://gedcom.io/terms/v5.5.1/type-RESTRICTION_NOTICE": // TODO complex validation
+                    case "https://gedcom.io/terms/v5.5.1/type-EVENTS_RECORDED": // TODO complex validation
+                    case "https://gedcom.io/terms/v5.5.1/type-LANGUAGE_PREFERENCE": // TODO complex validation
+                    case "https://gedcom.io/terms/v5.5.1/type-LANGUAGE_OF_TEXT": // TODO complex validation
+                    case "https://gedcom.io/terms/v5.5.1/type-EVENT_DESCRIPTOR": // TODO complex validation
                     case "http://www.w3.org/2001/XMLSchema#string":
                         if ((this.Schema.Uri == "https://gedcom.io/terms/v7/TAG") && (tokens.Length > 3))
                         {
@@ -728,36 +843,96 @@ namespace Gedcom7
                             GedcomStructureSchema.AddSchema(sourceProgram, tag, uri);
                             break;
                         }
+                        if (this.Schema.Uri == "https://gedcom.io/terms/v5.5.1/SEX")
+                        {
+                            if (this.LineVal.Length > 7)
+                            {
+                                return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                            }
+                        }
                         // We currently don't do any further validation.
                         break;
+                    case "https://gedcom.io/terms/v5.5.1/type-CHANGE_DATE": // TODO: should be DATE_EXACT
+                    case "https://gedcom.io/terms/v5.5.1/type-TRANSMISSION_DATE": // TODO: should be DATE_EXACT
                     case "https://gedcom.io/terms/v7/type-Date#exact":
                         if (!IsValidExactDate(this.LineVal))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid exact date");
                         }
                         break;
+                    case "https://gedcom.io/terms/v5.5.1/type-ENTRY_RECORDING_DATE": // TODO: should be DATE_VALUE
+                    case "https://gedcom.io/terms/v5.5.1/type-DATE_VALUE":
                     case "https://gedcom.io/terms/v7/type-Date":
-                        if (!IsValidDateValue(this.LineVal))
+                        if (!IsValidDateValue(this.File.GedcomVersion, this.LineVal))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid date value");
                         }
                         break;
+                    case "https://gedcom.io/terms/v5.5.1/type-DATE_PERIOD":
                     case "https://gedcom.io/terms/v7/type-Date#period":
-                        if (!IsValidDatePeriod(this.LineVal))
+                        if (!IsValidDatePeriod(this.File.GedcomVersion, this.LineVal))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid date period");
                         }
                         break;
+                    case "https://gedcom.io/terms/v5.5.1/type-TIME_VALUE":
                     case "https://gedcom.io/terms/v7/type-Time":
                         if (!IsValidTime(this.LineVal))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid time");
                         }
                         break;
+                    case "https://gedcom.io/terms/v5.5.1/type-NAME_PERSONAL":
                     case "https://gedcom.io/terms/v7/type-Name":
                         if (!IsValidName(this.LineVal))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid name");
+                        }
+                        break;
+                    // TODO(#4): handle some GEDCOM 5.5.1 enum types.
+                    case "https://gedcom.io/terms/v5.5.1/type-GEDCOM_FORM":
+                        if (this.LineVal != "LINEAGE-LINKED")
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
+                    case "https://gedcom.io/terms/v5.5.1/type-CHARACTER_SET":
+                        if (this.LineVal != "ANSEL" && this.LineVal != "UTF-8" && this.LineVal != "UNICODE" && this.LineVal != "ASCII")
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
+                    case "https://gedcom.io/terms/v5.5.1/type-ORDINANCE_PROCESS_FLAG":
+                        if (this.LineVal != "yes" && this.LineVal != "no")
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
+                    case "https://gedcom.io/terms/v5.5.1/type-MULTIMEDIA_FORMAT":
+                        if (this.LineVal != "bmp" && this.LineVal != "gif" && this.LineVal != "jpg" && this.LineVal != "ole" && this.LineVal != "pcx" && this.LineVal != "tif" && this.LineVal != "wav")
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
+                    case "https://gedcom.io/terms/v5.5.1/type-PEDIGREE_LINKAGE_TYPE":
+                        if (this.LineVal != "adopted" && this.LineVal != "birth" && this.LineVal != "foster" && this.LineVal != "sealing")
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
+                    case "https://gedcom.io/terms/v5.5.1/type-CERTAINTY_ASSESSMENT":
+                        if (this.LineVal != "0" && this.LineVal != "1" && this.LineVal != "2" && this.LineVal != "3")
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
+                    case "https://gedcom.io/terms/v5.5.1/type-SOURCE_MEDIA_TYPE":
+                        if (this.LineVal != "audio" && this.LineVal != "book" && this.LineVal != "card" && this.LineVal != "electronic" &&
+                            this.LineVal != "fiche" && this.LineVal != "film" && this.LineVal != "magazine" && this.LineVal != "manuscript" &&
+                            this.LineVal != "map" && this.LineVal != "newspaper" && this.LineVal != "photo" && this.LineVal != "tombstone" &&
+                            this.LineVal != "video")
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
                         break;
                     case "https://gedcom.io/terms/v7/type-Enum":
@@ -798,8 +973,9 @@ namespace Gedcom7
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid language");
                         }
                         break;
+                    case "https://gedcom.io/terms/v5.5.1/type-AGE_AT_EVENT":
                     case "https://gedcom.io/terms/v7/type-Age":
-                        if (!IsValidAge(this.LineVal))
+                        if (!IsValidAge(this.File.GedcomVersion, this.LineVal))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid age");
                         }
@@ -890,7 +1066,12 @@ namespace Gedcom7
         /// <returns>true if a pointer, false if not</returns>
         static bool IsPointer(string lineval)
         {
-            return (lineval != null && lineval.Length > 2 && lineval[0] == '@' && lineval[1] != '@');
+            if (lineval == null || lineval.Length == 0) return false;
+
+            // Calendar tags in GEDCOM 5.5.1 are of the form "@#CALENDAR NAME@".
+            Regex regex = new Regex(@"^@(?!#)[a-zA-Z0-9][^@]*@$");
+
+            return regex.IsMatch(lineval);
         }
 
         /// <summary>
@@ -1059,7 +1240,7 @@ namespace Gedcom7
         /// </summary>
         public GedcomStructure Structure { get; set; }
         public List<WeakReference<GedcomStructure>> MatchStructures { get; set; }
-        
+
         /// <summary>
         /// Comparison score.
         /// </summary>
