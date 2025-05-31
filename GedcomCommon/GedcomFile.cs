@@ -7,20 +7,20 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Gedcom7
+namespace GedcomCommon
 {
     public enum GedcomVersion
     {
         Unknown = 0,
         V551,
-        V70
+        V70,
+        Both // Only used in tests, never for an actual file.
     }
     public class GedcomFile
     {
-        public GedcomFile(string gedcomRegistriesPath = null)
+        public GedcomFile()
         {
             this.GedcomVersion = GedcomVersion.Unknown;
-            GedcomStructureSchema.LoadAll(gedcomRegistriesPath);
         }
 
         // Data members.
@@ -72,8 +72,9 @@ namespace Gedcom7
         /// </summary>
         /// <param name="reader">The stream to read from</param>
         /// <param name="gedcomVersion">GEDCOM version to read, if known</param>
+        /// <param name="gedcomRegistriesPath">GEDCOM registries path, or null</param>
         /// <returns>List of 0 or more error messages</returns>
-        public List<string> LoadFromStreamReader(StreamReader reader, GedcomVersion gedcomVersion = GedcomVersion.Unknown)
+        public List<string> LoadFromStreamReader(StreamReader reader, GedcomVersion gedcomVersion = GedcomVersion.Unknown, string gedcomRegistriesPath = null)
         {
             string line;
 
@@ -112,6 +113,8 @@ namespace Gedcom7
                 reader.DiscardBufferedData();
             }
 
+            GedcomStructureSchema.LoadAll(this.GedcomVersion, gedcomRegistriesPath);
+
             // Consume the BOM if any.
             if (reader.Peek() == 65279)
             {
@@ -139,8 +142,9 @@ namespace Gedcom7
         /// Load a GEDCOM file from a specified path.
         /// </summary>
         /// <param name="pathToFile">Path to file to load</param>
+        /// <param name="gedcomRegistriesPath">GEDCOM registries path</param>
         /// <returns>List of 0 or more error messages</returns>
-        public List<string> LoadFromPath(string pathToFile)
+        public List<string> LoadFromPath(string pathToFile, string gedcomRegistriesPath = null)
         {
             // Validate that extension is .ged.
             if (!pathToFile.EndsWith(".ged", StringComparison.InvariantCultureIgnoreCase))
@@ -155,7 +159,7 @@ namespace Gedcom7
             }
             using (var reader = new StreamReader(pathToFile))
             {
-                return LoadFromStreamReader(reader);
+                return LoadFromStreamReader(reader, GedcomVersion.Unknown, gedcomRegistriesPath);
             }
         }
 

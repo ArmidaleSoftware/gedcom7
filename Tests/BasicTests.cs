@@ -1,9 +1,10 @@
 // Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Gedcom7;
+using GedcomCommon;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Tests
 {
@@ -20,7 +21,7 @@ namespace Tests
 
         void TestMemoryUsage(string fileName, long maxSize)
         {
-            GedcomStructureSchema.LoadAll();
+            GedcomStructureSchema.LoadAll(GedcomVersion.V70);
             GC.Collect();
             long beforeMemory = GC.GetTotalMemory(true);
             TestContext.WriteLine($"Baseline: {beforeMemory} bytes");
