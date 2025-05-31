@@ -13,7 +13,8 @@ namespace GedcomCommon
     {
         Unknown = 0,
         V551,
-        V70
+        V70,
+        Both // Only used in tests, never for an actual file.
     }
     public class GedcomFile
     {

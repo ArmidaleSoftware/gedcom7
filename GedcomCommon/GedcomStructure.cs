@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace GedcomCommon
@@ -472,12 +473,18 @@ namespace GedcomCommon
         private const string TagCharRegex = @"([A-Z0-9_])";
         private const string StdTagRegex = @"[A-Z]" + TagCharRegex + "*";
         private const string ExtTagRegex = @"_" + TagCharRegex + "+";
+        private const string Calendar7Regex = @"(GREGORIAN|JULIAN|FRENCH_R|HEBREW|" + ExtTagRegex + ")";
         private const string Calendar551Regex = @"(@#DGREGORIAN@|@#DJULIAN@|@#DFRENCH R@|@#DHEBREW@|@#DROMAN@|@#DUNKNOWN@)";
         private const string MonthRegex = @"(" + StdTagRegex + "|" + ExtTagRegex + ")";
+        private const string Epoch7Regex = @"(BCE|" + ExtTagRegex + ")";
         private const string Epoch551Regex = @"(B.C.|" + ExtTagRegex + ")";
         private const string DayRegex = @"((\d{1,2}) )?";
-        private const string YearRegex = @"(\d{1,4})(/(\d{2}))?";
-        private const string DateRegex = @"(" + Calendar551Regex + @" )?(" + DayRegex + MonthRegex + @" )?" + YearRegex + @"( " + Epoch551Regex + @")?";
+        private const string Year551Regex = @"(\d{1,4})(/(\d{2}))?";
+        private const string Year7Regex = @"(\d{1,4})(/(\d{2}))?";
+        private const string Date551Regex = @"(" + Calendar551Regex + @" )?(" + DayRegex + MonthRegex + @" )?" + Year551Regex + @"( " + Epoch551Regex + @")?";
+        private const int Date551RegexGroups = 14; // TODO
+        private const string Date7Regex = @"(" + Calendar7Regex + @" )?(" + DayRegex + MonthRegex + @" )?" + Year7Regex + @"( " + Epoch7Regex + @")?";
+        private const int Date7RegexGroups = 15;
 
         /// <summary>
         /// Test whether a given string is a valid date period.
@@ -491,8 +498,11 @@ namespace GedcomCommon
             // Empty payload is ok.
             if (value == null || value.Length == 0) return true;
 
+            var dateRegex = (version == GedcomVersion.V551) ? Date551Regex : Date7Regex;
+            var dateRegexGroups = (version == GedcomVersion.V551) ? Date551RegexGroups : Date7RegexGroups;
+
             // Next check for a "TO" period.
-            var regex = new Regex("^TO " + DateRegex + "$");
+            var regex = new Regex("^TO " + dateRegex + "$");
             Match match = regex.Match(value);
             if (match.Success)
             {
@@ -502,7 +512,7 @@ namespace GedcomCommon
             // Check for a "FROM" and "TO" period.
             // This must be done before checking for a "FROM"-only period, to avoid
             // parsing "TO" as a month.
-            regex = new Regex("^FROM " + DateRegex + " TO " + DateRegex + "$");
+            regex = new Regex("^FROM " + dateRegex + " TO " + dateRegex + "$");
             match = regex.Match(value);
             if (match.Success)
             {
@@ -510,7 +520,7 @@ namespace GedcomCommon
                 {
                     return false;
                 }
-                if (!IsValidDateRegex(version, match.Groups, 16))
+                if (!IsValidDateRegex(version, match.Groups, 2 + dateRegexGroups))
                 {
                     return false;
                 }
@@ -518,7 +528,7 @@ namespace GedcomCommon
             }
 
             // Now check for a "FROM"-only period.
-            regex = new Regex("^FROM " + DateRegex + "$");
+            regex = new Regex("^FROM " + dateRegex + "$");
             match = regex.Match(value);
             if (match.Success)
             {
@@ -536,15 +546,18 @@ namespace GedcomCommon
         /// <returns>true if valid, false if not</returns>
         private static bool IsValidDateRange(GedcomVersion version, string value)
         {
+            var dateRegex = (version == GedcomVersion.V551) ? Date551Regex : Date7Regex;
+            var dateRegexGroups = (version == GedcomVersion.V551) ? Date551RegexGroups : Date7RegexGroups;
+
             // Check for a valid dateRange.
-            var regex = new Regex("^(AFT|BEF) " + DateRegex + "$");
+            var regex = new Regex("^(AFT|BEF) " + dateRegex + "$");
             Match match = regex.Match(value);
             if (match.Success)
             {
                 string modifier = match.Groups[1].Value;
                 return IsValidDateRegex(version, match.Groups, 3);
             }
-            regex = new Regex("^BET " + DateRegex + " AND " + DateRegex + @"$");
+            regex = new Regex("^BET " + dateRegex + " AND " + dateRegex + @"$");
             match = regex.Match(value);
             if (match.Success)
             {
@@ -552,7 +565,7 @@ namespace GedcomCommon
                 {
                     return false;
                 }
-                if (!IsValidDateRegex(version, match.Groups, 16))
+                if (!IsValidDateRegex(version, match.Groups, 2 + dateRegexGroups))
                 {
                     return false;
                 }
@@ -570,14 +583,68 @@ namespace GedcomCommon
         /// <returns>true if valid, false if not</returns>
         private static bool IsValidDateApproximated(GedcomVersion version, string value)
         {
-            var regex = new Regex("^(ABT|CAL|EST) " + DateRegex + "$");
+            var dateRegex = (version == GedcomVersion.V551) ? Date551Regex : Date7Regex;
+            var regex = new Regex("^(ABT|CAL|EST) " + dateRegex + "$");
             Match match = regex.Match(value);
             if (match.Success)
             {
                 string modifier = match.Groups[1].Value;
-                return IsValidDateRegex(version, match.Groups, 3);
+                return (version == GedcomVersion.V551) ? IsValidDate551Regex(match.Groups, 3) : IsValidDate7Regex(match.Groups, 3);
             }
             return false;
+        }
+
+        /// <summary>
+        /// Test whether a given set of DateRegex groups is a valid date value.
+        /// </summary>
+        /// <param name="groups">Group collection to test</param>
+        /// <param name="calendarIndex">Index of calendar in group collection</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidDate551Regex(GroupCollection groups, int calendarIndex)
+        {
+            var dateRegexGroups = Date551RegexGroups;
+
+            int offset = calendarIndex - 2;
+            string calendar = groups[offset + 2].Value;
+            uint day = groups[offset + 5].Success ? uint.Parse(groups[offset + 5].Value) : 0;
+            string month = groups[offset + 6].Value;
+            uint year = uint.Parse(groups[offset + 9].Value);
+            string epoch = groups[offset + 13].Value;
+            if (!IsValidDate(GedcomVersion.V551, calendar, day, month, year, epoch))
+            {
+                return false;
+            }
+            if (!string.IsNullOrEmpty(groups[offset + 12].Value))
+            {
+                uint altyear = uint.Parse(groups[offset + 12].Value);
+                if ((year + 1) % 100 == altyear)
+                {
+                    return IsValidDate(GedcomVersion.V551, calendar, day, month, year + 1, epoch);
+                }
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Test whether a given set of DateRegex groups is a valid date value.
+        /// </summary>
+        /// <param name="groups">Group collection to test</param>
+        /// <param name="calendarIndex">Index of calendar in group collection</param>
+        /// <returns>true if valid, false if not</returns>
+        private static bool IsValidDate7Regex(GroupCollection groups, int calendarIndex)
+        {
+            int offset = calendarIndex - 2;
+            string calendar = groups[offset + 2].Value;
+            uint day = groups[offset + 6].Success ? uint.Parse(groups[offset + 6].Value) : 0;
+            string month = groups[offset + 7].Value;
+            uint year = uint.Parse(groups[offset + 10].Value);
+            string epoch = groups[offset + 14].Value;
+            if (!IsValidDate(GedcomVersion.V70, calendar, day, month, year, epoch))
+            {
+                return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -589,26 +656,7 @@ namespace GedcomCommon
         /// <returns>true if valid, false if not</returns>
         private static bool IsValidDateRegex(GedcomVersion version, GroupCollection groups, int calendarIndex)
         {
-            int offset = calendarIndex - 2;
-            string calendar = groups[offset + 2].Value;
-            uint day = groups[offset + 5].Success ? uint.Parse(groups[offset + 5].Value) : 0;
-            string month = groups[offset + 6].Value;
-            uint year = uint.Parse(groups[offset + 9].Value);
-            string epoch = groups[offset + 13].Value;
-            if (!IsValidDate(version, calendar, day, month, year, epoch))
-            {
-                return false;
-            }
-            if (!string.IsNullOrEmpty(groups[offset + 11].Value))
-            {
-                uint altyear = uint.Parse(groups[offset + 11].Value);
-                if ((year + 1) % 100 == altyear)
-                {
-                    return IsValidDate(version, calendar, day, month, year + 1, epoch);
-                }
-                return false;
-            }
-            return true;
+            return (version == GedcomVersion.V551) ? IsValidDate551Regex(groups, calendarIndex) : IsValidDate7Regex(groups, calendarIndex);
         }
 
         /// <summary>
@@ -640,7 +688,8 @@ namespace GedcomCommon
             // Check for a valid date.
             // This must be done after the other checks so that we don't try to parse
             // a keyword like "BEF" or "FROM" as a month.
-            var regex = new Regex("^" + DateRegex + "$");
+            var dateRegex = (version == GedcomVersion.V551) ? Date551Regex : Date7Regex;
+            var regex = new Regex("^" + dateRegex + "$");
             Match match = regex.Match(value);
             if (match.Success)
             {
