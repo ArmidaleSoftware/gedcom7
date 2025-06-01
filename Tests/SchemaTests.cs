@@ -1264,7 +1264,7 @@ namespace Tests
         [TestMethod]
         public void ValidateTestFileDateDual()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/date-dual.ged");
+            ValidateGedcomFile("../../../../external/test-files/7/date-dual-invalid.ged");
         }
 
         [TestMethod]
