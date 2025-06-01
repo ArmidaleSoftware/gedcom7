@@ -1,7 +1,7 @@
 // Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Gedcom7;
+using GedcomCommon;
 using System.Collections.Generic;
 using System.IO;
 

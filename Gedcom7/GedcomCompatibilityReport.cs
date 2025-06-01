@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
+using GedcomCommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;

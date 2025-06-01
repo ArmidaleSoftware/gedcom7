@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Yaml.Serialization;
 
-namespace Gedcom7
+namespace GedcomCommon
 {
     public class EnumerationSet
     {
@@ -46,7 +46,16 @@ namespace Gedcom7
             }
             EnumerationValue.LoadAll(gedcomRegistriesPath);
             var path = Path.Combine(gedcomRegistriesPath, "enumeration-set/standard");
-            string[] files = Directory.GetFiles(path);
+            string[] files;
+            try
+            {
+                files = Directory.GetFiles(path);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
+            }
             foreach (string filename in files)
             {
                 var serializer = new YamlSerializer();

@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
+using GedcomCommon;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -34,8 +35,8 @@ namespace Gedcom7
 
         static int ValidateGedcom(string sourcePath, string gedcomRegistriesPath)
         {
-            var gedcomFile = new GedcomFile(gedcomRegistriesPath);
-            List<string> errors = gedcomFile.LoadFromPath(sourcePath);
+            var gedcomFile = new GedcomFile();
+            List<string> errors = gedcomFile.LoadFromPath(sourcePath, gedcomRegistriesPath);
 
             if (errors.Count < MAX_ERRORS)
             {

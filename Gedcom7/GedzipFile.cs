@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
+using GedcomCommon;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -60,10 +61,10 @@ namespace Gedcom7
                 {
                     using (Stream stream = entry.Open())
                     {
-                        this.GedcomFile = new GedcomFile(GedcomRegistriesPath);
+                        this.GedcomFile = new GedcomFile();
                         using (StreamReader streamReader = new StreamReader(stream))
                         {
-                            List<string> errors = this.GedcomFile.LoadFromStreamReader(streamReader, GedcomVersion.V70);
+                            List<string> errors = this.GedcomFile.LoadFromStreamReader(streamReader, GedcomVersion.V70, GedcomRegistriesPath);
                             return errors;
                         }
                     }
