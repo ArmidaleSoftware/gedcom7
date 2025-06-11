@@ -167,8 +167,9 @@ namespace GedcomCommon
         /// Load a GEDCOM file from a specified URL.
         /// </summary>
         /// <param name="url">URL to file to load</param>
+        /// <param name="gedcomRegistriesPath">GEDCOM registries path</param>
         /// <returns>List of 0 or more error messages</returns>
-        public List<string> LoadFromUrl(string url)
+        public List<string> LoadFromUrl(string url, string gedcomRegistriesPath = null)
         {
             this.Path = url;
 
@@ -178,7 +179,7 @@ namespace GedcomCommon
             {
                 using (var reader = new StreamReader(content))
                 {
-                    return LoadFromStreamReader(reader);
+                    return LoadFromStreamReader(reader, GedcomVersion.Unknown, gedcomRegistriesPath);
                 }
             }
         }
