@@ -15,6 +15,7 @@ namespace Tests
     public class SchemaTests
     {
         private const string TEST_FILES_BASE_PATH = "../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70";
+        private const string TEST_FILES_REMOTE_PATH = "https://gedcom.io/testfiles/gedcom70/";
 
         [TestMethod]
         public void LoadStructureSchema()
@@ -32,6 +33,22 @@ namespace Tests
         {
             var file = new GedcomFile();
             List<string> errors = file.LoadFromPath(path);
+            string error = null;
+            if (errors.Count == 0)
+            {
+                errors.AddRange(file.Validate());
+            }
+            if (errors.Count > 0)
+            {
+                error = string.Join("\n", errors);
+            }
+            Assert.AreEqual(expected_result, error);
+        }
+
+        public static void ValidateRemoteGedcomFile(string url, string expected_result = null)
+        {
+            var file = new GedcomFile();
+            List<string> errors = file.LoadFromUrl(url);
             string error = null;
             if (errors.Count == 0)
             {
@@ -128,6 +145,12 @@ namespace Tests
         public void ValidateFileMaximal70()
         {
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "maximal70.ged"));
+        }
+
+        [TestMethod]
+        public void ValidateRemoteFileMaximal70()
+        {
+            ValidateRemoteGedcomFile(TEST_FILES_REMOTE_PATH + "maximal70.ged");
         }
 
         [TestMethod]
