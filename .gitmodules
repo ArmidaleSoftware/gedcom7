@@ -4,3 +4,6 @@
 [submodule "external/test-files"]
 	path = external/test-files
 	url = https://github.com/gedcom7code/test-files.git
+[submodule "external/gedcom5.5.1"]
+	path = external/gedcom5.5.1
+	url = https://github.com/ArmidaleSoftware/gedcom5.5.1.git
