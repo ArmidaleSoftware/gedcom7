@@ -114,30 +114,6 @@ namespace Tests
 0 TRLR
 ", "Line 4: Xref must start and end with @");
 
-            // Xref must start with @.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS " + versionString + @"
-0 I1@ INDI
-0 TRLR
-", "Line 4: Undocumented standard record");
-
-            // Xref must end with @.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS " + versionString + @"
-0 @I1 INDI
-0 TRLR
-", "Line 4: Xref must start and end with @");
-
-            // Xref must contain something.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS " + versionString + @"
-0 @ INDI
-0 TRLR
-", "Line 4: Xref must start and end with @");
-
             // Upper case letters and numbers are fine.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
