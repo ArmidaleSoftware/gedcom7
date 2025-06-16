@@ -61,7 +61,7 @@ namespace Tests
             Assert.AreEqual(expected_result, error);
         }
 
-        public static void ValidateXref(string versionString)
+        protected static void ValidateXref(string versionString)
         {
             // HEAD pseudo-structure does not allow an xref.
             ValidateGedcomText(@"0 @H1@ HEAD
@@ -133,7 +133,56 @@ namespace Tests
             }
         }
 
-        public static void ValidateSpacing(string versionString)
+        protected static void ValidateHeaderAndTrailer(string versionString)
+        {
+            // Missing TRLR.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+", "Missing TRLR record");
+
+            // Minimal valid.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 TRLR
+");
+
+            // Backwards order.
+            ValidateGedcomText(@"0 TRLR
+0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+", "Line 1: HEAD must be the first record");
+
+            // The trailer cannot contain substructures.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 TRLR
+1 _EXT bad
+", "Line 4: TRLR must not contain substructures");
+
+            // Two HEADs.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 TRLR
+", "Line 4: HEAD must be the first record");
+
+            // Two TRLRs.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 TRLR
+0 TRLR
+", "Line 5: Duplicate TRLR record");
+        }
+
+        protected static void ValidateSpacing(string versionString)
         {
             // Extra space before the tag is not valid.
             ValidateGedcomText(@"0 HEAD
@@ -150,6 +199,234 @@ namespace Tests
 ", "Line 2: An empty payload is not valid after a space");
         }
 
+        protected static void ValidateValidNamePayload(string versionString, string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 @I1@ INDI
+1 NAME " + value + @"
+0 TRLR
+");
+        }
+
+        protected static void ValidateInvalidNamePayload(string versionString, string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 @I1@ INDI
+1 NAME " + value + @"
+", "Line 5: \"" + value + "\" is not a valid name");
+        }
+
+        /// <summary>
+        /// Validate Name payload type.
+        /// </summary>
+        protected static void ValidateNamePayloadType(string versionString)
+        {
+            // Try some valid name values.
+            ValidateValidNamePayload(versionString, "John Smith");
+            ValidateValidNamePayload(versionString, "John /Smith/");
+            ValidateValidNamePayload(versionString, "John /Smith/ Jr.");
+
+            // Try some invalid name values.
+            ValidateInvalidNamePayload(versionString, "/");
+            ValidateInvalidNamePayload(versionString, "a/b/c/d");
+            ValidateInvalidNamePayload(versionString, "a\tb");
+        }
+
+        protected static void ValidateValidDateValuePayload(GedcomVersion version, string value)
+        {
+            if (version == GedcomVersion.Both)
+            {
+                // TODO: ValidateValidDateValuePayload(GedcomVersion.V551, value);
+                ValidateValidDateValuePayload(GedcomVersion.V70, value);
+                return;
+            }
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + GetGedcomVersionString(version) + @"
+0 @I1@ INDI
+1 DEAT
+2 DATE " + value + @"
+0 TRLR
+");
+        }
+
+        private void ValidateInvalidExactDatePayload(string versionString, string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+1 DATE " + value + @"
+", "Line 4: \"" + value + "\" is not a valid exact date");
+        }
+
+        private void ValidateValidExactDatePayload(string versionString, string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+1 DATE " + value + @"
+0 TRLR
+");
+        }
+
+        /// <summary>
+        /// Validate exact date payload type.
+        /// </summary>
+        protected void ValidateExactDatePayloadType(string versionString)
+        {
+            // Try some valid date values.
+            ValidateValidExactDatePayload(versionString, "3 DEC 2023");
+            ValidateValidExactDatePayload(versionString, "03 DEC 2023");
+
+            // Try some invalid date values.
+            ValidateInvalidExactDatePayload(versionString, "invalid");
+            ValidateInvalidExactDatePayload(versionString, "3 dec 2023");
+            ValidateInvalidExactDatePayload(versionString, "3 JUNE 2023");
+            ValidateInvalidExactDatePayload(versionString, "DEC 2023");
+            ValidateInvalidExactDatePayload(versionString, "2023");
+        }
+
+        protected void ValidateInvalidDatePeriodPayload(GedcomVersion version, string value)
+        {
+            if (version == GedcomVersion.Both)
+            {
+                // TODO: ValidateInvalidDatePeriodPayload(GedcomVersion.V551, value);
+                ValidateInvalidDatePeriodPayload(GedcomVersion.V70, value);
+                return;
+            }
+
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + GetGedcomVersionString(version) + @"
+0 @I1@ INDI
+1 NO MARR
+2 DATE " + value + @"
+0 TRLR
+", "Line 6: \"" + value + "\" is not a valid date period");
+        }
+
+        protected void ValidateValidDatePeriodPayload(GedcomVersion version, string value)
+        {
+            if (version == GedcomVersion.Both)
+            {
+                // TODO: ValidateValidDatePeriodPayload(GedcomVersion.V551, value);
+                ValidateValidDatePeriodPayload(GedcomVersion.V70, value);
+                return;
+            }
+
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + GetGedcomVersionString(version) + @"
+0 @I1@ INDI
+1 NO MARR
+2 DATE " + value + @"
+0 TRLR
+");
+        }
+
+        private void ValidateInvalidTimePayload(string versionString, string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+1 DATE 1 DEC 2023
+2 TIME " + value + @"
+0 TRLR
+", "Line 5: \"" + value + "\" is not a valid time");
+        }
+
+        private void ValidateValidTimePayload(string versionString, string value)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+1 DATE 1 DEC 2023
+2 TIME " + value + @"
+0 TRLR
+");
+        }
+
+        /// <summary>
+        /// Validate Time payload type.
+        /// </summary>
+        protected void ValidateTimePayloadType(string versionString)
+        {
+            // Try some valid time values.
+            ValidateValidTimePayload(versionString, "02:50");
+            ValidateValidTimePayload(versionString, "2:50");
+            ValidateValidTimePayload(versionString, "2:50:00.00Z");
+
+            // Try some invalid time values.
+            ValidateInvalidTimePayload(versionString, " ");
+            ValidateInvalidTimePayload(versionString, "invalid");
+            ValidateInvalidTimePayload(versionString, "000:00");
+            ValidateInvalidTimePayload(versionString, "24:00:00");
+            ValidateInvalidTimePayload(versionString, "2:5");
+            ValidateInvalidTimePayload(versionString, "2:60");
+            ValidateInvalidTimePayload(versionString, "2:00:60");
+        }
+
+        /// <summary>
+        /// Validate payload as a pointer to recordType.
+        /// </summary>
+        protected void ValidateXrefPayloadType(string versionString)
+        {
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+1 OBJE @O1
+0 TRLR
+", "Line 7: Payload must be a pointer");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+1 SUBM
+0 TRLR
+", "Line 4: Payload must be a pointer");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+1 SUBM S1@
+0 TRLR
+", "Line 4: Payload must be a pointer");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+1 SUBM @S1@
+0 TRLR
+", "Line 4: @S1@ has no associated record");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+1 SUBM @I1@
+0 @I1@ INDI
+0 TRLR
+", "Line 4: SUBM points to a INDI record");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+1 SUBM @I1@
+0 @I1@ _SUBM
+0 TRLR
+", "Line 4: SUBM points to a _SUBM record");
+
+            // We can't validate the record type for an
+            // undocumented extension.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+1 _SUBM @I1@
+0 @I1@ INDI
+0 TRLR
+");
+        }
     }
 
     [TestClass]
@@ -173,7 +450,13 @@ namespace Tests
         public const string VersionString = "5.5.1";
 
         [TestMethod]
-        public void Validate551Xref()
+        public void ValidateHeaderAndTrailer()
+        {
+            ValidateHeaderAndTrailer(VersionString);
+        }
+
+        [TestMethod]
+        public void ValidateXref()
         {
             ValidateXref(VersionString);
 
@@ -276,6 +559,33 @@ namespace Tests
 ", "Line 3: Tag must not be empty");
 
             ValidateSpacing(VersionString);
+        }
+
+        /// <summary>
+        /// Validate Name payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateNamePayloadType()
+        {
+            ValidateNamePayloadType(VersionString);
+        }
+
+        /// <summary>
+        /// Validate exact date payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateExactDatePayloadType()
+        {
+            ValidateExactDatePayloadType(VersionString);
+        }
+
+        /// <summary>
+        /// Validate Time payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateTimePayloadType()
+        {
+            ValidateTimePayloadType(VersionString);
         }
     }
 
@@ -422,51 +732,7 @@ namespace Tests
         [TestMethod]
         public void ValidateHeaderAndTrailer()
         {
-            // Missing TRLR.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-", "Missing TRLR record");
-
-            // Minimal70.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 TRLR
-");
-
-            // Backwards order.
-            ValidateGedcomText(@"0 TRLR
-0 HEAD
-1 GEDC
-2 VERS 7.0
-", "Line 1: HEAD must be the first record");
-
-            // The trailer cannot contain substructures.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 TRLR
-1 _EXT bad
-", "Line 4: TRLR must not contain substructures");
-
-            // Two HEADs.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 HEAD
-1 GEDC
-2 VERS 7.0
-0 TRLR
-", "Line 4: HEAD must be the first record");
-
-            // Two TRLRs.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 TRLR
-0 TRLR
-", "Line 5: Duplicate TRLR record");
+            ValidateHeaderAndTrailer(VersionString);
         }
 
         [TestMethod]
@@ -545,7 +811,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public void Validate70Xref()
+        public void ValidateXref()
         {
             ValidateXref(VersionString);
 
@@ -737,61 +1003,13 @@ namespace Tests
 ", "Line 5: \"\" is not a valid value for RESN");
         }
 
-        private void ValidateInvalidNamePayload(string value)
-        {
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @I1@ INDI
-1 NAME " + value + @"
-", "Line 5: \"" + value + "\" is not a valid name");
-        }
-
-        private void ValidateValidNamePayload(string value)
-        {
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @I1@ INDI
-1 NAME " + value + @"
-0 TRLR
-");
-        }
-
         /// <summary>
         /// Validate Name payload type.
         /// </summary>
         [TestMethod]
         public void ValidateNamePayloadType()
         {
-            // Try some valid name values.
-            ValidateValidNamePayload("John Smith");
-            ValidateValidNamePayload("John /Smith/");
-            ValidateValidNamePayload("John /Smith/ Jr.");
-
-            // Try some invalid name values.
-            ValidateInvalidNamePayload("/");
-            ValidateInvalidNamePayload("a/b/c/d");
-            ValidateInvalidNamePayload("a\tb");
-        }
-
-        private void ValidateInvalidExactDatePayload(string value)
-        {
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 DATE " + value + @"
-", "Line 4: \"" + value + "\" is not a valid exact date");
-        }
-
-        private void ValidateValidExactDatePayload(string value)
-        {
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 DATE " + value + @"
-0 TRLR
-");
+            ValidateNamePayloadType(VersionString);
         }
 
         /// <summary>
@@ -800,40 +1018,7 @@ namespace Tests
         [TestMethod]
         public void ValidateExactDatePayloadType()
         {
-            // Try some valid date values.
-            ValidateValidExactDatePayload("3 DEC 2023");
-            ValidateValidExactDatePayload("03 DEC 2023");
-
-            // Try some invalid date values.
-            ValidateInvalidExactDatePayload("invalid");
-            ValidateInvalidExactDatePayload("3 dec 2023");
-            ValidateInvalidExactDatePayload("3 JUNE 2023");
-            ValidateInvalidExactDatePayload("DEC 2023");
-            ValidateInvalidExactDatePayload("2023");
-        }
-
-        private void ValidateInvalidDatePeriodPayload(string value)
-        {
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @I1@ INDI
-1 NO MARR
-2 DATE " + value + @"
-0 TRLR
-", "Line 6: \"" + value + "\" is not a valid date period");
-        }
-
-        private void ValidateValidDatePeriodPayload(string value)
-        {
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @I1@ INDI
-1 NO MARR
-2 DATE " + value + @"
-0 TRLR
-");
+            ValidateExactDatePayloadType(VersionString);
         }
 
         /// <summary>
@@ -843,24 +1028,24 @@ namespace Tests
         public void ValidateDatePeriodPayloadType()
         {
             // Try some valid date period values.
-            ValidateValidDatePeriodPayload("TO 3 DEC 2023");
-            ValidateValidDatePeriodPayload("TO DEC 2023");
-            ValidateValidDatePeriodPayload("TO 2023");
-            ValidateValidDatePeriodPayload("TO GREGORIAN 20 BCE");
-            ValidateValidDatePeriodPayload("FROM 03 DEC 2023");
-            ValidateValidDatePeriodPayload("FROM 2000 TO 2020");
-            ValidateValidDatePeriodPayload("FROM MAR 2000 TO JUN 2000");
-            ValidateValidDatePeriodPayload("FROM 30 NOV 2000 TO 1 DEC 2000");
-            ValidateValidDatePeriodPayload("FROM HEBREW 1 TSH 1");
-            ValidateValidDatePeriodPayload("FROM GREGORIAN 20 BCE TO GREGORIAN 12 BCE");
+            ValidateValidDatePeriodPayload(GedcomVersion.Both, "TO 3 DEC 2023");
+            ValidateValidDatePeriodPayload(GedcomVersion.Both, "TO DEC 2023");
+            ValidateValidDatePeriodPayload(GedcomVersion.Both, "TO 2023");
+            ValidateValidDatePeriodPayload(GedcomVersion.V70, "TO GREGORIAN 20 BCE");
+            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM 03 DEC 2023");
+            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM 2000 TO 2020");
+            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM MAR 2000 TO JUN 2000");
+            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM 30 NOV 2000 TO 1 DEC 2000");
+            ValidateValidDatePeriodPayload(GedcomVersion.V70, "FROM HEBREW 1 TSH 1");
+            ValidateValidDatePeriodPayload(GedcomVersion.V70, "FROM GREGORIAN 20 BCE TO GREGORIAN 12 BCE");
 
             // Try some invalid date period values.
-            ValidateInvalidDatePeriodPayload("2023");
-            ValidateInvalidDatePeriodPayload("TO 40 DEC 2023");
-            ValidateInvalidDatePeriodPayload("TO 3 dec 2023");
-            ValidateInvalidDatePeriodPayload("TO 3 JUNE 2023");
-            ValidateInvalidDatePeriodPayload("TO ABC 2023");
-            ValidateInvalidDatePeriodPayload("FROM HEBREW 1 TSH 1 BCE");
+            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "2023");
+            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO 40 DEC 2023");
+            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO 3 dec 2023");
+            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO 3 JUNE 2023");
+            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO ABC 2023");
+            ValidateInvalidDatePeriodPayload(GedcomVersion.V70, "FROM HEBREW 1 TSH 1 BCE");
         }
 
         private void ValidateInvalidDateValuePayload(GedcomVersion version, string value)
@@ -937,66 +1122,13 @@ namespace Tests
             ValidateInvalidDateValuePayload(GedcomVersion.V70, "AFT HEBREW 1 TSH 1 BCE");
         }
 
-        private void ValidateInvalidTimePayload(string value)
-        {
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 DATE 1 DEC 2023
-2 TIME " + value + @"
-0 TRLR
-", "Line 5: \"" + value + "\" is not a valid time");
-        }
-
-        private void ValidateValidTimePayload(string value)
-        {
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 DATE 1 DEC 2023
-2 TIME " + value + @"
-0 TRLR
-");
-        }
-
-        public static void ValidateValidDateValuePayload(GedcomVersion version, string value)
-        {
-            if (version == GedcomVersion.Both)
-            {
-                // TODO: ValidateValidDateValuePayload(GedcomVersion.V551, value);
-                ValidateValidDateValuePayload(GedcomVersion.V70, value);
-                return;
-            }
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS " + VersionString + @"
-0 @I1@ INDI
-1 DEAT
-2 DATE " + value + @"
-0 TRLR
-");
-        }
-
-
         /// <summary>
         /// Validate Time payload type.
         /// </summary>
         [TestMethod]
         public void ValidateTimePayloadType()
         {
-            // Try some valid time values.
-            ValidateValidTimePayload("02:50");
-            ValidateValidTimePayload("2:50");
-            ValidateValidTimePayload("2:50:00.00Z");
-
-            // Try some invalid time values.
-            ValidateInvalidTimePayload(" ");
-            ValidateInvalidTimePayload("invalid");
-            ValidateInvalidTimePayload("000:00");
-            ValidateInvalidTimePayload("24:00:00");
-            ValidateInvalidTimePayload("2:5");
-            ValidateInvalidTimePayload("2:60");
-            ValidateInvalidTimePayload("2:00:60");
+            ValidateTimePayloadType(VersionString);
         }
 
         private void ValidateInvalidAgePayload(string value)
@@ -1173,56 +1305,9 @@ namespace Tests
         /// Validate payload as a pointer to recordType.
         /// </summary>
         [TestMethod]
-        public void Validate70XrefPayloadType()
+        public void ValidateXrefPayloadType()
         {
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 SUBM @S1
-0 TRLR
-", "Line 4: Payload must be a pointer");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 SUBM
-0 TRLR
-", "Line 4: Payload must be a pointer");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 SUBM S1@
-0 TRLR
-", "Line 4: Payload must be a pointer");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 SUBM @S1@
-0 TRLR
-", "Line 4: @S1@ has no associated record");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 SUBM @I1@
-0 @I1@ INDI
-0 TRLR
-", "Line 4: SUBM points to a INDI record");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 SUBM @I1@
-0 @I1@ _SUBM
-0 TRLR
-", "Line 4: SUBM points to a _SUBM record");
-
-            // We can't validate the record type for an
-            // undocumented extension.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-1 _SUBM @I1@
-0 @I1@ INDI
-0 TRLR
-");
+            ValidateXrefPayloadType(VersionString);
         }
 
         // Test files from the test-files repository.
