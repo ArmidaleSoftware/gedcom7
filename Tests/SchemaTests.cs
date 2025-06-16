@@ -11,24 +11,8 @@ using System;
 
 namespace Tests
 {
-    [TestClass]
-    public class SchemaTests
+    public class SchemaTestsUtilities
     {
-        private const string TEST_FILES_BASE_PATH = "../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70";
-        private const string TEST_FILES_REMOTE_PATH = "https://gedcom.io/testfiles/gedcom70/";
-
-        [TestMethod]
-        public void LoadStructureSchema()
-        {
-            GedcomStructureSchema.LoadAll(GedcomVersion.V70);
-            var schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, GedcomStructureSchema.RecordSuperstructureUri, "HEAD", false);
-            Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/HEAD");
-            schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, "https://gedcom.io/terms/v7/DATA-EVEN", "DATE", false);
-            Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/DATA-EVEN-DATE");
-            schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, "https://gedcom.io/terms/v7/HEAD", "DATE", false);
-            Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/HEAD-DATE");
-        }
-
         public static void ValidateGedcomFile(string path, string expected_result = null)
         {
             var file = new GedcomFile();
@@ -61,22 +45,6 @@ namespace Tests
             Assert.AreEqual(expected_result, error);
         }
 
-        public static void ValidateGedzipFile(string path, string expected_result = null)
-        {
-            var file = new GedzipFile();
-            List<string> errors = file.LoadFromPath(path);
-            string error = null;
-            if (errors.Count == 0)
-            {
-                errors.AddRange(file.Validate());
-            }
-            if (errors.Count > 0)
-            {
-                error = string.Join("\n", errors);
-            }
-            Assert.AreEqual(expected_result, error);
-        }
-
         public static void ValidateGedcomText(string text, string expected_result = null)
         {
             var file = new GedcomFile();
@@ -93,70 +61,347 @@ namespace Tests
             Assert.AreEqual(expected_result, error);
         }
 
+        public static void ValidateXref(string versionString)
+        {
+            // HEAD pseudo-structure does not allow an xref.
+            ValidateGedcomText(@"0 @H1@ HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 TRLR
+", "Line 1: Xref is not valid for HEAD");
+
+            // Test an INDI record without an xref.  The spec says:
+            // "Each record to which other structures point must have
+            // a cross-reference identifier. A record to which no
+            // structures point may have a cross-reference identifier,
+            // but does not need to have one. A substructure or pseudo-
+            // structure must not have a cross-reference identifier."
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 INDI
+0 TRLR
+");
+
+            // TRLR pseudo-structure does not allow an xref.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 @T1@ TRLR
+", "Line 4: Xref is not valid for TRLR");
+
+            // Xref must start with @.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 I1@ INDI
+0 TRLR
+", "Line 4: Undocumented standard record");
+
+            // Xref must end with @.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 @I1 INDI
+0 TRLR
+", "Line 4: Xref must start and end with @");
+
+            // Xref must contain something.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 @ INDI
+0 TRLR
+", "Line 4: Xref must start and end with @");
+
+            // Xref must start with @.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 I1@ INDI
+0 TRLR
+", "Line 4: Undocumented standard record");
+
+            // Xref must end with @.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 @I1 INDI
+0 TRLR
+", "Line 4: Xref must start and end with @");
+
+            // Xref must contain something.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 @ INDI
+0 TRLR
+", "Line 4: Xref must start and end with @");
+
+            // Upper case letters and numbers are fine.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + versionString + @"
+0 @I1@ INDI
+0 TRLR
+");
+        }
+
+        public static string GetGedcomVersionString(GedcomVersion version)
+        {
+            switch (version)
+            {
+                case GedcomVersion.V551: return SchemaTests551.VersionString;
+                case GedcomVersion.V70: return SchemaTests70.VersionString;
+                default: throw new NotSupportedException();
+            }
+        }
+
+        public static void ValidateSpacing(string versionString)
+        {
+            // Extra space before the tag is not valid.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2  VERS " + versionString + @"
+0 TRLR
+", "Line 3: Tag must not be empty");
+
+            // Trailing whitespace is not valid.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC " + @"
+2 VERS " + versionString + @"
+0 TRLR
+", "Line 2: An empty payload is not valid after a space");
+        }
+
+    }
+
+    [TestClass]
+    public class SchemaTestsCommon : SchemaTestsUtilities
+    {
+
+        [TestMethod]
+        public void ValidateHeaderAndTrailer()
+        {
+            // Missing HEAD.
+            ValidateGedcomText("0 TRLR\n", "Line 1: HEAD must be the first record");
+
+            // No records.
+            ValidateGedcomText("", "Missing TRLR record");
+        }
+    }
+
+    [TestClass]
+    public class SchemaTests551 : SchemaTestsUtilities
+    {
+        public const string VersionString = "5.5.1";
+
+        [TestMethod]
+        public void Validate551Xref()
+        {
+            ValidateXref(VersionString);
+
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @VOID@ INDI
+0 TRLR
+");
+
+            // Hash is ok in GEDCOM 5.5.1 (except at the start) but not 7.0.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I#1@ INDI
+0 TRLR
+");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @#I1@ INDI
+0 TRLR
+", "Line 4: Xref \"@#I1@\" does not start with a letter or digit");
+
+            // Underscore is ok in GEDCOM 7.0 but not 5.5.1.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I_1@ INDI
+0 TRLR
+", "Line 4: Invalid character '_' in Xref \"@I_1@\"");
+
+            // Lower-case letters are ok in GEDCOM 5.5.1 but not 7.0.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @i1@ INDI
+0 TRLR
+");
+        }
+
+        [TestMethod]
+        public void ValidatePayloadType()
+        {
+            // Validate null.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC 1
+2 VERS 5.5.1
+0 TRLR
+", "Line 2: GEDC payload must be null");
+
+            // Validate an integer.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+1 NCHI 0
+0 TRLR
+");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+1 NCHI -1
+0 TRLR
+", "Line 5: \"-1\" is not a non-negative integer");
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+1 NCHI
+0 TRLR
+", "Line 5: \"\" is not a non-negative integer");
+
+            // Test Y|<NULL>.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+0 @I1@ INDI
+1 BIRT N
+0 TRLR
+", "Line 5: BIRT payload must be 'Y' or empty");
+        }
+
+        [TestMethod]
+        public void ValidateSpacing()
+        {
+            // Leading whitespace is valid prior to 7.0 but not in 7.0.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+ 2 VERS 5.5.1
+0 TRLR
+");
+
+            // Extra space before the tag is not valid.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2  VERS 5.5.1
+0 TRLR
+", "Line 3: Tag must not be empty");
+
+            ValidateSpacing(VersionString);
+        }
+    }
+
+    [TestClass]
+    public class SchemaTests70 : SchemaTestsUtilities
+    {
+        public const string VersionString = "7.0";
+        private const string TEST_FILES_BASE_70_PATH = "../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70";
+        private const string TEST_FILES_REMOTE_70_PATH = "https://gedcom.io/testfiles/gedcom70/";
+
+        [TestMethod]
+        public void LoadStructureSchema()
+        {
+            GedcomStructureSchema.LoadAll(GedcomVersion.V70);
+            var schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, GedcomStructureSchema.RecordSuperstructureUri, "HEAD", false);
+            Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/HEAD");
+            schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, "https://gedcom.io/terms/v7/DATA-EVEN", "DATE", false);
+            Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/DATA-EVEN-DATE");
+            schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, "https://gedcom.io/terms/v7/HEAD", "DATE", false);
+            Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/HEAD-DATE");
+        }
+
+        public static void ValidateGedzipFile(string path, string expected_result = null)
+        {
+            var file = new GedzipFile();
+            List<string> errors = file.LoadFromPath(path);
+            string error = null;
+            if (errors.Count == 0)
+            {
+                errors.AddRange(file.Validate());
+            }
+            if (errors.Count > 0)
+            {
+                error = string.Join("\n", errors);
+            }
+            Assert.AreEqual(expected_result, error);
+        }
+
         [TestMethod]
         public void ValidateFileEscapes()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "escapes.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "escapes.ged"));
         }
 
         [TestMethod]
         public void ValidateFileExtensionRecord()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "extension-record.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "extension-record.ged"));
         }
 
         [TestMethod]
         public void ValidateFileLongUrl()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "long-url.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "long-url.ged"));
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Lds()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "maximal70-lds.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "maximal70-lds.ged"));
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Memories1()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "maximal70-memories1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "maximal70-memories1.ged"));
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Memories2()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "maximal70-memories2.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "maximal70-memories2.ged"));
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Tree1()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "maximal70-tree1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "maximal70-tree1.ged"));
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Tree2()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "maximal70-tree2.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "maximal70-tree2.ged"));
         }
 
         [TestMethod]
         public void ValidateFileMaximal70()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "maximal70.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "maximal70.ged"));
         }
 
         [TestMethod]
         public void ValidateRemoteFileMaximal70()
         {
-            ValidateRemoteGedcomFile(TEST_FILES_REMOTE_PATH + "maximal70.ged");
+            ValidateRemoteGedcomFile(TEST_FILES_REMOTE_70_PATH + "maximal70.ged");
         }
 
         [TestMethod]
         public void ValidateFileMaximal70Zip()
         {
-            ValidateGedzipFile(Path.Combine(TEST_FILES_BASE_PATH, "maximal70.gdz"));
+            ValidateGedzipFile(Path.Combine(TEST_FILES_BASE_70_PATH, "maximal70.gdz"));
         }
 
         [TestMethod]
@@ -164,38 +409,38 @@ namespace Tests
         {
             ValidateGedcomFile("minimal70.txt", "minimal70.txt must have a .ged extension");
 
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "minimal70.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "minimal70.ged"));
         }
 
         [TestMethod]
         public void ValidateFileMinimal70Zip()
         {
             ValidateGedzipFile("minimal70.zip", "minimal70.zip must have a .gdz extension");
-            ValidateGedzipFile(Path.Combine(TEST_FILES_BASE_PATH, "minimal70.gdz"));
+            ValidateGedzipFile(Path.Combine(TEST_FILES_BASE_70_PATH, "minimal70.gdz"));
         }
 
         [TestMethod]
         public void ValidateFileRemarriage1()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "remarriage1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "remarriage1.ged"));
         }
 
         [TestMethod]
         public void ValidateFileRemarriage2()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "remarriage2.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "remarriage2.ged"));
         }
 
         [TestMethod]
         public void ValidateFileSameSexMarriage()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "same-sex-marriage.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "same-sex-marriage.ged"));
         }
 
         [TestMethod]
         public void ValidateFileVoidptr()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_PATH, "voidptr.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH, "voidptr.ged"));
         }
 
         [TestMethod]
@@ -206,9 +451,6 @@ namespace Tests
 1 GEDC
 2 VERS 7.0
 ", "Missing TRLR record");
-
-            // Missing HEAD.
-            ValidateGedcomText("0 TRLR\n", "Line 1: HEAD must be the first record");
 
             // Minimal70.
             ValidateGedcomText(@"0 HEAD
@@ -249,9 +491,6 @@ namespace Tests
 0 TRLR
 0 TRLR
 ", "Line 5: Duplicate TRLR record");
-
-            // No records.
-            ValidateGedcomText("", "Missing TRLR record");
         }
 
         [TestMethod]
@@ -310,15 +549,11 @@ namespace Tests
 ", "Line 4: CONT is not a valid substructure of HEAD");
         }
 
+
         [TestMethod]
         public void ValidateSpacing()
         {
             // Leading whitespace is valid prior to 7.0 but not in 7.0.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
- 2 VERS 5.5.1
-0 TRLR
-");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
  2 VERS 7.0
@@ -330,160 +565,13 @@ namespace Tests
 0 TRLR
 ", "Line 2: Line must start with an integer\nLine 3: Line must start with an integer");
 
-            // Extra space before the tag is not valid.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2  VERS 5.5.1
-0 TRLR
-", "Line 3: Tag must not be empty");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2  VERS 7.0
-0 TRLR
-", "Line 3: Tag must not be empty");
-
-            // Trailing whitespace is not valid.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC 
-2 VERS 5.5.1
-0 TRLR
-", "Line 2: An empty payload is not valid after a space");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC 
-2 VERS 7.0
-0 TRLR
-", "Line 2: An empty payload is not valid after a space");
+            ValidateSpacing(VersionString);
         }
 
         [TestMethod]
-        public void ValidateXref()
+        public void Validate70Xref()
         {
-            // HEAD pseudo-structure does not allow an xref.
-            ValidateGedcomText(@"0 @H1@ HEAD
-1 GEDC
-2 VERS 5.5.1
-0 TRLR
-", "Line 1: Xref is not valid for HEAD");
-            ValidateGedcomText(@"0 @H1@ HEAD
-1 GEDC
-2 VERS 7.0
-0 TRLR
-", "Line 1: Xref is not valid for HEAD");
-
-            // Test an INDI record without an xref.  The spec says:
-            // "Each record to which other structures point must have
-            // a cross-reference identifier. A record to which no
-            // structures point may have a cross-reference identifier,
-            // but does not need to have one. A substructure or pseudo-
-            // structure must not have a cross-reference identifier."
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 INDI
-0 TRLR
-");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 INDI
-0 TRLR
-");
-
-            // TRLR pseudo-structure does not allow an xref.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @T1@ TRLR
-", "Line 4: Xref is not valid for TRLR");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @T1@ TRLR
-", "Line 4: Xref is not valid for TRLR");
-
-            // Xref must start with @.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 I1@ INDI
-0 TRLR
-", "Line 4: Undocumented standard record");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 I1@ INDI
-0 TRLR
-", "Line 4: Undocumented standard record");
-
-            // Xref must end with @.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @I1 INDI
-0 TRLR
-", "Line 4: Xref must start and end with @");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @I1 INDI
-0 TRLR
-", "Line 4: Xref must start and end with @");
-
-            // Xref must contain something.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @ INDI
-0 TRLR
-", "Line 4: Xref must start and end with @");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @ INDI
-0 TRLR
-", "Line 4: Xref must start and end with @");
-
-            // Xref must start with @.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 I1@ INDI
-0 TRLR
-", "Line 4: Undocumented standard record");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 I1@ INDI
-0 TRLR
-", "Line 4: Undocumented standard record");
-
-            // Xref must end with @.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @I1 INDI
-0 TRLR
-", "Line 4: Xref must start and end with @");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @I1 INDI
-0 TRLR
-", "Line 4: Xref must start and end with @");
-
-            // Xref must contain something.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @ INDI
-0 TRLR
-", "Line 4: Xref must start and end with @");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @ INDI
-0 TRLR
-", "Line 4: Xref must start and end with @");
+            ValidateXref(VersionString);
 
             // Test characters within an xref, which is
             // @<alphanum><pointer_string>@
@@ -492,27 +580,7 @@ namespace Tests
             // and GEDCOM 7.0
             // where pointer_string has (upper|digit|_)
 
-            // Upper case letters and numbers are fine.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @I1@ INDI
-0 TRLR
-");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @I1@ INDI
-0 TRLR
-");
-
             // GEDCOM 7.0 disallows @VOID@ as an actual xref id.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @VOID@ INDI
-0 TRLR
-");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
@@ -523,18 +591,6 @@ namespace Tests
             // Hash is ok in GEDCOM 5.5.1 (except at the start) but not 7.0.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
-0 @I#1@ INDI
-0 TRLR
-");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @#I1@ INDI
-0 TRLR
-", "Line 4: Xref \"@#I1@\" does not start with a letter or digit");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
 2 VERS 7.0
 0 @I#1@ INDI
 0 TRLR
@@ -543,24 +599,12 @@ namespace Tests
             // Underscore is ok in GEDCOM 7.0 but not 5.5.1.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
-0 @I_1@ INDI
-0 TRLR
-", "Line 4: Invalid character '_' in Xref \"@I_1@\"");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
 2 VERS 7.0
 0 @I_1@ INDI
 0 TRLR
 ");
 
             // Lower-case letters are ok in GEDCOM 5.5.1 but not 7.0.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @i1@ INDI
-0 TRLR
-");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 7.0
@@ -579,45 +623,6 @@ namespace Tests
         [TestMethod]
         public void ValidatePayloadType()
         {
-            // Validate null.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC 1
-2 VERS 5.5.1
-0 TRLR
-", "Line 2: GEDC payload must be null");
-
-            // Validate an integer.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @I1@ INDI
-1 NCHI 0
-0 TRLR
-");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @I1@ INDI
-1 NCHI -1
-0 TRLR
-", "Line 5: \"-1\" is not a non-negative integer");
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @I1@ INDI
-1 NCHI
-0 TRLR
-", "Line 5: \"\" is not a non-negative integer");
-
-            // Test Y|<NULL>.
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 5.5.1
-0 @I1@ INDI
-1 BIRT N
-0 TRLR
-", "Line 5: BIRT payload must be 'Y' or empty");
-
             // We can't validate "standard" structures
             // under an extension, since they may be
             // ambiguous, such as "NAME" or "HUSB".
@@ -644,7 +649,7 @@ namespace Tests
         {
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
+2 VERS 7.0
 0 @O1@ OBJE
 1 FILE " + value + @"
 2 FORM application/x-other
@@ -656,7 +661,7 @@ namespace Tests
         {
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
+2 VERS 7.0
 0 @O1@ OBJE
 1 FILE " + value + @"
 2 FORM application/x-other
@@ -900,34 +905,6 @@ namespace Tests
 ", "Line 6: \"" + value + "\" is not a valid date value");
         }
 
-        private string GetGedcomVersionString(GedcomVersion version)
-        {
-            switch (version)
-            {
-                case GedcomVersion.V551: return "5.5.1";
-                case GedcomVersion.V70: return "7.0";
-                default: throw new NotSupportedException();
-            }
-        }
-
-        private void ValidateValidDateValuePayload(GedcomVersion version, string value)
-        {
-            if (version == GedcomVersion.Both)
-            {
-                // TODO: ValidateValidDateValuePayload(GedcomVersion.V551, value);
-                ValidateValidDateValuePayload(GedcomVersion.V70, value);
-                return;
-            }
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS " + GetGedcomVersionString(version) + @"
-0 @I1@ INDI
-1 DEAT
-2 DATE " + value + @"
-0 TRLR
-");
-        }
-
         /// <summary>
         /// Validate date value payload type.
         /// </summary>
@@ -1005,6 +982,25 @@ namespace Tests
 0 TRLR
 ");
         }
+
+        public static void ValidateValidDateValuePayload(GedcomVersion version, string value)
+        {
+            if (version == GedcomVersion.Both)
+            {
+                // TODO: ValidateValidDateValuePayload(GedcomVersion.V551, value);
+                ValidateValidDateValuePayload(GedcomVersion.V70, value);
+                return;
+            }
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + VersionString + @"
+0 @I1@ INDI
+1 DEAT
+2 DATE " + value + @"
+0 TRLR
+");
+        }
+
 
         /// <summary>
         /// Validate Time payload type.
@@ -1201,7 +1197,7 @@ namespace Tests
         /// Validate payload as a pointer to recordType.
         /// </summary>
         [TestMethod]
-        public void ValidateXrefPayloadType()
+        public void Validate70XrefPayloadType()
         {
             ValidateGedcomText(@"0 HEAD
 1 GEDC
