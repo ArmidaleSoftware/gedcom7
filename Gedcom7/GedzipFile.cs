@@ -148,9 +148,13 @@ namespace Gedcom7
             List<string> referencedFilePaths = this.GedcomFile.GetReferencedFiles();
             foreach (string filePath in referencedFilePaths)
             {
-                if (IsLocalFileReference(filePath) && !this.ContainsReferencedFile(filePath))
+                if (IsLocalFileReference(filePath))
                 {
-                    errors.Add(System.IO.Path.GetFileName(this.Path) + " is missing " + filePath);
+                    string unescapedFilePath = Uri.UnescapeDataString(filePath);
+                    if (!this.ContainsReferencedFile(unescapedFilePath))
+                    {
+                        errors.Add(System.IO.Path.GetFileName(this.Path) + " is missing " + unescapedFilePath);
+                    }
                 }
             }
 
