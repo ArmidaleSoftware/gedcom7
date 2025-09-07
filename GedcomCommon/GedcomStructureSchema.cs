@@ -103,6 +103,36 @@ namespace GedcomCommon
             return this.StandardTag;
         }
 
+        public static bool UriHasVersion(string uri, GedcomVersion version)
+        {
+            if (uri.Contains("/v5.5.1/"))
+            {
+                return (version == GedcomVersion.V551 || version == GedcomVersion.Both);
+            }
+            return (version == GedcomVersion.V70 || version == GedcomVersion.Both);
+        }
+
+        /// <summary>
+        /// Check whether this schema applies to a given GEDCOM version.
+        /// </summary>
+        /// <param name="version">GEDCOM version</param>
+        /// <returns>true if applies, false if not</returns>
+        public bool HasVersion(GedcomVersion version)
+        {
+            if (IsDocumented && !UriHasVersion(this.Uri, version))
+            {
+                return false;
+            }
+            foreach (string uri in Substructures.Keys)
+            {
+                if (!UriHasVersion(uri, version))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         GedcomStructureSchema(Dictionary<object, object> dictionary)
         {
             this.Lang = dictionary["lang"] as string;
@@ -156,7 +186,7 @@ namespace GedcomCommon
             structureSchemaKey.SuperstructureUri = superstructureUri;
             structureSchemaKey.Tag = tag;
             structureSchemaKey.IsPointer = (version == GedcomVersion.V551) && (schema.Payload != null) && schema.Payload.StartsWith('@');
-            Debug.Assert(!s_StructureSchemas.ContainsKey(structureSchemaKey));
+            Debug.Assert(!s_StructureSchemas.ContainsKey(structureSchemaKey), $"No structure schema for {sourceProgram} {superstructureUri} {tag} {structureSchemaKey.IsPointer}");
             s_StructureSchemas[structureSchemaKey] = schema;
         }
 
@@ -211,6 +241,10 @@ namespace GedcomCommon
                 object[] myObject = serializer.DeserializeFromFile(filename);
                 var dictionary = myObject[0] as Dictionary<object, object>;
                 var schema = new GedcomStructureSchema(dictionary);
+                if (!schema.HasVersion(version))
+                {
+                    continue;
+                }
                 s_StructureSchemasByUri[schema.Uri] = schema;
                 if (schema.Superstructures.Count == 0)
                 {
