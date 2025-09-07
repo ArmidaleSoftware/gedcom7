@@ -883,6 +883,9 @@ namespace GedcomCommon
                     case "https://gedcom.io/terms/v5.5.1/type-LANGUAGE_PREFERENCE": // TODO complex validation
                     case "https://gedcom.io/terms/v5.5.1/type-LANGUAGE_OF_TEXT": // TODO complex validation
                     case "https://gedcom.io/terms/v5.5.1/type-EVENT_DESCRIPTOR": // TODO complex validation
+                    case "https://gedcom.io/terms/v7/type-TagDef": // TODO complex validation
+                    case "https://gedcom.io/terms/v7/type-Latitude": // TODO complex validation
+                    case "https://gedcom.io/terms/v7/type-Longitude": // TODO complex validation
                     case "http://www.w3.org/2001/XMLSchema#string":
                         if ((this.Schema.Uri == "https://gedcom.io/terms/v7/TAG") && (tokens.Length > 3))
                         {
@@ -1029,6 +1032,7 @@ namespace GedcomCommon
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid age");
                         }
                         break;
+                    case "http://www.w3.org/2001/XMLSchema#anyURI":
                     case "https://gedcom.io/terms/v7/type-FilePath":
                         // The value must be a URI reference.
                         if (!Uri.IsWellFormedUriString(this.LineVal, UriKind.RelativeOrAbsolute))
@@ -1046,7 +1050,7 @@ namespace GedcomCommon
                             }
                             break;
                         }
-                        return ErrorMessage("TODO: unrecognized payload type");
+                        return ErrorMessage($"TODO: unrecognized payload type {payloadType}");
                 }
             }
 
