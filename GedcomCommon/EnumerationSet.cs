@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Yaml.Serialization;
+using YamlDotNet.Serialization;
 
 namespace GedcomCommon
 {
@@ -17,7 +17,7 @@ namespace GedcomCommon
         {
             this.Uri = dictionary["uri"] as string;
             this.ValueUris = new List<string>();
-            GedcomStructureSchema.AddStrings(this.ValueUris, dictionary["enumeration values"] as Object[]);
+            GedcomStructureSchema.AddStrings(this.ValueUris, dictionary["enumeration values"] as List<Object>);
 
             this.ValueTags = new List<string>();
             foreach (var uri in this.ValueUris)
@@ -58,9 +58,9 @@ namespace GedcomCommon
             }
             foreach (string filename in files)
             {
-                var serializer = new YamlSerializer();
-                object[] myObject = serializer.DeserializeFromFile(filename);
-                var dictionary = myObject[0] as Dictionary<object, object>;
+                var deserializer = new DeserializerBuilder().Build();
+                using var reader = new StreamReader(filename);
+                var dictionary = deserializer.Deserialize<Dictionary<object, object>>(reader);
                 var schema = new EnumerationSet(dictionary);
                 s_EnumerationSets.Add(schema.Uri, schema);
             }

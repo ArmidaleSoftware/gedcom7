@@ -75,24 +75,24 @@ jobs:
 
       - name: Run Basic Unit Tests
         if: steps.skip_check.outputs.should_skip != 'true'
-        working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0
+        working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net8.0
         run: vstest.console.exe Tests.dll /Logger:trx
 
       - name: Validate GEDCOM.io test files
         if: steps.skip_check.outputs.should_skip != 'true'
-        working-directory: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/
+        working-directory: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/
         run: |
           .\GedValidate.exe ${{github.workspace}}\external\GEDCOM-registries ${{github.workspace}}\external\GEDCOM-registries\registry_tools\GEDCOM.io\testfiles\gedcom70\
 
       - name: Validate test-files test files
         if: steps.skip_check.outputs.should_skip != 'true'
-        working-directory: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/
+        working-directory: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/
         run: |
           .\GedValidate.exe ${{github.workspace}}\external\GEDCOM-registries ${{github.workspace}}\external\test-files\7\
 
       - name: Dump memory usage
         if: steps.skip_check.outputs.should_skip != 'true'
-        working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net6.0/TestResults
+        working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net8.0/TestResults
         run: findstr bytes *.trx
 
       - name: Upload GedValidate binary
@@ -100,5 +100,5 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: Windows ${{env.BUILD_CONFIGURATION}} GedValidate
-          path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net6.0/
+          path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/
           retention-days: 5
