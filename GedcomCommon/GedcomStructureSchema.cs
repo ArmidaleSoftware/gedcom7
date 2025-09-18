@@ -4,7 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Yaml.Serialization;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace GedcomCommon
 {
@@ -32,7 +33,7 @@ namespace GedcomCommon
     }
     public class GedcomStructureSchema
     {
-        public static void AddStrings(List<string> list, Object[] array)
+        public static void AddStrings(List<string> list, List<object> array)
         {
             if (array != null)
             {
@@ -146,7 +147,7 @@ namespace GedcomCommon
                 this.EnumerationSetUri = dictionary["enumeration set"] as string;
             }
             this.Specification = new List<string>();
-            AddStrings(this.Specification, dictionary["specification"] as Object[]);
+            AddStrings(this.Specification, dictionary["specification"] as List<Object>);
             this.Substructures = new Dictionary<string, GedcomStructureCountInfo>();
             AddDictionary(this.Substructures, dictionary["substructures"] as Dictionary<object, object>);
             this.Superstructures = new Dictionary<string, GedcomStructureCountInfo>();
@@ -237,9 +238,9 @@ namespace GedcomCommon
             string[] files = Directory.GetFiles(path);
             foreach (string filename in files)
             {
-                var serializer = new YamlSerializer();
-                object[] myObject = serializer.DeserializeFromFile(filename);
-                var dictionary = myObject[0] as Dictionary<object, object>;
+                var deserializer = new DeserializerBuilder().Build();
+                using var reader = new StreamReader(filename);
+                var dictionary = deserializer.Deserialize<Dictionary<object, object>>(reader);
                 var schema = new GedcomStructureSchema(dictionary);
                 if (!schema.HasVersion(version))
                 {

@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Yaml.Serialization;
+using YamlDotNet.Serialization;
 
 namespace GedcomCommon
 {
@@ -22,9 +22,9 @@ namespace GedcomCommon
             this.Label = dictionary["label"] as string;
             this.StandardTag = dictionary["standard tag"] as string;
             this.Epochs = new List<string>();
-            GedcomStructureSchema.AddStrings(this.Epochs, dictionary["epochs"] as Object[]);
+            GedcomStructureSchema.AddStrings(this.Epochs, dictionary["epochs"] as List<Object>);
             this.MonthUris = new List<string>();
-            GedcomStructureSchema.AddStrings(this.MonthUris, dictionary["months"] as Object[]);
+            GedcomStructureSchema.AddStrings(this.MonthUris, dictionary["months"] as List<Object>);
 
             this.MonthTags = new List<string>();
             foreach (var uri in this.MonthUris)
@@ -60,9 +60,9 @@ namespace GedcomCommon
             }
             foreach (string filename in files)
             {
-                var serializer = new YamlSerializer();
-                object[] myObject = serializer.DeserializeFromFile(filename);
-                var dictionary = myObject[0] as Dictionary<object, object>;
+                var deserializer = new DeserializerBuilder().Build();
+                using var reader = new StreamReader(filename);
+                var dictionary = deserializer.Deserialize<Dictionary<object, object>>(reader);
                 var schema = new CalendarSchema(dictionary);
                 s_CalendarsByTag.Add(schema.StandardTag, schema);
             }
