@@ -14,7 +14,8 @@ namespace GedcomCommon
         Unknown = 0,
         V551,
         V70,
-        Both // Only used in tests, never for an actual file.
+        V71,
+        All // Only used in tests, never for an actual file.
     }
     public class GedcomFile
     {
@@ -99,6 +100,10 @@ namespace GedcomCommon
                         if (line.Contains("7.0"))
                         {
                             this.GedcomVersion = GedcomVersion.V70;
+                        }
+                        else if (line.Contains("7.1"))
+                        {
+                            this.GedcomVersion = GedcomVersion.V71;
                         }
                         else if (line.Contains("5.5.1"))
                         {

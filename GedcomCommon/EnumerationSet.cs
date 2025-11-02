@@ -45,7 +45,7 @@ namespace GedcomCommon
                 return;
             }
             EnumerationValue.LoadAll(gedcomRegistriesPath);
-            var path = Path.Combine(gedcomRegistriesPath, "enumeration-set/standard");
+            var path = Path.Combine(gedcomRegistriesPath, "enumeration-set\\standard");
             string[] files;
             try
             {

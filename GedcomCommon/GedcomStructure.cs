@@ -736,7 +736,7 @@ namespace GedcomCommon
             int index = 0;
 
             GedcomVersion gedcomVersion = file.GedcomVersion;
-            if (gedcomVersion != GedcomVersion.V70)
+            if (gedcomVersion == GedcomVersion.V551)
             {
                 // Prior to GEDCOM 7, leading whitespace was allowed.
                 while (tokens[index].Length == 0)

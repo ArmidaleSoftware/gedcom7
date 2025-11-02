@@ -106,11 +106,16 @@ namespace GedcomCommon
 
         public static bool UriHasVersion(string uri, GedcomVersion version)
         {
+            Debug.Assert(version != GedcomVersion.Unknown);
             if (uri.Contains("/v5.5.1/"))
             {
-                return (version == GedcomVersion.V551 || version == GedcomVersion.Both);
+                return (version == GedcomVersion.V551 || version == GedcomVersion.All);
             }
-            return (version == GedcomVersion.V70 || version == GedcomVersion.Both);
+            if (uri.Contains("/v7.1/"))
+            {
+                return (version == GedcomVersion.V71 || version == GedcomVersion.All);
+            }
+            return (version == GedcomVersion.V70 || version == GedcomVersion.All);
         }
 
         /// <summary>
@@ -120,6 +125,7 @@ namespace GedcomCommon
         /// <returns>true if applies, false if not</returns>
         public bool HasVersion(GedcomVersion version)
         {
+            Debug.Assert(version != GedcomVersion.Unknown);
             if (IsDocumented && !UriHasVersion(this.Uri, version))
             {
                 return false;
@@ -182,6 +188,7 @@ namespace GedcomCommon
         /// <param name="schema">Schema</param>
         public static void AddSchema(GedcomVersion version, string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
         {
+            Debug.Assert(sourceProgram != string.Empty); // Use wildcard for all.
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
             structureSchemaKey.SourceProgram = sourceProgram;
             structureSchemaKey.SuperstructureUri = superstructureUri;
@@ -225,6 +232,7 @@ namespace GedcomCommon
 
         public static void LoadAll(GedcomVersion version, string gedcomRegistriesPath = null)
         {
+            Debug.Assert(version != GedcomVersion.Unknown);
             if (s_StructureSchemas.Count > 0)
             {
                 return;
@@ -232,9 +240,9 @@ namespace GedcomCommon
             if (gedcomRegistriesPath == null)
             {
                 string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                gedcomRegistriesPath = Path.Combine(baseDirectory, "../../../../../gedcom7/external/GEDCOM-registries");
+                gedcomRegistriesPath = Path.Combine(baseDirectory, "..\\..\\..\\..\\..\\gedcom7\\external\\GEDCOM-registries");
             }
-            var path = Path.Combine(gedcomRegistriesPath, "structure/standard");
+            var path = Path.Combine(gedcomRegistriesPath, "structure\\standard");
             string[] files = Directory.GetFiles(path);
             foreach (string filename in files)
             {
