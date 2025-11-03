@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
+using GedcomCommon;
+using Gedcom551;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,17 +9,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace GedcomCommon
+namespace GedcomLoader
 {
-    public enum GedcomVersion
-    {
-        Unknown = 0,
-        V551,
-        V70,
-        V71,
-        All // Only used in tests, never for an actual file.
-    }
-    public class GedcomFile
+    public class GedcomFile : IGedcomFile
     {
         public GedcomFile()
         {
@@ -29,7 +23,8 @@ namespace GedcomCommon
         public string Path { get; private set; }
         public int LineCount { get; private set; }
         public List<GedcomStructure> GetRecordsAsList() => Records.Values.ToList();
-        public Dictionary<string, GedcomStructure> Records = new Dictionary<string, GedcomStructure>();
+        public Dictionary<string, GedcomStructure> Records { get; } = new Dictionary<string, GedcomStructure>();
+
         public GedcomStructure Head { get; set; }
         public GedcomStructure Trlr { get; set; }
         public override string ToString() { return this.Path; }
@@ -118,7 +113,16 @@ namespace GedcomCommon
                 reader.DiscardBufferedData();
             }
 
+            if (this.GedcomVersion == GedcomVersion.Unknown)
+            {
+                this.GedcomVersion = GedcomVersion.V70;
+            }
+
             GedcomStructureSchema.LoadAll(this.GedcomVersion, gedcomRegistriesPath);
+            if (this.GedcomVersion == GedcomVersion.V551)
+            {
+                Gedcom551.CalendarSchema.AddOldCalendars();
+            }
 
             // Consume the BOM if any.
             if (reader.Peek() == 65279)
@@ -210,8 +214,10 @@ namespace GedcomCommon
         /// </summary>
         /// <param name="otherFile">File to compare against</param>
         /// <returns></returns>
-        public GedcomComparisonReport Compare(GedcomFile otherFile)
+        public GedcomComparisonReport Compare(IGedcomFile otherIFile)
         {
+            var otherFile = otherIFile as GedcomFile;
+
             // First do a pass trying to match structures in each file.
             foreach (var keyValuePair in this.Records)
             {
@@ -244,7 +250,7 @@ namespace GedcomCommon
         public GedcomStructureMatchInfo GetMatchInfo(GedcomStructure structure)
         {
 #if DEBUG
-            GedcomFile file = structure.File;
+            var file = structure.File as GedcomFile;
             Debug.Assert(file == this);
 #endif
             if (!this.StructureMatchDictionary.ContainsKey(structure))
@@ -278,7 +284,7 @@ namespace GedcomCommon
         public void SaveMatch(GedcomStructure current, GedcomStructure other, float score)
         {
             GedcomStructureMatchInfo currentMatchInfo = GetMatchInfo(current);
-            GedcomFile otherFile = other.File;
+            var otherFile = other.File as GedcomFile;
             GedcomStructureMatchInfo otherMatchInfo = otherFile.GetMatchInfo(other);
             if (otherFile.GetIsMatchComplete(otherMatchInfo))
             {

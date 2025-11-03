@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using YamlDotNet.Serialization;
@@ -77,6 +78,12 @@ namespace GedcomCommon
                 }
                 s_CalendarsByTag.Add(schema.StandardTag, schema);
             }
+        }
+
+        public static void AddOldCalendar(Dictionary<object, object> dictionary)
+        {
+            var schema = new CalendarSchema(dictionary);
+            s_CalendarsByTag.Add(schema.StandardTag, schema);
         }
 
         public static CalendarSchema GetCalendarByTag(string tag) => s_CalendarsByTag[tag];

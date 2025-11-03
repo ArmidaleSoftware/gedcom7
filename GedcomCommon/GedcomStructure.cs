@@ -28,14 +28,14 @@ namespace GedcomCommon
                 return null;
             }
         }
-        public GedcomFile File
+        public IGedcomFile File
         {
             get
             {
-                if (_superstructure is WeakReference<GedcomFile>)
+                if (_superstructure is WeakReference<IGedcomFile>)
                 {
-                    WeakReference<GedcomFile> wr = _superstructure as WeakReference<GedcomFile>;
-                    GedcomFile target;
+                    WeakReference<IGedcomFile> wr = _superstructure as WeakReference<IGedcomFile>;
+                    IGedcomFile target;
                     if (wr.TryGetTarget(out target))
                     {
                         return target;
@@ -267,7 +267,7 @@ namespace GedcomCommon
             {
                 // Try to resolve the pointer.
                 string xref = this.LineVal;
-                GedcomFile file = this.File;
+                IGedcomFile file = this.File;
                 GedcomStructure record = file.FindRecord(xref);
                 if (record == null)
                 {
@@ -721,7 +721,7 @@ namespace GedcomCommon
         /// <param name="line">Line text</param>
         /// <param name="structurePath">Prior structure path</param>
         /// <returns>Error message, or null on success</returns>
-        public string Parse(GedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
+        public string Parse(IGedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
         {
             this.LineNumber = lineNumber;
             this.OriginalLine = line;
@@ -767,7 +767,7 @@ namespace GedcomCommon
             }
             else
             {
-                this._superstructure = new WeakReference<GedcomFile>(file);
+                this._superstructure = new WeakReference<IGedcomFile>(file);
 
                 if ((tokens.Length > index) && (tokens[index].Length > 0) && (tokens[index][0] == '@'))
                 {
@@ -1151,7 +1151,7 @@ namespace GedcomCommon
         /// <returns>positive if similar, negative if dissimilar</returns>
         static float ScoreNamePiece(GedcomStructure superset, GedcomStructure subset)
         {
-            GedcomFile file = superset.File;
+            IGedcomFile file = superset.File;
             if (file == null)
             {
                 return 0;
@@ -1233,7 +1233,7 @@ namespace GedcomCommon
         public GedcomStructure FindBestMatch(List<GedcomStructure> others, out float returnScore)
         {
             returnScore = 0;
-            GedcomFile file = this.File;
+            IGedcomFile file = this.File;
             if (file == null)
             {
                 return null;
@@ -1242,7 +1242,7 @@ namespace GedcomCommon
             GedcomStructure bestOther = null;
             foreach (GedcomStructure other in others)
             {
-                GedcomFile otherFile = other.File;
+                IGedcomFile otherFile = other.File;
                 if (otherFile == null)
                 {
                     return null;

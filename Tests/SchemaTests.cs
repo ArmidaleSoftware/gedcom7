@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
 using GedcomCommon;
+using GedcomLoader;
 using Gedcom7;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
@@ -236,12 +237,47 @@ namespace Tests
             ValidateInvalidNamePayload(versionString, "a\tb");
         }
 
+        protected static string GetGedcomVersionHeaderAdditions(GedcomVersion version)
+        {
+            if (version != GedcomVersion.V551)
+            {
+                return string.Empty;
+            }
+            return @"2 FORM LINEAGE-LINKED
+1 CHAR ASCII
+";
+        }
+
         protected static void ValidateValidDateValuePayload(GedcomVersion version, string value)
         {
-            if (version == GedcomVersion.Both)
+            if (version == GedcomVersion.All)
             {
-                // TODO: ValidateValidDateValuePayload(GedcomVersion.V551, value);
+                ValidateValidDateValuePayload(GedcomVersion.V551, value);
                 ValidateValidDateValuePayload(GedcomVersion.V70, value);
+                ValidateValidDateValuePayload(GedcomVersion.V71, value);
+                return;
+            }
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS " + GetGedcomVersionString(version) + @"
+" + GetGedcomVersionHeaderAdditions(version) + @"1 SOUR Test
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 DEAT
+2 DATE " + value + @"
+0 TRLR
+");
+        }
+
+        protected void ValidateInvalidDateValuePayload(GedcomVersion version, string value)
+        {
+            if (version == GedcomVersion.All)
+            {
+                ValidateInvalidDateValuePayload(GedcomVersion.V551, value);
+                ValidateInvalidDateValuePayload(GedcomVersion.V70, value);
+                ValidateInvalidDateValuePayload(GedcomVersion.V71, value);
                 return;
             }
             ValidateGedcomText(@"0 HEAD
@@ -251,7 +287,7 @@ namespace Tests
 1 DEAT
 2 DATE " + value + @"
 0 TRLR
-");
+", "Line 6: \"" + value + "\" is not a valid date value");
         }
 
         private void ValidateInvalidExactDatePayload(string versionString, string value)
@@ -292,10 +328,11 @@ namespace Tests
 
         protected void ValidateInvalidDatePeriodPayload(GedcomVersion version, string value)
         {
-            if (version == GedcomVersion.Both)
+            if (version == GedcomVersion.All)
             {
-                // TODO: ValidateInvalidDatePeriodPayload(GedcomVersion.V551, value);
+                ValidateInvalidDatePeriodPayload(GedcomVersion.V551, value);
                 ValidateInvalidDatePeriodPayload(GedcomVersion.V70, value);
+                ValidateInvalidDatePeriodPayload(GedcomVersion.V71, value);
                 return;
             }
 
@@ -311,10 +348,11 @@ namespace Tests
 
         protected void ValidateValidDatePeriodPayload(GedcomVersion version, string value)
         {
-            if (version == GedcomVersion.Both)
+            if (version == GedcomVersion.All)
             {
-                // TODO: ValidateValidDatePeriodPayload(GedcomVersion.V551, value);
+                ValidateValidDatePeriodPayload(GedcomVersion.V551, value);
                 ValidateValidDatePeriodPayload(GedcomVersion.V70, value);
+                ValidateValidDatePeriodPayload(GedcomVersion.V71, value);
                 return;
             }
 
@@ -442,6 +480,74 @@ namespace Tests
             // No records.
             ValidateGedcomText("", "Missing TRLR record");
         }
+
+        /// <summary>
+        /// Validate date value payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateCommonDateValuePayloadType()
+        {
+            // Try some valid dates.
+            ValidateValidDateValuePayload(GedcomVersion.All, "3 DEC 2023");
+            ValidateValidDateValuePayload(GedcomVersion.All, "DEC 2023");
+            ValidateValidDateValuePayload(GedcomVersion.All, "2023");
+
+            // Try some valid date periods.
+            ValidateValidDateValuePayload(GedcomVersion.All, "TO 3 DEC 2023");
+            ValidateValidDateValuePayload(GedcomVersion.All, "TO DEC 2023");
+            ValidateValidDateValuePayload(GedcomVersion.All, "TO 2023");
+            ValidateValidDateValuePayload(GedcomVersion.All, "FROM 03 DEC 2023");
+            ValidateValidDateValuePayload(GedcomVersion.All, "FROM 2000 TO 2020");
+            ValidateValidDateValuePayload(GedcomVersion.All, "FROM MAR 2000 TO JUN 2000");
+            ValidateValidDateValuePayload(GedcomVersion.All, "FROM 30 NOV 2000 TO 1 DEC 2000");
+
+            // Try some valid date ranges.
+            ValidateValidDateValuePayload(GedcomVersion.All, "BEF 3 DEC 2023");
+            ValidateValidDateValuePayload(GedcomVersion.All, "BEF DEC 2023");
+            ValidateValidDateValuePayload(GedcomVersion.All, "BEF 2023");
+            ValidateValidDateValuePayload(GedcomVersion.All, "AFT 03 DEC 2023");
+            ValidateValidDateValuePayload(GedcomVersion.All, "BET 2000 AND 2020");
+            ValidateValidDateValuePayload(GedcomVersion.All, "BET MAR 2000 AND JUN 2000");
+            ValidateValidDateValuePayload(GedcomVersion.All, "BET 30 NOV 2000 AND 1 DEC 2000");
+
+            // Try some valid approximate dates.
+            ValidateValidDateValuePayload(GedcomVersion.All, "ABT 3 DEC 2023");
+            ValidateValidDateValuePayload(GedcomVersion.All, "CAL DEC 2023");
+
+            // Try some invalid date values.
+            ValidateInvalidDateValuePayload(GedcomVersion.All, "TO 40 DEC 2023");
+            ValidateInvalidDateValuePayload(GedcomVersion.All, "TO 3 dec 2023");
+            ValidateInvalidDateValuePayload(GedcomVersion.All, "TO 3 JUNE 2023");
+            ValidateInvalidDateValuePayload(GedcomVersion.All, "TO ABC 2023");
+            ValidateInvalidDateValuePayload(GedcomVersion.All, "BEF 40 DEC 2023");
+            ValidateInvalidDateValuePayload(GedcomVersion.All, "BEF 3 dec 2023");
+            ValidateInvalidDateValuePayload(GedcomVersion.All, "BEF 3 JUNE 2023");
+            ValidateInvalidDateValuePayload(GedcomVersion.All, "BEF ABC 2023");
+            ValidateInvalidDateValuePayload(GedcomVersion.All, "BET 2000");
+        }
+
+        /// <summary>
+        /// Validate date period payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateCommonDatePeriodPayloadType()
+        {
+            // Try some valid date period values.
+            ValidateValidDatePeriodPayload(GedcomVersion.All, "TO 3 DEC 2023");
+            ValidateValidDatePeriodPayload(GedcomVersion.All, "TO DEC 2023");
+            ValidateValidDatePeriodPayload(GedcomVersion.All, "TO 2023");
+            ValidateValidDatePeriodPayload(GedcomVersion.All, "FROM 03 DEC 2023");
+            ValidateValidDatePeriodPayload(GedcomVersion.All, "FROM 2000 TO 2020");
+            ValidateValidDatePeriodPayload(GedcomVersion.All, "FROM MAR 2000 TO JUN 2000");
+            ValidateValidDatePeriodPayload(GedcomVersion.All, "FROM 30 NOV 2000 TO 1 DEC 2000");
+
+            // Try some invalid date period values.
+            ValidateInvalidDatePeriodPayload(GedcomVersion.All, "2023");
+            ValidateInvalidDatePeriodPayload(GedcomVersion.All, "TO 40 DEC 2023");
+            ValidateInvalidDatePeriodPayload(GedcomVersion.All, "TO 3 dec 2023");
+            ValidateInvalidDatePeriodPayload(GedcomVersion.All, "TO 3 JUNE 2023");
+            ValidateInvalidDatePeriodPayload(GedcomVersion.All, "TO ABC 2023");
+        }
     }
 
     [TestClass]
@@ -496,6 +602,49 @@ namespace Tests
 0 @i1@ INDI
 0 TRLR
 ");
+        }
+
+        /// <summary>
+        /// Validate date value payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateV551DateValuePayloadType()
+        {
+            // Try some valid dates.
+            ValidateValidDateValuePayload(GedcomVersion.V551, "@#DGREGORIAN@ 20 B.C.");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "@#DHEBREW@ 1 TSH 1");
+
+            // Try some valid date periods.
+            ValidateValidDateValuePayload(GedcomVersion.V551, "TO @#DGREGORIAN@ 20 B.C.");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "FROM @#DHEBREW@ 1 TSH 1");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "FROM @#DGREGORIAN@ 20 B.C. TO @#DGREGORIAN@ 12 B.C.");
+
+            // Try some valid date ranges.
+            ValidateValidDateValuePayload(GedcomVersion.V551, "BEF @#DGREGORIAN@ 20 B.C.");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "AFT @#DHEBREW@ 1 TSH 1");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "BET @#DGREGORIAN@ 20 B.C. AND @#DGREGORIAN@ 12 B.C.");
+
+            // Try some valid approximate dates.
+            ValidateValidDateValuePayload(GedcomVersion.V551, "EST @#DGREGORIAN@ 20 B.C.");
+
+            // Try some invalid date values.
+            ValidateInvalidDateValuePayload(GedcomVersion.V551, "FROM @#DHEBREW@ 1 TSH 1 B.C.");
+            ValidateInvalidDateValuePayload(GedcomVersion.V551, "AFT @#DHEBREW@ 1 TSH 1 B.C.");
+        }
+
+        /// <summary>
+        /// Validate date period payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateDatePeriodPayloadType()
+        {
+            // Try some valid date period values.
+            ValidateValidDatePeriodPayload(GedcomVersion.V551, "TO @#DGREGORIAN@ 20 B.C.");
+            ValidateValidDatePeriodPayload(GedcomVersion.V551, "FROM @#DHEBREW@ 1 TSH 1");
+            ValidateValidDatePeriodPayload(GedcomVersion.V551, "FROM @#DGREGORIAN@ 20 B.C. TO @#DGREGORIAN@ 12 B.C.");
+
+            // Try some invalid date period values.
+            ValidateInvalidDatePeriodPayload(GedcomVersion.V551, "FROM @#DHEBREW@ 1 TSH 1 B.C.");
         }
 
         [TestMethod]
@@ -610,8 +759,9 @@ namespace Tests
 
         public static void ValidateGedzipFile(string path, string expected_result = null)
         {
+            var fileFactory = new GedcomFileFactory();
             var file = new GedzipFile();
-            List<string> errors = file.LoadFromPath(path);
+            List<string> errors = file.LoadFromPath(path, fileFactory);
             string error = null;
             if (errors.Count == 0)
             {
@@ -1028,96 +1178,38 @@ namespace Tests
         public void ValidateDatePeriodPayloadType()
         {
             // Try some valid date period values.
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "TO 3 DEC 2023");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "TO DEC 2023");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "TO 2023");
             ValidateValidDatePeriodPayload(GedcomVersion.V70, "TO GREGORIAN 20 BCE");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM 03 DEC 2023");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM 2000 TO 2020");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM MAR 2000 TO JUN 2000");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM 30 NOV 2000 TO 1 DEC 2000");
             ValidateValidDatePeriodPayload(GedcomVersion.V70, "FROM HEBREW 1 TSH 1");
             ValidateValidDatePeriodPayload(GedcomVersion.V70, "FROM GREGORIAN 20 BCE TO GREGORIAN 12 BCE");
 
             // Try some invalid date period values.
-            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "2023");
-            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO 40 DEC 2023");
-            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO 3 dec 2023");
-            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO 3 JUNE 2023");
-            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO ABC 2023");
             ValidateInvalidDatePeriodPayload(GedcomVersion.V70, "FROM HEBREW 1 TSH 1 BCE");
-        }
-
-        private void ValidateInvalidDateValuePayload(GedcomVersion version, string value)
-        {
-            if (version == GedcomVersion.Both)
-            {
-                // TODO: ValidateInvalidDateValuePayload(GedcomVersion.V551, value);
-                ValidateInvalidDateValuePayload(GedcomVersion.V70, value);
-                return;
-            }
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @I1@ INDI
-1 DEAT
-2 DATE " + value + @"
-0 TRLR
-", "Line 6: \"" + value + "\" is not a valid date value");
         }
 
         /// <summary>
         /// Validate date value payload type.
         /// </summary>
         [TestMethod]
-        public void ValidateDateValuePayloadType()
+        public void ValidateV70DateValuePayloadType()
         {
             // Try some valid dates.
-            ValidateValidDateValuePayload(GedcomVersion.Both, "3 DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "2023");
             ValidateValidDateValuePayload(GedcomVersion.V70, "GREGORIAN 20 BCE");
             ValidateValidDateValuePayload(GedcomVersion.V70, "HEBREW 1 TSH 1");
 
             // Try some valid date periods.
-            ValidateValidDateValuePayload(GedcomVersion.Both, "TO 3 DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "TO DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "TO 2023");
             ValidateValidDateValuePayload(GedcomVersion.V70, "TO GREGORIAN 20 BCE");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "FROM 03 DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "FROM 2000 TO 2020");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "FROM MAR 2000 TO JUN 2000");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "FROM 30 NOV 2000 TO 1 DEC 2000");
             ValidateValidDateValuePayload(GedcomVersion.V70, "FROM HEBREW 1 TSH 1");
             ValidateValidDateValuePayload(GedcomVersion.V70, "FROM GREGORIAN 20 BCE TO GREGORIAN 12 BCE");
 
             // Try some valid date ranges.
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BEF 3 DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BEF DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BEF 2023");
             ValidateValidDateValuePayload(GedcomVersion.V70, "BEF GREGORIAN 20 BCE");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "AFT 03 DEC 2023");
             ValidateValidDateValuePayload(GedcomVersion.V70, "AFT HEBREW 1 TSH 1");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BET 2000 AND 2020");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BET MAR 2000 AND JUN 2000");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BET 30 NOV 2000 AND 1 DEC 2000");
             ValidateValidDateValuePayload(GedcomVersion.V70, "BET GREGORIAN 20 BCE AND GREGORIAN 12 BCE");
 
             // Try some valid approximate dates.
-            ValidateValidDateValuePayload(GedcomVersion.Both, "ABT 3 DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "CAL DEC 2023");
             ValidateValidDateValuePayload(GedcomVersion.V70, "EST GREGORIAN 20 BCE");
 
             // Try some invalid date values.
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "TO 40 DEC 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "TO 3 dec 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "TO 3 JUNE 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "TO ABC 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "BEF 40 DEC 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "BEF 3 dec 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "BEF 3 JUNE 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "BEF ABC 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "BET 2000");
             ValidateInvalidDateValuePayload(GedcomVersion.V70, "FROM HEBREW 1 TSH 1 BCE");
             ValidateInvalidDateValuePayload(GedcomVersion.V70, "AFT HEBREW 1 TSH 1 BCE");
         }

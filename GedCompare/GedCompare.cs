@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
 using GedcomCommon;
+using GedcomLoader;
 using System;
 using System.Collections.Generic;
 
@@ -64,13 +65,14 @@ namespace Gedcom7
 
         static int CheckCompatibility(string filename, bool includePercentage = false)
         {
+            var fileFactory = new GedcomFileFactory();
             GedcomFile file = LoadFile(filename);
             if (file == null)
             {
                 Console.WriteLine("Could not load " + filename);
                 return 1;
             }
-            GedcomCompatibilityReport report = new GedcomCompatibilityReport(file);
+            var report = new GedcomCompatibilityReport(file, fileFactory);
 
             Console.WriteLine("Baseline Version: " + report.BaselineVersion + " (" + report.BaselineDate + ")");
             if (includePercentage)
