@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -267,8 +268,8 @@ namespace GedcomCommon
                     }
                 }
             }
-            EnumerationSet.LoadAll(gedcomRegistriesPath);
-            CalendarSchema.LoadAll(gedcomRegistriesPath);
+            EnumerationSet.LoadAll(version, gedcomRegistriesPath);
+            CalendarSchema.LoadAll(version, gedcomRegistriesPath);
         }
 
         public static GedcomStructureSchema GetSchema(string uri) => s_StructureSchemasByUri.ContainsKey(uri) ? s_StructureSchemasByUri[uri] : null;
