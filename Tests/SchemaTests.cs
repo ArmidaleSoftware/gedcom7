@@ -403,7 +403,6 @@ namespace Tests
         {
             string versionString = GetGedcomVersionString(version);
             string additions = GetGedcomVersionHeaderAdditions(version);
-            int additionalLines = additions.Split('\n').Count() - 1;
 
             ValidateGedcomText(@"0 HEAD
 1 DATE 1 DEC 2023

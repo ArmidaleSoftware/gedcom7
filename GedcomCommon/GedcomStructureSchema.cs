@@ -4,9 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using YamlDotNet.Core;
 using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace GedcomCommon
 {
@@ -177,18 +175,18 @@ namespace GedcomCommon
         public Dictionary<string, GedcomStructureCountInfo> Substructures { get; private set; }
         public Dictionary<string, GedcomStructureCountInfo> Superstructures { get; private set; }
 
-        static Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas551 = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
-        static Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas70 = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
-        static Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas71 = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
-        static Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>[] s_StructureSchemasByVersion = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>[]
+        static readonly Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas551 = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
+        static readonly Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas70 = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
+        static readonly Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas71 = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
+        static readonly Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>[] s_StructureSchemasByVersion = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>[]
         {
             null,
             s_StructureSchemas551,
             s_StructureSchemas70,
             s_StructureSchemas71
         };
-        static Dictionary<string, string> s_StructureSchemaAliases = new System.Collections.Generic.Dictionary<string, string>();
-        static Dictionary<string, GedcomStructureSchema> s_StructureSchemasByUri = new Dictionary<string, GedcomStructureSchema>();
+        static readonly Dictionary<string, string> s_StructureSchemaAliases = new System.Collections.Generic.Dictionary<string, string>();
+        static readonly Dictionary<string, GedcomStructureSchema> s_StructureSchemasByUri = new Dictionary<string, GedcomStructureSchema>();
 
         public const string RecordSuperstructureUri = "TOP";
 
