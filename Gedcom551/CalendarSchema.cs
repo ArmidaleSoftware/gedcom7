@@ -55,7 +55,7 @@ namespace Gedcom551
                 "TSH", "CSH", "KSL", "TVT", "SHV", "ADR", "ADS",
                 "NSN", "IYR", "SVN", "TMZ", "AAV", "ELL"
             });
-            AddOldCalendar("@#JULIAN@", new List<string>
+            AddOldCalendar("@#DJULIAN@", new List<string>
             {
                 "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
                 "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
