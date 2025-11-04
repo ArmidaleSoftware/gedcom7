@@ -289,7 +289,7 @@ namespace GedcomCommon
             CalendarSchema.LoadAll(version, gedcomRegistriesPath);
         }
 
-        public static GedcomStructureSchema GetSchema(string uri) => s_StructureSchemasByUri.ContainsKey(uri) ? s_StructureSchemasByUri[uri] : null;
+        public static GedcomStructureSchema GetSchema(string uri) => s_StructureSchemasByUri.TryGetValue(uri, out var schema) ? schema : null;
 
         /// <summary>
         /// Get a GEDCOM structure schema.
@@ -310,9 +310,10 @@ namespace GedcomCommon
             structureSchemaKey.IsPointer = (version == GedcomVersion.V551) ? isPointer : false;
 
             var structureSchemas = s_StructureSchemasByVersion[(int)version];
-            if (structureSchemas.ContainsKey(structureSchemaKey))
+            GedcomStructureSchema schema;
+            if (structureSchemas.TryGetValue(structureSchemaKey, out schema))
             {
-                return structureSchemas[structureSchemaKey];
+                return schema;
             }
 
             // Now look for a schema specific to the source program
@@ -323,25 +324,23 @@ namespace GedcomCommon
                 sourceProgram = "Unknown";
             }
             structureSchemaKey.SourceProgram = sourceProgram;
-            if (structureSchemas.ContainsKey(structureSchemaKey))
+            if (structureSchemas.TryGetValue(structureSchemaKey, out schema))
             {
-                return structureSchemas[structureSchemaKey];
+                return schema;
             }
 
             // Now look for a schema specific to the source program
             // and wildcard superstructure URI, which would be an
             // undocumented extension tag.
             structureSchemaKey.SuperstructureUri = null;
-            if (structureSchemas.ContainsKey(structureSchemaKey))
+            if (structureSchemas.TryGetValue(structureSchemaKey, out schema))
             {
-                return structureSchemas[structureSchemaKey];
+                return schema;
             }
 
             // Now look for a schema alias defined in HEAD.SCHMA.
-            GedcomStructureSchema schema;
-            if (s_StructureSchemaAliases.ContainsKey(tag))
+            if (s_StructureSchemaAliases.TryGetValue(tag, out string uri))
             {
-                string uri = s_StructureSchemaAliases[tag];
                 if (s_StructureSchemasByUri.TryGetValue(uri, out schema))
                 {
                     return schema;
