@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using YamlDotNet.Serialization;
@@ -40,7 +41,14 @@ namespace GedcomCommon
 
         static Dictionary<string, CalendarSchema> s_CalendarsByTag = new Dictionary<string, CalendarSchema>();
 
-        public static void LoadAll(string gedcomRegistriesPath)
+        /// <summary>
+        /// Check whether this schema applies to a given GEDCOM version.
+        /// </summary>
+        /// <param name="version">GEDCOM version</param>
+        /// <returns>true if applies, false if not</returns>
+        private bool HasVersion(GedcomVersion version) => GedcomStructureSchema.UriHasVersion(this.Uri, version);
+
+        public static void LoadAll(GedcomVersion version, string gedcomRegistriesPath)
         {
             if (s_CalendarsByTag.Count > 0)
             {
@@ -64,9 +72,21 @@ namespace GedcomCommon
                 using var reader = new StreamReader(filename);
                 var dictionary = deserializer.Deserialize<Dictionary<object, object>>(reader);
                 var schema = new CalendarSchema(dictionary);
+                if (!schema.HasVersion(version))
+                {
+                    continue;
+                }
                 s_CalendarsByTag.Add(schema.StandardTag, schema);
             }
         }
+
+        public static void AddOldCalendar(Dictionary<object, object> dictionary)
+        {
+            var schema = new CalendarSchema(dictionary);
+            s_CalendarsByTag.Add(schema.StandardTag, schema);
+        }
+
+        public static bool IsValidCalendarTag(string tag) => s_CalendarsByTag.ContainsKey(tag);
 
         public static CalendarSchema GetCalendarByTag(string tag) => s_CalendarsByTag[tag];
 

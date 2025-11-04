@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Gedcom7\Gedcom7.csproj" />
+    <ProjectReference Include="..\GedcomLoader\GedcomLoader.csproj" />
   </ItemGroup>
 
 </Project>

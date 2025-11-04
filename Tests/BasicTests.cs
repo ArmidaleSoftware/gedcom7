@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MIT
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using GedcomCommon;
+using GedcomLoader;
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Tests
 {
@@ -38,7 +38,7 @@ namespace Tests
             // Assert.IsTrue(used <= 608);
 
             List<string> errors = note.LoadFromPath(fileName);
-            Assert.AreEqual(0, errors.Count);
+            Assert.HasCount(0, errors);
 
             // Fetch new process information.
             GC.Collect();

@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
-using GedcomCommon;
+using GedcomLoader;
 using Gedcom7;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
@@ -15,10 +15,11 @@ namespace Tests
         private void TestCompatibility(string filename, int tree1Percentage, int tree2Percentage,
             int memories1Percentage, int memories2Percentage, int ldsPercentage)
         {
+            var fileFactory = new GedcomFileFactory();
             var file = new GedcomFile();
             List<string> errors = file.LoadFromPath(BaselinePath + filename + ".ged");
-            Assert.AreEqual(0, errors.Count);
-            GedcomCompatibilityReport report = new GedcomCompatibilityReport(file);
+            Assert.IsEmpty(errors);
+            var report = new GedcomCompatibilityReport(file, fileFactory);
 
             Assert.AreEqual(tree1Percentage, report.Tree1CompatibilityPercentage);
             Assert.AreEqual(tree2Percentage, report.Tree2CompatibilityPercentage);

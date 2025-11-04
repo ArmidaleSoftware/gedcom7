@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Gedcom7\Gedcom7.csproj" />
     <ProjectReference Include="..\GedcomCommon\GedcomCommon.csproj" />
+    <ProjectReference Include="..\GedcomLoader\GedcomLoader.csproj" />
   </ItemGroup>
 
 </Project>

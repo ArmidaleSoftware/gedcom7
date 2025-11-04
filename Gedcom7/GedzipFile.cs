@@ -27,7 +27,7 @@ namespace Gedcom7
         // Data members.
         private string GedcomRegistriesPath { get; set; }
         public string Path { get; private set; }
-        public GedcomFile GedcomFile { get; private set; }
+        public IGedcomFile GedcomFile { get; private set; }
         private ZipArchive ZipArchive { get; set; }
         public void Dispose()
         {
@@ -38,8 +38,9 @@ namespace Gedcom7
         /// Load a GEDZIP file from a specified path.
         /// </summary>
         /// <param name="pathToFile">Path to GEDZIP file to load</param>
+        /// <param name="fileFactory">Factory to create IGedcomFile instances</param>
         /// <returns>List of 0 or more error messages</returns>
-        public List<string> LoadFromPath(string pathToFile)
+        public List<string> LoadFromPath(string pathToFile, IGedcomFileFactory fileFactory)
         {
             // Validate that extension is .gdz.
             if (!pathToFile.EndsWith(".gdz", StringComparison.InvariantCultureIgnoreCase))
@@ -61,7 +62,7 @@ namespace Gedcom7
                 {
                     using (Stream stream = entry.Open())
                     {
-                        this.GedcomFile = new GedcomFile();
+                        this.GedcomFile = fileFactory.CreateGedcomFile();
                         using (StreamReader streamReader = new StreamReader(stream))
                         {
                             List<string> errors = this.GedcomFile.LoadFromStreamReader(streamReader, GedcomVersion.V70, GedcomRegistriesPath);

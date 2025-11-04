@@ -49,14 +49,14 @@ namespace Gedcom7
             return output;
         }
 
-        private GedcomComparisonReport CompareFiles(GedcomFile baselineFile, GedcomFile file)
+        private GedcomComparisonReport CompareFiles(IGedcomFile baselineFile, IGedcomFile file)
         {
             return baselineFile.Compare(file);
         }
 
-        private GedcomComparisonReport Compare(string url, GedcomFile file)
+        private GedcomComparisonReport Compare(string url, IGedcomFile file, IGedcomFileFactory fileFactory)
         {
-            var baselineFile = new GedcomFile();
+            var baselineFile = fileFactory.CreateGedcomFile();
             List<string> errors = baselineFile.LoadFromUrl(url);
             if (errors.Count > 0) {
                 return null;
@@ -64,9 +64,9 @@ namespace Gedcom7
             return CompareFiles(baselineFile, file);
         }
 
-        public GedcomCompatibilityReport(GedcomFile file)
+        public GedcomCompatibilityReport(IGedcomFile file, IGedcomFileFactory fileFactory)
         {
-            var baselineFile = new GedcomFile();
+            var baselineFile = fileFactory.CreateGedcomFile();
             List<string> errors = baselineFile.LoadFromUrl("https://gedcom.io/testfiles/gedcom70/maximal70.ged");
             if (errors.Count > 0)
             {
@@ -75,11 +75,11 @@ namespace Gedcom7
             this.BaselineVersion = baselineFile.SourceProductVersion;
             this.BaselineDate = baselineFile.Date;
             this.Maximal70Report = CompareFiles(baselineFile, file);
-            this.Tree1Report = Compare("https://gedcom.io/testfiles/gedcom70/maximal70-tree1.ged", file);
-            this.Tree2Report = Compare("https://gedcom.io/testfiles/gedcom70/maximal70-tree2.ged", file);
-            this.Memories1Report = Compare("https://gedcom.io/testfiles/gedcom70/maximal70-memories1.ged", file);
-            this.Memories2Report = Compare("https://gedcom.io/testfiles/gedcom70/maximal70-memories2.ged", file);
-            this.LdsReport = Compare("https://gedcom.io/testfiles/gedcom70/maximal70-lds.ged", file);
+            this.Tree1Report = Compare("https://gedcom.io/testfiles/gedcom70/maximal70-tree1.ged", file, fileFactory);
+            this.Tree2Report = Compare("https://gedcom.io/testfiles/gedcom70/maximal70-tree2.ged", file, fileFactory);
+            this.Memories1Report = Compare("https://gedcom.io/testfiles/gedcom70/maximal70-memories1.ged", file, fileFactory);
+            this.Memories2Report = Compare("https://gedcom.io/testfiles/gedcom70/maximal70-memories2.ged", file, fileFactory);
+            this.LdsReport = Compare("https://gedcom.io/testfiles/gedcom70/maximal70-lds.ged", file, fileFactory);
         }
     }
 }

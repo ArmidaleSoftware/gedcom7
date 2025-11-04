@@ -1,13 +1,13 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
-using GedcomCommon;
 using Gedcom7;
+using GedcomCommon;
+using GedcomLoader;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System;
 
 namespace Tests
 {
@@ -61,12 +61,16 @@ namespace Tests
             Assert.AreEqual(expected_result, error);
         }
 
-        protected static void ValidateXref(string versionString)
+        protected static void ValidateXref(GedcomVersion version)
         {
+            string versionString = GetGedcomVersionString(version);
+            string additional = GetGedcomVersionHeaderAdditions(version);
+            int additionalLines = additional.Split('\n').Count() - 1;
+
             // HEAD pseudo-structure does not allow an xref.
             ValidateGedcomText(@"0 @H1@ HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + versionString + additional + @"
 0 TRLR
 ", "Line 1: Xref is not valid for HEAD");
 
@@ -78,7 +82,7 @@ namespace Tests
             // structure must not have a cross-reference identifier."
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + versionString + additional + @"
 0 INDI
 0 TRLR
 ");
@@ -86,38 +90,38 @@ namespace Tests
             // TRLR pseudo-structure does not allow an xref.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + versionString + additional + @"
 0 @T1@ TRLR
-", "Line 4: Xref is not valid for TRLR");
+", "Line " + (4 + additionalLines) + ": Xref is not valid for TRLR");
 
             // Xref must start with @.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + versionString + additional + @"
 0 I1@ INDI
 0 TRLR
-", "Line 4: Undocumented standard record");
+", "Line " + (4 + additionalLines) + ": Undocumented standard record");
 
             // Xref must end with @.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + versionString + additional + @"
 0 @I1 INDI
 0 TRLR
-", "Line 4: Xref must start and end with @");
+", "Line " + (4 + additionalLines) + ": Xref must start and end with @");
 
             // Xref must contain something.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + versionString + additional + @"
 0 @ INDI
 0 TRLR
-", "Line 4: Xref must start and end with @");
+", "Line " + (4 + additionalLines) + ": Xref must start and end with @");
 
             // Upper case letters and numbers are fine.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + versionString + additional + @"
 0 @I1@ INDI
 0 TRLR
 ");
@@ -133,18 +137,21 @@ namespace Tests
             }
         }
 
-        protected static void ValidateHeaderAndTrailer(string versionString)
+        protected static void ValidateHeaderAndTrailer(GedcomVersion version)
         {
+            string additions = GetGedcomVersionHeaderAdditions(version);
+            int additionalLines = additions.Split('\n').Count() - 1;
+
             // Missing TRLR.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + GetGedcomVersionString(version) + additions + @"
 ", "Missing TRLR record");
 
             // Minimal valid.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + GetGedcomVersionString(version) + additions + @"
 0 TRLR
 ");
 
@@ -152,34 +159,34 @@ namespace Tests
             ValidateGedcomText(@"0 TRLR
 0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + GetGedcomVersionString(version) + additions + @"
 ", "Line 1: HEAD must be the first record");
 
             // The trailer cannot contain substructures.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + GetGedcomVersionString(version) + additions + @"
 0 TRLR
 1 _EXT bad
-", "Line 4: TRLR must not contain substructures");
+", "Line " + (4 + additionalLines) + ": TRLR must not contain substructures");
 
             // Two HEADs.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + GetGedcomVersionString(version) + additions + @"
 0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + GetGedcomVersionString(version) + @"
 0 TRLR
-", "Line 4: HEAD must be the first record");
+", "Line " + (4 + additionalLines) + ": HEAD must be the first record");
 
             // Two TRLRs.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + GetGedcomVersionString(version) + additions + @"
 0 TRLR
 0 TRLR
-", "Line 5: Duplicate TRLR record");
+", "Line " + (5 + additionalLines) + ": Duplicate TRLR record");
         }
 
         protected static void ValidateSpacing(string versionString)
@@ -199,54 +206,77 @@ namespace Tests
 ", "Line 2: An empty payload is not valid after a space");
         }
 
-        protected static void ValidateValidNamePayload(string versionString, string value)
+        protected static void ValidateValidNamePayload(GedcomVersion version, string value)
         {
+            string versionString = GetGedcomVersionString(version);
+            string additions = GetGedcomVersionHeaderAdditions(version);
+
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + versionString + additions + @"
 0 @I1@ INDI
 1 NAME " + value + @"
 0 TRLR
 ");
         }
 
-        protected static void ValidateInvalidNamePayload(string versionString, string value)
+        protected static void ValidateInvalidNamePayload(GedcomVersion version, string value)
         {
+            string versionString = GetGedcomVersionString(version);
+            string additions = GetGedcomVersionHeaderAdditions(version);
+            int additionalLines = additions.Split('\n').Count() - 1;
+
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
+2 VERS " + versionString + additions + @"
 0 @I1@ INDI
 1 NAME " + value + @"
-", "Line 5: \"" + value + "\" is not a valid name");
+", "Line " + (5 + additionalLines) + ": \"" + value + "\" is not a valid name");
         }
 
         /// <summary>
         /// Validate Name payload type.
         /// </summary>
-        protected static void ValidateNamePayloadType(string versionString)
+        protected static void ValidateNamePayloadType(GedcomVersion version)
         {
             // Try some valid name values.
-            ValidateValidNamePayload(versionString, "John Smith");
-            ValidateValidNamePayload(versionString, "John /Smith/");
-            ValidateValidNamePayload(versionString, "John /Smith/ Jr.");
+            ValidateValidNamePayload(version, "John Smith");
+            ValidateValidNamePayload(version, "John /Smith/");
+            ValidateValidNamePayload(version, "John /Smith/ Jr.");
 
             // Try some invalid name values.
-            ValidateInvalidNamePayload(versionString, "/");
-            ValidateInvalidNamePayload(versionString, "a/b/c/d");
-            ValidateInvalidNamePayload(versionString, "a\tb");
+            ValidateInvalidNamePayload(version, "/");
+            ValidateInvalidNamePayload(version, "a/b/c/d");
+            ValidateInvalidNamePayload(version, "a\tb");
+        }
+
+        protected static string GetGedcomVersionHeaderAdditions(GedcomVersion version)
+        {
+            if (version != GedcomVersion.V551)
+            {
+                return string.Empty;
+            }
+            return @"
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test";
         }
 
         protected static void ValidateValidDateValuePayload(GedcomVersion version, string value)
         {
-            if (version == GedcomVersion.Both)
+            if (version == GedcomVersion.All)
             {
-                // TODO: ValidateValidDateValuePayload(GedcomVersion.V551, value);
+                ValidateValidDateValuePayload(GedcomVersion.V551, value);
                 ValidateValidDateValuePayload(GedcomVersion.V70, value);
+                ValidateValidDateValuePayload(GedcomVersion.V71, value);
                 return;
             }
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + GetGedcomVersionString(version) + @"
+2 VERS " + GetGedcomVersionString(version) + GetGedcomVersionHeaderAdditions(version) + @"
 0 @I1@ INDI
 1 DEAT
 2 DATE " + value + @"
@@ -254,21 +284,51 @@ namespace Tests
 ");
         }
 
-        private void ValidateInvalidExactDatePayload(string versionString, string value)
+        protected static void ValidateInvalidDateValuePayload(GedcomVersion version, string value)
         {
+            if (version == GedcomVersion.All)
+            {
+                ValidateInvalidDateValuePayload(GedcomVersion.V551, value);
+                ValidateInvalidDateValuePayload(GedcomVersion.V70, value);
+                ValidateInvalidDateValuePayload(GedcomVersion.V71, value);
+                return;
+            }
+
+            string versionString = GetGedcomVersionString(version);
+            string additions = GetGedcomVersionHeaderAdditions(version);
+            int additionalLines = additions.Split('\n').Count() - 1;
+
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + versionString + @"
-1 DATE " + value + @"
-", "Line 4: \"" + value + "\" is not a valid exact date");
+2 VERS " + versionString + additions + @"
+0 @I1@ INDI
+1 DEAT
+2 DATE " + value + @"
+0 TRLR
+", "Line " + (6 + additionalLines) + ": \"" + value + "\" is not a valid date value");
         }
 
-        private void ValidateValidExactDatePayload(string versionString, string value)
+        private void ValidateInvalidExactDatePayload(GedcomVersion version, string value)
         {
+            string versionString = GetGedcomVersionString(version);
+            string additions = GetGedcomVersionHeaderAdditions(version);
+
             ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS " + versionString + @"
 1 DATE " + value + @"
+1 GEDC
+2 VERS " + versionString + additions + @"
+", "Line 2: \"" + value + "\" is not a valid exact date");
+        }
+
+        private void ValidateValidExactDatePayload(GedcomVersion version, string value)
+        {
+            string versionString = GetGedcomVersionString(version);
+            string additions = GetGedcomVersionHeaderAdditions(version);
+
+            ValidateGedcomText(@"0 HEAD
+1 DATE " + value + @"
+1 GEDC
+2 VERS " + versionString + additions + @"
 0 TRLR
 ");
         }
@@ -276,76 +336,93 @@ namespace Tests
         /// <summary>
         /// Validate exact date payload type.
         /// </summary>
-        protected void ValidateExactDatePayloadType(string versionString)
+        protected void ValidateExactDatePayloadType(GedcomVersion version)
         {
             // Try some valid date values.
-            ValidateValidExactDatePayload(versionString, "3 DEC 2023");
-            ValidateValidExactDatePayload(versionString, "03 DEC 2023");
+            ValidateValidExactDatePayload(version, "3 DEC 2023");
+            ValidateValidExactDatePayload(version, "03 DEC 2023");
 
             // Try some invalid date values.
-            ValidateInvalidExactDatePayload(versionString, "invalid");
-            ValidateInvalidExactDatePayload(versionString, "3 dec 2023");
-            ValidateInvalidExactDatePayload(versionString, "3 JUNE 2023");
-            ValidateInvalidExactDatePayload(versionString, "DEC 2023");
-            ValidateInvalidExactDatePayload(versionString, "2023");
+            ValidateInvalidExactDatePayload(version, "invalid");
+            ValidateInvalidExactDatePayload(version, "3 dec 2023");
+            ValidateInvalidExactDatePayload(version, "3 JUNE 2023");
+            ValidateInvalidExactDatePayload(version, "DEC 2023");
+            ValidateInvalidExactDatePayload(version, "2023");
         }
 
-        protected void ValidateInvalidDatePeriodPayload(GedcomVersion version, string value)
+        protected static void ValidateInvalidDatePeriodPayload(GedcomVersion version, string value)
         {
-            if (version == GedcomVersion.Both)
+            if (version == GedcomVersion.All)
             {
-                // TODO: ValidateInvalidDatePeriodPayload(GedcomVersion.V551, value);
+                ValidateInvalidDatePeriodPayload(GedcomVersion.V551, value);
                 ValidateInvalidDatePeriodPayload(GedcomVersion.V70, value);
+                ValidateInvalidDatePeriodPayload(GedcomVersion.V71, value);
                 return;
             }
 
+            string versionString = GetGedcomVersionString(version);
+            string additions = GetGedcomVersionHeaderAdditions(version);
+            int additionalLines = additions.Split('\n').Count() - 1;
+
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + GetGedcomVersionString(version) + @"
-0 @I1@ INDI
-1 NO MARR
-2 DATE " + value + @"
+2 VERS " + versionString + additions + @"
+0 @I1@ SOUR
+1 DATA
+2 EVEN MARR
+3 DATE " + value + @"
 0 TRLR
-", "Line 6: \"" + value + "\" is not a valid date period");
+", "Line " + (7 + additionalLines) + ": \"" + value + "\" is not a valid date period");
         }
 
-        protected void ValidateValidDatePeriodPayload(GedcomVersion version, string value)
+        protected static void ValidateValidDatePeriodPayload(GedcomVersion version, string value)
         {
-            if (version == GedcomVersion.Both)
+            if (version == GedcomVersion.All)
             {
-                // TODO: ValidateValidDatePeriodPayload(GedcomVersion.V551, value);
+                ValidateValidDatePeriodPayload(GedcomVersion.V551, value);
                 ValidateValidDatePeriodPayload(GedcomVersion.V70, value);
+                ValidateValidDatePeriodPayload(GedcomVersion.V71, value);
                 return;
             }
 
+            string versionString = GetGedcomVersionString(version);
+            string additions = GetGedcomVersionHeaderAdditions(version);
+
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS " + GetGedcomVersionString(version) + @"
-0 @I1@ INDI
-1 NO MARR
-2 DATE " + value + @"
+2 VERS " + versionString + additions + @"
+0 @I1@ SOUR
+1 DATA
+2 EVEN MARR
+3 DATE " + value + @"
 0 TRLR
 ");
         }
 
-        private void ValidateInvalidTimePayload(string versionString, string value)
+        private void ValidateInvalidTimePayload(GedcomVersion version, string value)
         {
+            string versionString = GetGedcomVersionString(version);
+            string additions = GetGedcomVersionHeaderAdditions(version);
+
             ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS " + versionString + @"
 1 DATE 1 DEC 2023
 2 TIME " + value + @"
+1 GEDC
+2 VERS " + versionString + additions + @"
 0 TRLR
-", "Line 5: \"" + value + "\" is not a valid time");
+", "Line 3: \"" + value + "\" is not a valid time");
         }
 
-        private void ValidateValidTimePayload(string versionString, string value)
+        private void ValidateValidTimePayload(GedcomVersion version, string value)
         {
+            string versionString = GetGedcomVersionString(version);
+            string additional = GetGedcomVersionHeaderAdditions(version);
+
             ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS " + versionString + @"
 1 DATE 1 DEC 2023
 2 TIME " + value + @"
+1 GEDC
+2 VERS " + versionString + additional + @"
 0 TRLR
 ");
         }
@@ -353,21 +430,21 @@ namespace Tests
         /// <summary>
         /// Validate Time payload type.
         /// </summary>
-        protected void ValidateTimePayloadType(string versionString)
+        protected void ValidateTimePayloadType(GedcomVersion version)
         {
             // Try some valid time values.
-            ValidateValidTimePayload(versionString, "02:50");
-            ValidateValidTimePayload(versionString, "2:50");
-            ValidateValidTimePayload(versionString, "2:50:00.00Z");
+            ValidateValidTimePayload(version, "02:50");
+            ValidateValidTimePayload(version, "2:50");
+            ValidateValidTimePayload(version, "2:50:00.00Z");
 
             // Try some invalid time values.
-            ValidateInvalidTimePayload(versionString, " ");
-            ValidateInvalidTimePayload(versionString, "invalid");
-            ValidateInvalidTimePayload(versionString, "000:00");
-            ValidateInvalidTimePayload(versionString, "24:00:00");
-            ValidateInvalidTimePayload(versionString, "2:5");
-            ValidateInvalidTimePayload(versionString, "2:60");
-            ValidateInvalidTimePayload(versionString, "2:00:60");
+            ValidateInvalidTimePayload(version, " ");
+            ValidateInvalidTimePayload(version, "invalid");
+            ValidateInvalidTimePayload(version, "000:00");
+            ValidateInvalidTimePayload(version, "24:00:00");
+            ValidateInvalidTimePayload(version, "2:5");
+            ValidateInvalidTimePayload(version, "2:60");
+            ValidateInvalidTimePayload(version, "2:00:60");
         }
 
         /// <summary>
@@ -442,6 +519,72 @@ namespace Tests
             // No records.
             ValidateGedcomText("", "Missing TRLR record");
         }
+
+        /// <summary>
+        /// Validate date value payload type.
+        /// </summary>
+        public static void ValidateCommonDateValuePayloadType(GedcomVersion version)
+        {
+            // Try some valid dates.
+            ValidateValidDateValuePayload(version, "3 DEC 2023");
+            ValidateValidDateValuePayload(version, "DEC 2023");
+            ValidateValidDateValuePayload(version, "2023");
+
+            // Try some valid date periods.
+            ValidateValidDateValuePayload(version, "TO 3 DEC 2023");
+            ValidateValidDateValuePayload(version, "TO DEC 2023");
+            ValidateValidDateValuePayload(version, "TO 2023");
+            ValidateValidDateValuePayload(version, "FROM 03 DEC 2023");
+            ValidateValidDateValuePayload(version, "FROM 2000 TO 2020");
+            ValidateValidDateValuePayload(version, "FROM MAR 2000 TO JUN 2000");
+            ValidateValidDateValuePayload(version, "FROM 30 NOV 2000 TO 1 DEC 2000");
+
+            // Try some valid date ranges.
+            ValidateValidDateValuePayload(version, "BEF 3 DEC 2023");
+            ValidateValidDateValuePayload(version, "BEF DEC 2023");
+            ValidateValidDateValuePayload(version, "BEF 2023");
+            ValidateValidDateValuePayload(version, "AFT 03 DEC 2023");
+            ValidateValidDateValuePayload(version, "BET 2000 AND 2020");
+            ValidateValidDateValuePayload(version, "BET MAR 2000 AND JUN 2000");
+            ValidateValidDateValuePayload(version, "BET 30 NOV 2000 AND 1 DEC 2000");
+
+            // Try some valid approximate dates.
+            ValidateValidDateValuePayload(version, "ABT 3 DEC 2023");
+            ValidateValidDateValuePayload(version, "CAL DEC 2023");
+
+            // Try some invalid date values.
+            ValidateInvalidDateValuePayload(version, "TO 40 DEC 2023");
+            ValidateInvalidDateValuePayload(version, "TO 3 dec 2023");
+            ValidateInvalidDateValuePayload(version, "TO 3 JUNE 2023");
+            ValidateInvalidDateValuePayload(version, "TO ABC 2023");
+            ValidateInvalidDateValuePayload(version, "BEF 40 DEC 2023");
+            ValidateInvalidDateValuePayload(version, "BEF 3 dec 2023");
+            ValidateInvalidDateValuePayload(version, "BEF 3 JUNE 2023");
+            ValidateInvalidDateValuePayload(version, "BEF ABC 2023");
+            ValidateInvalidDateValuePayload(version, "BET 2000");
+        }
+
+        /// <summary>
+        /// Validate date period payload type.
+        /// </summary>
+        public static void ValidateCommonDatePeriodPayloadType(GedcomVersion version)
+        {
+            // Try some valid date period values.
+            ValidateValidDatePeriodPayload(version, "TO 3 DEC 2023");
+            ValidateValidDatePeriodPayload(version, "TO DEC 2023");
+            ValidateValidDatePeriodPayload(version, "TO 2023");
+            ValidateValidDatePeriodPayload(version, "FROM 03 DEC 2023");
+            ValidateValidDatePeriodPayload(version, "FROM 2000 TO 2020");
+            ValidateValidDatePeriodPayload(version, "FROM MAR 2000 TO JUN 2000");
+            ValidateValidDatePeriodPayload(version, "FROM 30 NOV 2000 TO 1 DEC 2000");
+
+            // Try some invalid date period values.
+            ValidateInvalidDatePeriodPayload(version, "2023");
+            ValidateInvalidDatePeriodPayload(version, "TO 40 DEC 2023");
+            ValidateInvalidDatePeriodPayload(version, "TO 3 dec 2023");
+            ValidateInvalidDatePeriodPayload(version, "TO 3 JUNE 2023");
+            ValidateInvalidDatePeriodPayload(version, "TO ABC 2023");
+        }
     }
 
     [TestClass]
@@ -452,17 +595,23 @@ namespace Tests
         [TestMethod]
         public void ValidateHeaderAndTrailer()
         {
-            ValidateHeaderAndTrailer(VersionString);
+            ValidateHeaderAndTrailer(GedcomVersion.V551);
         }
 
         [TestMethod]
         public void ValidateXref()
         {
-            ValidateXref(VersionString);
+            ValidateXref(GedcomVersion.V551);
 
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
 0 @VOID@ INDI
 0 TRLR
 ");
@@ -471,74 +620,149 @@ namespace Tests
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
 0 @I#1@ INDI
 0 TRLR
 ");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
 0 @#I1@ INDI
 0 TRLR
-", "Line 4: Xref \"@#I1@\" does not start with a letter or digit");
+", "Line 10: Xref \"@#I1@\" does not start with a letter or digit");
 
             // Underscore is ok in GEDCOM 7.0 but not 5.5.1.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
 0 @I_1@ INDI
 0 TRLR
-", "Line 4: Invalid character '_' in Xref \"@I_1@\"");
+", "Line 10: Invalid character '_' in Xref \"@I_1@\"");
 
             // Lower-case letters are ok in GEDCOM 5.5.1 but not 7.0.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
 0 @i1@ INDI
 0 TRLR
 ");
         }
 
+        /// <summary>
+        /// Validate date value payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateV551DateValuePayloadType()
+        {
+            SchemaTestsCommon.ValidateCommonDateValuePayloadType(GedcomVersion.V551);
+
+            // Try some valid dates.
+            ValidateValidDateValuePayload(GedcomVersion.V551, "1740/41");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "@#DGREGORIAN@ 1740/41");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "@#DGREGORIAN@ 20 B.C.");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "@#DHEBREW@ 1 TSH 1");
+
+            // Try some valid date periods.
+            ValidateValidDateValuePayload(GedcomVersion.V551, "TO @#DGREGORIAN@ 20 B.C.");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "FROM @#DHEBREW@ 1 TSH 1");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "FROM @#DGREGORIAN@ 20 B.C. TO @#DGREGORIAN@ 12 B.C.");
+
+            // Try some valid date ranges.
+            ValidateValidDateValuePayload(GedcomVersion.V551, "BEF @#DGREGORIAN@ 20 B.C.");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "AFT @#DHEBREW@ 1 TSH 1");
+            ValidateValidDateValuePayload(GedcomVersion.V551, "BET @#DGREGORIAN@ 20 B.C. AND @#DGREGORIAN@ 12 B.C.");
+
+            // Try some valid approximate dates.
+            ValidateValidDateValuePayload(GedcomVersion.V551, "EST @#DGREGORIAN@ 20 B.C.");
+
+            // Try some invalid date values.
+            ValidateInvalidDateValuePayload(GedcomVersion.V551, "FROM @#DHEBREW@ 1 TSH 1 B.C.");
+            ValidateInvalidDateValuePayload(GedcomVersion.V551, "AFT @#DHEBREW@ 1 TSH 1 B.C.");
+        }
+
+        /// <summary>
+        /// Validate date period payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateDatePeriodPayloadType()
+        {
+            SchemaTestsCommon.ValidateCommonDatePeriodPayloadType(GedcomVersion.V551);
+
+            // Try some valid date period values.
+            ValidateValidDatePeriodPayload(GedcomVersion.V551, "TO @#DGREGORIAN@ 20 B.C.");
+            ValidateValidDatePeriodPayload(GedcomVersion.V551, "FROM @#DHEBREW@ 1 TSH 1");
+            ValidateValidDatePeriodPayload(GedcomVersion.V551, "FROM @#DGREGORIAN@ 20 B.C. TO @#DGREGORIAN@ 12 B.C.");
+
+            // Try some invalid date period values.
+            ValidateInvalidDatePeriodPayload(GedcomVersion.V551, "FROM @#DHEBREW@ 1 TSH 1 B.C.");
+        }
+
         [TestMethod]
         public void ValidatePayloadType()
         {
+            string additions = GetGedcomVersionHeaderAdditions(GedcomVersion.V551);
+
             // Validate null.
             ValidateGedcomText(@"0 HEAD
 1 GEDC 1
-2 VERS 5.5.1
+2 VERS 5.5.1" + additions + @"
 0 TRLR
 ", "Line 2: GEDC payload must be null");
 
             // Validate an integer.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
+2 VERS 5.5.1" + additions + @"
 0 @I1@ INDI
 1 NCHI 0
 0 TRLR
 ");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
+2 VERS 5.5.1" + additions + @"
 0 @I1@ INDI
 1 NCHI -1
 0 TRLR
-", "Line 5: \"-1\" is not a non-negative integer");
+", "Line 11: \"-1\" is not a non-negative integer");
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
+2 VERS 5.5.1" + additions + @"
 0 @I1@ INDI
 1 NCHI
 0 TRLR
-", "Line 5: \"\" is not a non-negative integer");
+", "Line 11: \"\" is not a non-negative integer");
 
             // Test Y|<NULL>.
             ValidateGedcomText(@"0 HEAD
 1 GEDC
-2 VERS 5.5.1
+2 VERS 5.5.1" + additions + @"
 0 @I1@ INDI
 1 BIRT N
 0 TRLR
-", "Line 5: BIRT payload must be 'Y' or empty");
+", "Line 11: BIRT payload must be 'Y' or empty");
         }
 
         [TestMethod]
@@ -548,6 +772,12 @@ namespace Tests
             ValidateGedcomText(@"0 HEAD
 1 GEDC
  2 VERS 5.5.1
+ 2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
 0 TRLR
 ");
 
@@ -555,6 +785,12 @@ namespace Tests
             ValidateGedcomText(@"0 HEAD
 1 GEDC
 2  VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
 0 TRLR
 ", "Line 3: Tag must not be empty");
 
@@ -567,7 +803,7 @@ namespace Tests
         [TestMethod]
         public void ValidateNamePayloadType()
         {
-            ValidateNamePayloadType(VersionString);
+            ValidateNamePayloadType(GedcomVersion.V551);
         }
 
         /// <summary>
@@ -576,7 +812,7 @@ namespace Tests
         [TestMethod]
         public void ValidateExactDatePayloadType()
         {
-            ValidateExactDatePayloadType(VersionString);
+            ValidateExactDatePayloadType(GedcomVersion.V551);
         }
 
         /// <summary>
@@ -585,7 +821,7 @@ namespace Tests
         [TestMethod]
         public void ValidateTimePayloadType()
         {
-            ValidateTimePayloadType(VersionString);
+            ValidateTimePayloadType(GedcomVersion.V551);
         }
     }
 
@@ -601,17 +837,18 @@ namespace Tests
         {
             GedcomStructureSchema.LoadAll(GedcomVersion.V70);
             var schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, GedcomStructureSchema.RecordSuperstructureUri, "HEAD", false);
-            Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/HEAD");
+            Assert.AreEqual("https://gedcom.io/terms/v7/HEAD", schema?.Uri);
             schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, "https://gedcom.io/terms/v7/DATA-EVEN", "DATE", false);
-            Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/DATA-EVEN-DATE");
+            Assert.AreEqual("https://gedcom.io/terms/v7/DATA-EVEN-DATE", schema?.Uri);
             schema = GedcomStructureSchema.GetSchema(GedcomVersion.V70, null, "https://gedcom.io/terms/v7/HEAD", "DATE", false);
-            Assert.AreEqual(schema?.Uri, "https://gedcom.io/terms/v7/HEAD-DATE");
+            Assert.AreEqual("https://gedcom.io/terms/v7/HEAD-DATE", schema?.Uri);
         }
 
         public static void ValidateGedzipFile(string path, string expected_result = null)
         {
+            var fileFactory = new GedcomFileFactory();
             var file = new GedzipFile();
-            List<string> errors = file.LoadFromPath(path);
+            List<string> errors = file.LoadFromPath(path, fileFactory);
             string error = null;
             if (errors.Count == 0)
             {
@@ -732,7 +969,7 @@ namespace Tests
         [TestMethod]
         public void ValidateHeaderAndTrailer()
         {
-            ValidateHeaderAndTrailer(VersionString);
+            ValidateHeaderAndTrailer(GedcomVersion.V70);
         }
 
         [TestMethod]
@@ -813,7 +1050,7 @@ namespace Tests
         [TestMethod]
         public void ValidateXref()
         {
-            ValidateXref(VersionString);
+            ValidateXref(GedcomVersion.V70);
 
             // Test characters within an xref, which is
             // @<alphanum><pointer_string>@
@@ -1009,7 +1246,7 @@ namespace Tests
         [TestMethod]
         public void ValidateNamePayloadType()
         {
-            ValidateNamePayloadType(VersionString);
+            ValidateNamePayloadType(GedcomVersion.V70);
         }
 
         /// <summary>
@@ -1018,7 +1255,7 @@ namespace Tests
         [TestMethod]
         public void ValidateExactDatePayloadType()
         {
-            ValidateExactDatePayloadType(VersionString);
+            ValidateExactDatePayloadType(GedcomVersion.V70);
         }
 
         /// <summary>
@@ -1027,97 +1264,43 @@ namespace Tests
         [TestMethod]
         public void ValidateDatePeriodPayloadType()
         {
+            SchemaTestsCommon.ValidateCommonDatePeriodPayloadType(GedcomVersion.V70);
+
             // Try some valid date period values.
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "TO 3 DEC 2023");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "TO DEC 2023");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "TO 2023");
             ValidateValidDatePeriodPayload(GedcomVersion.V70, "TO GREGORIAN 20 BCE");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM 03 DEC 2023");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM 2000 TO 2020");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM MAR 2000 TO JUN 2000");
-            ValidateValidDatePeriodPayload(GedcomVersion.Both, "FROM 30 NOV 2000 TO 1 DEC 2000");
             ValidateValidDatePeriodPayload(GedcomVersion.V70, "FROM HEBREW 1 TSH 1");
             ValidateValidDatePeriodPayload(GedcomVersion.V70, "FROM GREGORIAN 20 BCE TO GREGORIAN 12 BCE");
 
             // Try some invalid date period values.
-            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "2023");
-            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO 40 DEC 2023");
-            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO 3 dec 2023");
-            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO 3 JUNE 2023");
-            ValidateInvalidDatePeriodPayload(GedcomVersion.Both, "TO ABC 2023");
             ValidateInvalidDatePeriodPayload(GedcomVersion.V70, "FROM HEBREW 1 TSH 1 BCE");
-        }
-
-        private void ValidateInvalidDateValuePayload(GedcomVersion version, string value)
-        {
-            if (version == GedcomVersion.Both)
-            {
-                // TODO: ValidateInvalidDateValuePayload(GedcomVersion.V551, value);
-                ValidateInvalidDateValuePayload(GedcomVersion.V70, value);
-                return;
-            }
-            ValidateGedcomText(@"0 HEAD
-1 GEDC
-2 VERS 7.0
-0 @I1@ INDI
-1 DEAT
-2 DATE " + value + @"
-0 TRLR
-", "Line 6: \"" + value + "\" is not a valid date value");
         }
 
         /// <summary>
         /// Validate date value payload type.
         /// </summary>
         [TestMethod]
-        public void ValidateDateValuePayloadType()
+        public void ValidateV70DateValuePayloadType()
         {
+            SchemaTestsCommon.ValidateCommonDateValuePayloadType(GedcomVersion.V70);
+
             // Try some valid dates.
-            ValidateValidDateValuePayload(GedcomVersion.Both, "3 DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "2023");
             ValidateValidDateValuePayload(GedcomVersion.V70, "GREGORIAN 20 BCE");
             ValidateValidDateValuePayload(GedcomVersion.V70, "HEBREW 1 TSH 1");
 
             // Try some valid date periods.
-            ValidateValidDateValuePayload(GedcomVersion.Both, "TO 3 DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "TO DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "TO 2023");
             ValidateValidDateValuePayload(GedcomVersion.V70, "TO GREGORIAN 20 BCE");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "FROM 03 DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "FROM 2000 TO 2020");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "FROM MAR 2000 TO JUN 2000");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "FROM 30 NOV 2000 TO 1 DEC 2000");
             ValidateValidDateValuePayload(GedcomVersion.V70, "FROM HEBREW 1 TSH 1");
             ValidateValidDateValuePayload(GedcomVersion.V70, "FROM GREGORIAN 20 BCE TO GREGORIAN 12 BCE");
 
             // Try some valid date ranges.
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BEF 3 DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BEF DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BEF 2023");
             ValidateValidDateValuePayload(GedcomVersion.V70, "BEF GREGORIAN 20 BCE");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "AFT 03 DEC 2023");
             ValidateValidDateValuePayload(GedcomVersion.V70, "AFT HEBREW 1 TSH 1");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BET 2000 AND 2020");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BET MAR 2000 AND JUN 2000");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "BET 30 NOV 2000 AND 1 DEC 2000");
             ValidateValidDateValuePayload(GedcomVersion.V70, "BET GREGORIAN 20 BCE AND GREGORIAN 12 BCE");
 
             // Try some valid approximate dates.
-            ValidateValidDateValuePayload(GedcomVersion.Both, "ABT 3 DEC 2023");
-            ValidateValidDateValuePayload(GedcomVersion.Both, "CAL DEC 2023");
             ValidateValidDateValuePayload(GedcomVersion.V70, "EST GREGORIAN 20 BCE");
 
             // Try some invalid date values.
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "TO 40 DEC 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "TO 3 dec 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "TO 3 JUNE 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "TO ABC 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "BEF 40 DEC 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "BEF 3 dec 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "BEF 3 JUNE 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "BEF ABC 2023");
-            ValidateInvalidDateValuePayload(GedcomVersion.Both, "BET 2000");
             ValidateInvalidDateValuePayload(GedcomVersion.V70, "FROM HEBREW 1 TSH 1 BCE");
             ValidateInvalidDateValuePayload(GedcomVersion.V70, "AFT HEBREW 1 TSH 1 BCE");
         }
@@ -1128,7 +1311,7 @@ namespace Tests
         [TestMethod]
         public void ValidateTimePayloadType()
         {
-            ValidateTimePayloadType(VersionString);
+            ValidateTimePayloadType(GedcomVersion.V70);
         }
 
         private void ValidateInvalidAgePayload(string value)

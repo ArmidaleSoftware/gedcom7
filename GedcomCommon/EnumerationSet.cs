@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using YamlDotNet.Serialization;
 
@@ -32,20 +33,30 @@ namespace GedcomCommon
 
                 // Now try a structure URI.
                 GedcomStructureSchema schema = GedcomStructureSchema.GetSchema(uri);
-                this.ValueTags.Add(schema.StandardTag);
+                if (schema != null)
+                {
+                    this.ValueTags.Add(schema.StandardTag);
+                }
             }
         }
 
         static Dictionary<string, EnumerationSet> s_EnumerationSets = new Dictionary<string, EnumerationSet>();
 
-        public static void LoadAll(string gedcomRegistriesPath)
+        /// <summary>
+        /// Check whether this schema applies to a given GEDCOM version.
+        /// </summary>
+        /// <param name="version">GEDCOM version</param>
+        /// <returns>true if applies, false if not</returns>
+        private bool HasVersion(GedcomVersion version) => GedcomStructureSchema.UriHasVersion(this.Uri, version);
+
+        public static void LoadAll(GedcomVersion version, string gedcomRegistriesPath)
         {
             if (s_EnumerationSets.Count > 0)
             {
                 return;
             }
             EnumerationValue.LoadAll(gedcomRegistriesPath);
-            var path = Path.Combine(gedcomRegistriesPath, "enumeration-set/standard");
+            var path = Path.Combine(gedcomRegistriesPath, "enumeration-set", "standard");
             string[] files;
             try
             {
@@ -62,6 +73,10 @@ namespace GedcomCommon
                 using var reader = new StreamReader(filename);
                 var dictionary = deserializer.Deserialize<Dictionary<object, object>>(reader);
                 var schema = new EnumerationSet(dictionary);
+                if (!schema.HasVersion(version))
+                {
+                    continue;
+                }
                 s_EnumerationSets.Add(schema.Uri, schema);
             }
         }

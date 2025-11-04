@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GedValidate", "GedValidate\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GedcomCommon", "GedcomCommon\GedcomCommon.csproj", "{9FB8F378-A21C-4749-8F07-72E4E8054E7E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gedcom551", "Gedcom551\Gedcom551.csproj", "{5733ADD1-4E30-42E9-9556-C72097683AB7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GedcomLoader", "GedcomLoader\GedcomLoader.csproj", "{146B6485-581C-4302-8979-B42AADBE24A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,14 @@ Global
 		{9FB8F378-A21C-4749-8F07-72E4E8054E7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9FB8F378-A21C-4749-8F07-72E4E8054E7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9FB8F378-A21C-4749-8F07-72E4E8054E7E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5733ADD1-4E30-42E9-9556-C72097683AB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5733ADD1-4E30-42E9-9556-C72097683AB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5733ADD1-4E30-42E9-9556-C72097683AB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5733ADD1-4E30-42E9-9556-C72097683AB7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{146B6485-581C-4302-8979-B42AADBE24A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{146B6485-581C-4302-8979-B42AADBE24A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{146B6485-581C-4302-8979-B42AADBE24A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{146B6485-581C-4302-8979-B42AADBE24A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

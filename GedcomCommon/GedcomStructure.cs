@@ -28,17 +28,20 @@ namespace GedcomCommon
                 return null;
             }
         }
-        public GedcomFile File
+        public IGedcomFile File
         {
             get
             {
-                if (_superstructure is WeakReference<GedcomFile>)
+                if (_superstructure is WeakReference<IGedcomFile>)
                 {
-                    WeakReference<GedcomFile> wr = _superstructure as WeakReference<GedcomFile>;
-                    GedcomFile target;
-                    if (wr.TryGetTarget(out target))
+                    WeakReference<IGedcomFile> wr = _superstructure as WeakReference<IGedcomFile>;
+                    if (wr != null)
                     {
-                        return target;
+                        IGedcomFile target;
+                        if (wr.TryGetTarget(out target))
+                        {
+                            return target;
+                        }
                     }
                 }
                 GedcomStructure superstructure = this.Superstructure;
@@ -267,7 +270,7 @@ namespace GedcomCommon
             {
                 // Try to resolve the pointer.
                 string xref = this.LineVal;
-                GedcomFile file = this.File;
+                IGedcomFile file = this.File;
                 GedcomStructure record = file.FindRecord(xref);
                 if (record == null)
                 {
@@ -460,10 +463,19 @@ namespace GedcomCommon
                 return false;
             }
 
-            // See if epoch is in the list.
-            if (!string.IsNullOrEmpty(epoch) && !calendarSchema.IsValidEpoch(epoch))
+            if (!string.IsNullOrEmpty(epoch))
             {
-                return false;
+                // See if epoch is in the list.
+                if (!calendarSchema.IsValidEpoch(epoch))
+                {
+                    return false;
+                }
+
+                if ((version == GedcomVersion.V551) && !string.IsNullOrEmpty(month))
+                {
+                    // GEDCOM 5.5.1 only permitted an epoch in the absense of a month.
+                    return false;
+                }
             }
 
             return true;
@@ -614,9 +626,9 @@ namespace GedcomCommon
             {
                 return false;
             }
-            if (!string.IsNullOrEmpty(groups[offset + 12].Value))
+            if (!string.IsNullOrEmpty(groups[offset + 11].Value))
             {
-                uint altyear = uint.Parse(groups[offset + 12].Value);
+                uint altyear = uint.Parse(groups[offset + 11].Value);
                 if ((year + 1) % 100 == altyear)
                 {
                     return IsValidDate(GedcomVersion.V551, calendar, day, month, year + 1, epoch);
@@ -721,7 +733,7 @@ namespace GedcomCommon
         /// <param name="line">Line text</param>
         /// <param name="structurePath">Prior structure path</param>
         /// <returns>Error message, or null on success</returns>
-        public string Parse(GedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
+        public string Parse(IGedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
         {
             this.LineNumber = lineNumber;
             this.OriginalLine = line;
@@ -736,7 +748,7 @@ namespace GedcomCommon
             int index = 0;
 
             GedcomVersion gedcomVersion = file.GedcomVersion;
-            if (gedcomVersion != GedcomVersion.V70)
+            if (gedcomVersion == GedcomVersion.V551)
             {
                 // Prior to GEDCOM 7, leading whitespace was allowed.
                 while (tokens[index].Length == 0)
@@ -767,7 +779,7 @@ namespace GedcomCommon
             }
             else
             {
-                this._superstructure = new WeakReference<GedcomFile>(file);
+                this._superstructure = new WeakReference<IGedcomFile>(file);
 
                 if ((tokens.Length > index) && (tokens[index].Length > 0) && (tokens[index][0] == '@'))
                 {
@@ -892,7 +904,7 @@ namespace GedcomCommon
                             string sourceProgram = this.File.SourceProduct?.LineVal ?? "Unknown";
                             string tag = tokens[2];
                             string uri = tokens[3];
-                            GedcomStructureSchema.AddSchema(sourceProgram, tag, uri);
+                            GedcomStructureSchema.AddSchema(this.File.GedcomVersion, sourceProgram, tag, uri);
                             break;
                         }
                         if (this.Schema.Uri == "https://gedcom.io/terms/v5.5.1/SEX")
@@ -906,6 +918,7 @@ namespace GedcomCommon
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-CHANGE_DATE": // TODO: should be DATE_EXACT
                     case "https://gedcom.io/terms/v5.5.1/type-TRANSMISSION_DATE": // TODO: should be DATE_EXACT
+                    case "https://gedcom.io/terms/v5.5.1/type-DATE_EXACT":
                     case "https://gedcom.io/terms/v7/type-Date#exact":
                         if (!IsValidExactDate(this.LineVal))
                         {
@@ -1151,7 +1164,7 @@ namespace GedcomCommon
         /// <returns>positive if similar, negative if dissimilar</returns>
         static float ScoreNamePiece(GedcomStructure superset, GedcomStructure subset)
         {
-            GedcomFile file = superset.File;
+            IGedcomFile file = superset.File;
             if (file == null)
             {
                 return 0;
@@ -1233,7 +1246,7 @@ namespace GedcomCommon
         public GedcomStructure FindBestMatch(List<GedcomStructure> others, out float returnScore)
         {
             returnScore = 0;
-            GedcomFile file = this.File;
+            IGedcomFile file = this.File;
             if (file == null)
             {
                 return null;
@@ -1242,7 +1255,7 @@ namespace GedcomCommon
             GedcomStructure bestOther = null;
             foreach (GedcomStructure other in others)
             {
-                GedcomFile otherFile = other.File;
+                IGedcomFile otherFile = other.File;
                 if (otherFile == null)
                 {
                     return null;

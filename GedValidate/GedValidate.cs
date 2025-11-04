@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
 using GedcomCommon;
+using GedcomLoader;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -52,7 +53,8 @@ namespace Gedcom7
             List<string> errors;
             using (var gedzipFile = new GedzipFile(gedcomRegistriesPath))
             {
-                errors = gedzipFile.LoadFromPath(sourcePath);
+                var fileFactory = new GedcomFileFactory();
+                errors = gedzipFile.LoadFromPath(sourcePath, fileFactory);
                 if (errors.Count < MAX_ERRORS)
                 {
                     errors.AddRange(gedzipFile.Validate());

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace GedcomCommon
 {
@@ -20,6 +19,7 @@ namespace GedcomCommon
     }
     public struct GedcomStructureSchemaKey
     {
+        public GedcomVersion GedcomVersion;
         public string SourceProgram; // null (wildcard) for standard tags.
         public string SuperstructureUri; // null (wildcard) for undocumented extensions, "-" for records.
         public string Tag;
@@ -106,11 +106,19 @@ namespace GedcomCommon
 
         public static bool UriHasVersion(string uri, GedcomVersion version)
         {
+            Debug.Assert(version != GedcomVersion.Unknown);
             if (uri.Contains("/v5.5.1/"))
             {
-                return (version == GedcomVersion.V551 || version == GedcomVersion.Both);
+                return (version == GedcomVersion.V551 || version == GedcomVersion.All);
             }
-            return (version == GedcomVersion.V70 || version == GedcomVersion.Both);
+            if (uri.Contains("/v7.1/"))
+            {
+                return (version == GedcomVersion.V71 || version == GedcomVersion.All);
+            }
+
+            // V7 URIs are valid for both V7.0 and V7.1.
+            // TODO: ignore V7 URIs if subsumed by a V7.1 URI.
+            return (version == GedcomVersion.V70 || version == GedcomVersion.V71 || version == GedcomVersion.All);
         }
 
         /// <summary>
@@ -120,6 +128,7 @@ namespace GedcomCommon
         /// <returns>true if applies, false if not</returns>
         public bool HasVersion(GedcomVersion version)
         {
+            Debug.Assert(version != GedcomVersion.Unknown);
             if (IsDocumented && !UriHasVersion(this.Uri, version))
             {
                 return false;
@@ -166,9 +175,18 @@ namespace GedcomCommon
         public Dictionary<string, GedcomStructureCountInfo> Substructures { get; private set; }
         public Dictionary<string, GedcomStructureCountInfo> Superstructures { get; private set; }
 
-        static Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
-        static Dictionary<string, string> s_StructureSchemaAliases = new System.Collections.Generic.Dictionary<string, string>();
-        static Dictionary<string, GedcomStructureSchema> s_StructureSchemasByUri = new Dictionary<string, GedcomStructureSchema>();
+        static readonly Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas551 = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
+        static readonly Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas70 = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
+        static readonly Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema> s_StructureSchemas71 = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>();
+        static readonly Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>[] s_StructureSchemasByVersion = new Dictionary<GedcomStructureSchemaKey, GedcomStructureSchema>[]
+        {
+            null,
+            s_StructureSchemas551,
+            s_StructureSchemas70,
+            s_StructureSchemas71
+        };
+        static readonly Dictionary<string, string> s_StructureSchemaAliases = new System.Collections.Generic.Dictionary<string, string>();
+        static readonly Dictionary<string, GedcomStructureSchema> s_StructureSchemasByUri = new Dictionary<string, GedcomStructureSchema>();
 
         public const string RecordSuperstructureUri = "TOP";
 
@@ -182,24 +200,30 @@ namespace GedcomCommon
         /// <param name="schema">Schema</param>
         public static void AddSchema(GedcomVersion version, string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
         {
+            Debug.Assert(sourceProgram != string.Empty); // Use null as the wildcard for all source programs, not an empty string.
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
+            structureSchemaKey.GedcomVersion = version;
             structureSchemaKey.SourceProgram = sourceProgram;
             structureSchemaKey.SuperstructureUri = superstructureUri;
             structureSchemaKey.Tag = tag;
             structureSchemaKey.IsPointer = (version == GedcomVersion.V551) && (schema.Payload != null) && schema.Payload.StartsWith('@');
-            Debug.Assert(!s_StructureSchemas.ContainsKey(structureSchemaKey), $"No structure schema for {sourceProgram} {superstructureUri} {tag} {structureSchemaKey.IsPointer}");
-            s_StructureSchemas[structureSchemaKey] = schema;
+
+            var structureSchemas = s_StructureSchemasByVersion[(int)version];
+            Debug.Assert(!structureSchemas.ContainsKey(structureSchemaKey), $"No structure schema for {sourceProgram} {superstructureUri} {tag} {structureSchemaKey.IsPointer}");
+            structureSchemas[structureSchemaKey] = schema;
         }
 
         /// <summary>
         /// Add a schema.
         /// </summary>
+        /// <param name="version">GEDCOM version</param>
         /// <param name="sourceProgram">null (wildcard) for standard tags, else extension</param>
         /// <param name="tag">Tag</param>
         /// <param name="uri">Structure URI</param>
-        public static void AddSchema(string sourceProgram, string tag, string uri)
+        public static void AddSchema(GedcomVersion version, string sourceProgram, string tag, string uri)
         {
             var structureSchemaKey = new GedcomStructureSchemaKey();
+            structureSchemaKey.GedcomVersion = version;
             structureSchemaKey.SourceProgram = sourceProgram;
             // Leave SuperstructureUri as null for a wildcard.
             structureSchemaKey.Tag = tag;
@@ -220,21 +244,23 @@ namespace GedcomCommon
 
             var schema = new GedcomStructureSchema(sourceProgram, tag);
             schema.Uri = uri;
-            s_StructureSchemas[structureSchemaKey] = schema;
+            s_StructureSchemasByVersion[(int)version][structureSchemaKey] = schema;
         }
 
         public static void LoadAll(GedcomVersion version, string gedcomRegistriesPath = null)
         {
-            if (s_StructureSchemas.Count > 0)
+            Debug.Assert(version != GedcomVersion.Unknown && version != GedcomVersion.All);
+            if (s_StructureSchemasByVersion[(int)version].Count > 0)
             {
+                // Already loaded.
                 return;
             }
             if (gedcomRegistriesPath == null)
             {
                 string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                gedcomRegistriesPath = Path.Combine(baseDirectory, "../../../../../gedcom7/external/GEDCOM-registries");
+                gedcomRegistriesPath = Path.GetFullPath(Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "gedcom7", "external", "GEDCOM-registries"));
             }
-            var path = Path.Combine(gedcomRegistriesPath, "structure/standard");
+            var path = Path.Combine(gedcomRegistriesPath, "structure", "standard");
             string[] files = Directory.GetFiles(path);
             foreach (string filename in files)
             {
@@ -259,8 +285,8 @@ namespace GedcomCommon
                     }
                 }
             }
-            EnumerationSet.LoadAll(gedcomRegistriesPath);
-            CalendarSchema.LoadAll(gedcomRegistriesPath);
+            EnumerationSet.LoadAll(version, gedcomRegistriesPath);
+            CalendarSchema.LoadAll(version, gedcomRegistriesPath);
         }
 
         public static GedcomStructureSchema GetSchema(string uri) => s_StructureSchemasByUri.ContainsKey(uri) ? s_StructureSchemasByUri[uri] : null;
@@ -278,12 +304,15 @@ namespace GedcomCommon
         {
             // First look for a schema with a wildcard source program.
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
+            structureSchemaKey.GedcomVersion = version;
             structureSchemaKey.SuperstructureUri = superstructureUri;
             structureSchemaKey.Tag = tag;
             structureSchemaKey.IsPointer = (version == GedcomVersion.V551) ? isPointer : false;
-            if (s_StructureSchemas.ContainsKey(structureSchemaKey))
+
+            var structureSchemas = s_StructureSchemasByVersion[(int)version];
+            if (structureSchemas.ContainsKey(structureSchemaKey))
             {
-                return s_StructureSchemas[structureSchemaKey];
+                return structureSchemas[structureSchemaKey];
             }
 
             // Now look for a schema specific to the source program
@@ -294,18 +323,18 @@ namespace GedcomCommon
                 sourceProgram = "Unknown";
             }
             structureSchemaKey.SourceProgram = sourceProgram;
-            if (s_StructureSchemas.ContainsKey(structureSchemaKey))
+            if (structureSchemas.ContainsKey(structureSchemaKey))
             {
-                return s_StructureSchemas[structureSchemaKey];
+                return structureSchemas[structureSchemaKey];
             }
 
             // Now look for a schema specific to the source program
             // and wildcard superstructure URI, which would be an
             // undocumented extension tag.
             structureSchemaKey.SuperstructureUri = null;
-            if (s_StructureSchemas.ContainsKey(structureSchemaKey))
+            if (structureSchemas.ContainsKey(structureSchemaKey))
             {
-                return s_StructureSchemas[structureSchemaKey];
+                return structureSchemas[structureSchemaKey];
             }
 
             // Now look for a schema alias defined in HEAD.SCHMA.
@@ -322,8 +351,8 @@ namespace GedcomCommon
             // Create a new schema for it.
             structureSchemaKey.SuperstructureUri = superstructureUri;
             schema = new GedcomStructureSchema(sourceProgram, tag);
-            s_StructureSchemas[structureSchemaKey] = schema;
-            return s_StructureSchemas[structureSchemaKey];
+            structureSchemas[structureSchemaKey] = schema;
+            return structureSchemas[structureSchemaKey];
         }
     }
 }
