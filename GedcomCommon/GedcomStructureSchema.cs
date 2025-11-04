@@ -202,7 +202,7 @@ namespace GedcomCommon
         /// <param name="schema">Schema</param>
         public static void AddSchema(GedcomVersion version, string sourceProgram, string superstructureUri, string tag, GedcomStructureSchema schema)
         {
-            Debug.Assert(sourceProgram != string.Empty); // Use wildcard for all.
+            Debug.Assert(sourceProgram != string.Empty); // Use null as the wildcard for all source programs, not an empty string.
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
             structureSchemaKey.GedcomVersion = version;
             structureSchemaKey.SourceProgram = sourceProgram;
