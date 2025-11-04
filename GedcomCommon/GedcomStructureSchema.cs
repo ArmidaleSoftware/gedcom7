@@ -117,7 +117,10 @@ namespace GedcomCommon
             {
                 return (version == GedcomVersion.V71 || version == GedcomVersion.All);
             }
-            return (version == GedcomVersion.V70 || version == GedcomVersion.All);
+
+            // V7 URIs are valid for both V7.0 and V7.1.
+            // TODO: ignore V7 URIs if subsumed by a V7.1 URI.
+            return (version == GedcomVersion.V70 || version == GedcomVersion.V71 || version == GedcomVersion.All);
         }
 
         /// <summary>
