@@ -901,7 +901,7 @@ namespace GedcomCommon
                             string sourceProgram = this.File.SourceProduct?.LineVal ?? "Unknown";
                             string tag = tokens[2];
                             string uri = tokens[3];
-                            GedcomStructureSchema.AddSchema(sourceProgram, tag, uri);
+                            GedcomStructureSchema.AddSchema(this.File.GedcomVersion, sourceProgram, tag, uri);
                             break;
                         }
                         if (this.Schema.Uri == "https://gedcom.io/terms/v5.5.1/SEX")
