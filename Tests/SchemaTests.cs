@@ -4,13 +4,10 @@ using Gedcom7;
 using GedcomCommon;
 using GedcomLoader;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using YamlDotNet.Core;
-using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace Tests
 {
@@ -68,7 +65,7 @@ namespace Tests
         {
             string versionString = GetGedcomVersionString(version);
             string additional = GetGedcomVersionHeaderAdditions(version);
-            int addtionalLines = additional.Split('\n').Count() - 1;
+            int additionalLines = additional.Split('\n').Count() - 1;
 
             // HEAD pseudo-structure does not allow an xref.
             ValidateGedcomText(@"0 @H1@ HEAD
@@ -95,7 +92,7 @@ namespace Tests
 1 GEDC
 2 VERS " + versionString + additional + @"
 0 @T1@ TRLR
-", "Line " + (4 + addtionalLines) + ": Xref is not valid for TRLR");
+", "Line " + (4 + additionalLines) + ": Xref is not valid for TRLR");
 
             // Xref must start with @.
             ValidateGedcomText(@"0 HEAD
@@ -103,7 +100,7 @@ namespace Tests
 2 VERS " + versionString + additional + @"
 0 I1@ INDI
 0 TRLR
-", "Line " + (4 + addtionalLines) + ": Undocumented standard record");
+", "Line " + (4 + additionalLines) + ": Undocumented standard record");
 
             // Xref must end with @.
             ValidateGedcomText(@"0 HEAD
@@ -111,7 +108,7 @@ namespace Tests
 2 VERS " + versionString + additional + @"
 0 @I1 INDI
 0 TRLR
-", "Line " + (4 + addtionalLines) + ": Xref must start and end with @");
+", "Line " + (4 + additionalLines) + ": Xref must start and end with @");
 
             // Xref must contain something.
             ValidateGedcomText(@"0 HEAD
@@ -119,7 +116,7 @@ namespace Tests
 2 VERS " + versionString + additional + @"
 0 @ INDI
 0 TRLR
-", "Line " + (4 + addtionalLines) + ": Xref must start and end with @");
+", "Line " + (4 + additionalLines) + ": Xref must start and end with @");
 
             // Upper case letters and numbers are fine.
             ValidateGedcomText(@"0 HEAD

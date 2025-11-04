@@ -11,7 +11,7 @@ namespace Tests
     [TestClass]
     public class ComparisonTests
     {
-        private const string TEST_FILES_BASE_PATH = "../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70";
+        private const string TEST_FILES_BASE_PATH = "..\\..\\..\\..\\external\\GEDCOM-registries\\registry_tools\\GEDCOM.io\\testfiles\\gedcom70";
 
         void CompareFileWithSelf(string path)
         {
