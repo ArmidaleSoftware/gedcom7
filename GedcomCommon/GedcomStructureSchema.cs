@@ -236,6 +236,7 @@ namespace GedcomCommon
             Debug.Assert(version != GedcomVersion.Unknown);
             if (s_StructureSchemas.Count > 0)
             {
+                // Already loaded.
                 return;
             }
             if (gedcomRegistriesPath == null)

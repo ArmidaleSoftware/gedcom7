@@ -34,6 +34,11 @@ namespace Gedcom551
         /// </summary>
         public static void AddOldCalendars()
         {
+            if (GedcomCommon.CalendarSchema.IsValidCalendarTag("@#DGREGORIAN@"))
+            {
+                // Already added.
+                return;
+            }
             AddOldCalendar("@#DFRENCH R@", new List<string>
             {
                 "VEND", "BRUM", "FRIM", "NIVO", "PLUV", "VENT",

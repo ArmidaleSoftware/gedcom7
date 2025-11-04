@@ -86,6 +86,8 @@ namespace GedcomCommon
             s_CalendarsByTag.Add(schema.StandardTag, schema);
         }
 
+        public static bool IsValidCalendarTag(string tag) => s_CalendarsByTag.ContainsKey(tag);
+
         public static CalendarSchema GetCalendarByTag(string tag) => s_CalendarsByTag[tag];
 
         public bool IsValidMonth(string value)

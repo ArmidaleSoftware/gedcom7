@@ -460,10 +460,19 @@ namespace GedcomCommon
                 return false;
             }
 
-            // See if epoch is in the list.
-            if (!string.IsNullOrEmpty(epoch) && !calendarSchema.IsValidEpoch(epoch))
+            if (!string.IsNullOrEmpty(epoch))
             {
-                return false;
+                // See if epoch is in the list.
+                if (!calendarSchema.IsValidEpoch(epoch))
+                {
+                    return false;
+                }
+
+                if ((version == GedcomVersion.V551) && !string.IsNullOrEmpty(month))
+                {
+                    // GEDCOM 5.5.1 only permitted an epoch in the absense of a month.
+                    return false;
+                }
             }
 
             return true;
@@ -614,9 +623,9 @@ namespace GedcomCommon
             {
                 return false;
             }
-            if (!string.IsNullOrEmpty(groups[offset + 12].Value))
+            if (!string.IsNullOrEmpty(groups[offset + 11].Value))
             {
-                uint altyear = uint.Parse(groups[offset + 12].Value);
+                uint altyear = uint.Parse(groups[offset + 11].Value);
                 if ((year + 1) % 100 == altyear)
                 {
                     return IsValidDate(GedcomVersion.V551, calendar, day, month, year + 1, epoch);
@@ -906,6 +915,7 @@ namespace GedcomCommon
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-CHANGE_DATE": // TODO: should be DATE_EXACT
                     case "https://gedcom.io/terms/v5.5.1/type-TRANSMISSION_DATE": // TODO: should be DATE_EXACT
+                    case "https://gedcom.io/terms/v5.5.1/type-DATE_EXACT":
                     case "https://gedcom.io/terms/v7/type-Date#exact":
                         if (!IsValidExactDate(this.LineVal))
                         {

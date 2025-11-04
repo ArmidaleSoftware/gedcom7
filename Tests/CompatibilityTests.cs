@@ -18,7 +18,7 @@ namespace Tests
             var fileFactory = new GedcomFileFactory();
             var file = new GedcomFile();
             List<string> errors = file.LoadFromPath(BaselinePath + filename + ".ged");
-            Assert.AreEqual(0, errors.Count);
+            Assert.IsEmpty(errors);
             var report = new GedcomCompatibilityReport(file, fileFactory);
 
             Assert.AreEqual(tree1Percentage, report.Tree1CompatibilityPercentage);

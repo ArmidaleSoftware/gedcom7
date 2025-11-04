@@ -17,11 +17,11 @@ namespace Tests
         {
             var file = new GedcomFile();
             List<string> errors = file.LoadFromPath(path);
-            Assert.AreEqual(0, errors.Count);
+            Assert.IsEmpty(errors);
 
             GedcomComparisonReport report = file.Compare(file);
-            Assert.AreEqual(0, report.StructuresAdded.Count);
-            Assert.AreEqual(0, report.StructuresRemoved.Count);
+            Assert.IsEmpty(report.StructuresAdded);
+            Assert.IsEmpty(report.StructuresRemoved);
             Assert.AreEqual(100, report.CompatibilityPercentage);
         }
 
@@ -41,22 +41,22 @@ namespace Tests
         {
             var subsetFile = new GedcomFile();
             List<string> errors = subsetFile.LoadFromPath(Path.Combine(TEST_FILES_BASE_PATH, subset + ".ged"));
-            Assert.AreEqual(0, errors.Count);
+            Assert.IsEmpty(errors);
 
             var supersetFile = new GedcomFile();
             errors = supersetFile.LoadFromPath(Path.Combine(TEST_FILES_BASE_PATH, superset + ".ged"));
-            Assert.AreEqual(0, errors.Count);
+            Assert.IsEmpty(errors);
 
             // Adding information is ok.
             GedcomComparisonReport report = subsetFile.Compare(supersetFile);
-            Assert.AreEqual(structuresAdded, report.StructuresAdded.Count);
-            Assert.AreEqual(0, report.StructuresRemoved.Count);
+            Assert.HasCount(structuresAdded, report.StructuresAdded);
+            Assert.IsEmpty(report.StructuresRemoved);
             Assert.AreEqual(100, report.CompatibilityPercentage);
 
             // Losing information is not ok.
             report = supersetFile.Compare(subsetFile);
-            Assert.AreEqual(0, report.StructuresAdded.Count);
-            Assert.AreEqual(structuresAdded, report.StructuresRemoved.Count);
+            Assert.IsEmpty(report.StructuresAdded);
+            Assert.HasCount(structuresAdded, report.StructuresRemoved);
             Assert.AreEqual(percentage, report.CompatibilityPercentage);
         }
 
@@ -118,16 +118,16 @@ namespace Tests
         public void CompareNoteWithSharedNote()
         {
             var note = new GedcomFile();
-            List<string> errors = note.LoadFromPath("../../../samples/note.ged");
-            Assert.AreEqual(0, errors.Count);
+            List<string> errors = note.LoadFromPath("..\\..\\..\\samples\\note.ged");
+            Assert.IsEmpty(errors);
 
             var snote = new GedcomFile();
-            errors = snote.LoadFromPath("../../../samples/snote.ged");
-            Assert.AreEqual(0, errors.Count);
+            errors = snote.LoadFromPath("..\\..\\..\\samples\\snote.ged");
+            Assert.IsEmpty(errors);
 
             GedcomComparisonReport report = note.Compare(snote);
-            Assert.AreEqual(0, report.StructuresAdded.Count);
-            Assert.AreEqual(0, report.StructuresRemoved.Count);
+            Assert.IsEmpty(report.StructuresAdded);
+            Assert.IsEmpty(report.StructuresRemoved);
             Assert.AreEqual(100, report.CompatibilityPercentage);
         }
 
@@ -136,46 +136,46 @@ namespace Tests
         {
             var singles = new GedcomFile();
             List<string> errors = singles.LoadFromPath("../../../samples/name-pieces-single.ged");
-            Assert.AreEqual(0, errors.Count);
+            Assert.IsEmpty(errors);
 
             var multiples = new GedcomFile();
             errors = multiples.LoadFromPath("../../../samples/name-pieces-multiple.ged");
-            Assert.AreEqual(0, errors.Count);
+            Assert.IsEmpty(errors);
 
             // Verify that both compare equally.
             GedcomComparisonReport report = singles.Compare(multiples);
-            Assert.AreEqual(0, report.StructuresAdded.Count);
-            Assert.AreEqual(0, report.StructuresRemoved.Count);
+            Assert.IsEmpty(report.StructuresAdded);
+            Assert.IsEmpty(report.StructuresRemoved);
             Assert.AreEqual(100, report.CompatibilityPercentage);
 
             report = multiples.Compare(singles);
-            Assert.AreEqual(0, report.StructuresAdded.Count);
-            Assert.AreEqual(0, report.StructuresRemoved.Count);
+            Assert.IsEmpty(report.StructuresAdded);
+            Assert.IsEmpty(report.StructuresRemoved);
             Assert.AreEqual(100, report.CompatibilityPercentage);
 
             var mismatch = new GedcomFile();
             errors = mismatch.LoadFromPath("../../../samples/name-pieces-multiple-mismatch.ged");
-            Assert.AreEqual(0, errors.Count);
+            Assert.IsEmpty(errors);
 
             // Verify that mismatch does not compare equally.
             report = singles.Compare(mismatch);
-            Assert.AreEqual(6, report.StructuresAdded.Count);
-            Assert.AreEqual(6, report.StructuresRemoved.Count);
+            Assert.HasCount(6, report.StructuresAdded);
+            Assert.HasCount(6, report.StructuresRemoved);
             Assert.AreEqual(50, report.CompatibilityPercentage);
 
             report = mismatch.Compare(singles);
-            Assert.AreEqual(6, report.StructuresAdded.Count);
-            Assert.AreEqual(6, report.StructuresRemoved.Count);
+            Assert.HasCount(6, report.StructuresAdded);
+            Assert.HasCount(6, report.StructuresRemoved);
             Assert.AreEqual(66, report.CompatibilityPercentage);
 
             report = multiples.Compare(mismatch);
-            Assert.AreEqual(6, report.StructuresAdded.Count);
-            Assert.AreEqual(6, report.StructuresRemoved.Count);
+            Assert.HasCount(6, report.StructuresAdded);
+            Assert.HasCount(6, report.StructuresRemoved);
             Assert.AreEqual(66, report.CompatibilityPercentage);
 
             report = mismatch.Compare(multiples);
-            Assert.AreEqual(6, report.StructuresAdded.Count);
-            Assert.AreEqual(6, report.StructuresRemoved.Count);
+            Assert.HasCount(6, report.StructuresAdded);
+            Assert.HasCount(6, report.StructuresRemoved);
             Assert.AreEqual(66, report.CompatibilityPercentage);
         }
     }
