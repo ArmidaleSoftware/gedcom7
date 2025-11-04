@@ -310,9 +310,9 @@ namespace GedcomCommon
             structureSchemaKey.IsPointer = (version == GedcomVersion.V551) ? isPointer : false;
 
             var structureSchemas = s_StructureSchemasByVersion[(int)version];
-            if (structureSchemas.ContainsKey(structureSchemaKey))
+            if (structureSchemas.TryGetValue(structureSchemaKey, out GedcomStructureSchema schema))
             {
-                return structureSchemas[structureSchemaKey];
+                return schema;
             }
 
             // Now look for a schema specific to the source program
@@ -323,22 +323,21 @@ namespace GedcomCommon
                 sourceProgram = "Unknown";
             }
             structureSchemaKey.SourceProgram = sourceProgram;
-            if (structureSchemas.ContainsKey(structureSchemaKey))
+            if (structureSchemas.TryGetValue(structureSchemaKey, out schema))
             {
-                return structureSchemas[structureSchemaKey];
+                return schema;
             }
 
             // Now look for a schema specific to the source program
             // and wildcard superstructure URI, which would be an
             // undocumented extension tag.
             structureSchemaKey.SuperstructureUri = null;
-            if (structureSchemas.ContainsKey(structureSchemaKey))
+            if (structureSchemas.TryGetValue(structureSchemaKey, out schema))
             {
-                return structureSchemas[structureSchemaKey];
+                return schema;
             }
 
             // Now look for a schema alias defined in HEAD.SCHMA.
-            GedcomStructureSchema schema;
             if (s_StructureSchemaAliases.ContainsKey(tag))
             {
                 string uri = s_StructureSchemaAliases[tag];
