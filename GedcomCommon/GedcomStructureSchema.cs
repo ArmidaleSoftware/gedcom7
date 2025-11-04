@@ -258,7 +258,7 @@ namespace GedcomCommon
             if (gedcomRegistriesPath == null)
             {
                 string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                gedcomRegistriesPath = Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "gedcom7", "external", "GEDCOM-registries");
+                gedcomRegistriesPath = Path.GetFullPath(Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "gedcom7", "external", "GEDCOM-registries"));
             }
             var path = Path.Combine(gedcomRegistriesPath, "structure", "standard");
             string[] files = Directory.GetFiles(path);

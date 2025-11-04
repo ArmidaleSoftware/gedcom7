@@ -35,10 +35,13 @@ namespace GedcomCommon
                 if (_superstructure is WeakReference<IGedcomFile>)
                 {
                     WeakReference<IGedcomFile> wr = _superstructure as WeakReference<IGedcomFile>;
-                    IGedcomFile target;
-                    if (wr.TryGetTarget(out target))
+                    if (wr != null)
                     {
-                        return target;
+                        IGedcomFile target;
+                        if (wr.TryGetTarget(out target))
+                        {
+                            return target;
+                        }
                     }
                 }
                 GedcomStructure superstructure = this.Superstructure;

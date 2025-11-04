@@ -8,7 +8,7 @@ namespace GedcomCommon
 {
     public interface IGedcomFile
     {
-        GedcomStructure SourceProduct { get;  }
+        GedcomStructure SourceProduct { get; }
         GedcomVersion GedcomVersion { get; }
         GedcomStructure FindRecord(string xref);
         Dictionary<string, GedcomStructure> Records { get; }
