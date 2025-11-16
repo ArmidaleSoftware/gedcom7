@@ -33,7 +33,7 @@ namespace Gedcom551
                 "Mewari", "Nepali", "Oriya", "Pahari", "Pali", "Panjabi",
                 "Persian", "Prakrit", "Pusto", "Rajasthani", "Russian",
                 "Sanskrit", "Serb", "Tagalog", "Tamil", "Telugu", "Thai",
-                "Tibetan", "Ukrainian", "Urdu", "Vietnamese", "Yiddish ",
+                "Tibetan", "Ukrainian", "Urdu", "Vietnamese", "Yiddish",
                 "Mandarin"
             };
             return Array.Exists(languages, lang => lang.Equals(value, StringComparison.OrdinalIgnoreCase));

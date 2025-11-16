@@ -12,7 +12,6 @@ namespace Gedcom7
         /// <summary>
         /// Test whether a given string is a valid language tag.
         /// </summary>
-        /// <param name="version">Gedcom version</param>
         /// <param name="value">String to test</param>
         /// <returns>true if valid, false if not</returns>
         private static bool IsValidLanguageTag(string value)
