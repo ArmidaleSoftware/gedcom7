@@ -828,7 +828,6 @@ namespace Tests
         // Test files from the test-files repository.
 
         [TestMethod]
-        [Ignore("Known issue: CONC validation not implemented yet")]
         public void ValidateTestFileAtSign()
         {
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "atsign.ged"));
@@ -942,10 +941,10 @@ namespace Tests
         }
 
         [TestMethod]
-        [Ignore("Known issue: xref-case.ged validation not implemented yet")]
         public void ValidateTestFileXrefCase()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "xref-case.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "xref-case.ged"),
+                "Line 3: @test@ has no associated record");
         }
     }
 

@@ -136,6 +136,20 @@ namespace GedcomLoader
             while ((line = reader.ReadLine()) != null)
             {
                 this.LineCount++;
+
+                if (this.GedcomVersion == GedcomVersion.V551)
+                {
+                    int level = structurePath.Count();
+                    if (level > 0) {
+                        string conc = $"{level} CONC ";
+                        if (line.StartsWith(conc))
+                        {
+                            structurePath.Last().ConcatenatePayload(line.Substring(conc.Length));
+                            continue;
+                        }
+                    }
+                }
+
                 var s = new GedcomStructure();
                 // TODO: Move these registrations to static initialization inside the Gedcom551 and Gedcom7 namespaces
                 s.RegisterPayloadParser("https://gedcom.io/terms/v5.5.1/type-LANGUAGE_ID", Gedcom551.LanguageId.ValidateLanguageId);
