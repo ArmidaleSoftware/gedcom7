@@ -101,6 +101,10 @@ namespace GedcomCommon
 
         // Functions and derived data members.
         public override string ToString() => this.OriginalLine;
+        public void ConcatenatePayload(string more)
+        {
+            LineVal += more;
+        }
         public bool IsNoteType => this.Tag == "NOTE" || this.Tag == "SNOTE";
         public bool IsNamePieceType => this.Tag == "NPFX" || this.Tag == "GIVN" || this.Tag == "NICK" || this.Tag == "SPFX" || this.Tag == "SURN" || this.Tag == "NSFX";
         public GedcomStructure FindFirstSubstructure(string tag) => this.Substructures.Find(x => x.Tag == tag);
