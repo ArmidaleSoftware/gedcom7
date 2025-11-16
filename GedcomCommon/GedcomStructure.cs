@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using YamlDotNet.Core;
+using YamlDotNet.Core.Tokens;
 
 namespace GedcomCommon
 {
@@ -338,18 +340,6 @@ namespace GedcomCommon
                 return false;
             }
             return true;
-        }
-
-        /// <summary>
-        /// Test whether a given string is a valid language tag.
-        /// </summary>
-        /// <param name="value">String to test</param>
-        /// <returns>true if valid, false if not</returns>
-        private static bool IsValidLanguage(string value)
-        {
-            if (value == null || value.Length == 0) return false;
-            Regex regex = new Regex(@"^\w+(-\w+)*$");
-            return regex.IsMatch(value);
         }
 
         /// <summary>
@@ -725,6 +715,20 @@ namespace GedcomCommon
 
         public string SpacedLineVal => " " + this.LineVal + " ";
 
+        private readonly Dictionary<string, Func<GedcomStructure, string>> _payloadParsers
+            = new Dictionary<string, Func<GedcomStructure, string>>(StringComparer.OrdinalIgnoreCase);
+
+        public void RegisterPayloadParser(string key, Func<GedcomStructure, string> parser)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException("Key cannot be null or whitespace.", nameof(key));
+
+            if (parser == null)
+                throw new ArgumentNullException(nameof(parser));
+
+            _payloadParsers[key] = parser; // overwrites if key already exists
+        }
+
         /// <summary>
         /// Parse a line of text into a GEDCOM structure.
         /// </summary>
@@ -735,6 +739,7 @@ namespace GedcomCommon
         /// <returns>Error message, or null on success</returns>
         public string Parse(IGedcomFile file, int lineNumber, string line, List<GedcomStructure> structurePath)
         {
+            string error = null;
             this.LineNumber = lineNumber;
             this.OriginalLine = line;
             this.Substructures = new List<GedcomStructure>();
@@ -855,7 +860,6 @@ namespace GedcomCommon
                     }
                 }
 
-                // TODO: use a payload-specific parser subclass instead of a string.
                 string payloadType = this.Schema?.Payload;
                 switch (payloadType)
                 {
@@ -1032,12 +1036,6 @@ namespace GedcomCommon
                             return ErrorMessage(this.Tag + " payload must be a text type");
                         }
                         break;
-                    case "http://www.w3.org/2001/XMLSchema#Language":
-                        if (!IsValidLanguage(this.LineVal))
-                        {
-                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid language");
-                        }
-                        break;
                     case "https://gedcom.io/terms/v5.5.1/type-AGE_AT_EVENT":
                     case "https://gedcom.io/terms/v7/type-Age":
                         if (!IsValidAge(this.File.GedcomVersion, this.LineVal))
@@ -1054,7 +1052,16 @@ namespace GedcomCommon
                         }
                         break;
                     default:
-                        if (this.Schema?.HasPointer ?? false)
+                        if (_payloadParsers.TryGetValue(payloadType, out var parser))
+                        {
+                            error = parser(this);
+                            if (!string.IsNullOrEmpty(error))
+                            {
+                                return error;
+                            }
+                            break;
+                        }
+                        else if (this.Schema?.HasPointer ?? false)
                         {
                             string recordType = payloadType.Substring(2, payloadType.Length - 4);
                             if (this.LineVal == null || this.LineVal.Length < 3 || this.LineVal[0] != '@' || this.LineVal[this.LineVal.Length - 1] != '@')
@@ -1063,11 +1070,13 @@ namespace GedcomCommon
                             }
                             break;
                         }
-                        return ErrorMessage($"TODO: unrecognized payload type {payloadType}");
+                        else
+                        {
+                            return ErrorMessage($"TODO: unrecognized payload type {payloadType}");
+                        }
                 }
             }
 
-            string error = null;
             if (this.Level == 0)
             {
                 if ((this.Tag == "HEAD") != (file.Records.Count == 0))

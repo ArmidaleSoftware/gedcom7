@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Armidale Software
 // SPDX-License-Identifier: MIT
 using GedcomCommon;
-using Gedcom551;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -138,6 +137,9 @@ namespace GedcomLoader
             {
                 this.LineCount++;
                 var s = new GedcomStructure();
+                // TODO: Move these registrations to static initialization inside the Gedcom551 and Gedcom7 namespaces
+                s.RegisterPayloadParser("https://gedcom.io/terms/v5.5.1/type-LANGUAGE_ID", Gedcom551.LanguageId.ValidateLanguageId);
+                s.RegisterPayloadParser("https://gedcom.io/terms/v7.0/type-LANGUAGE_TAG", Gedcom7.LanguageTag.ValidateLanguageTag);
                 string error = s.Parse(this, this.LineCount, line, structurePath);
                 if (error != null)
                 {
