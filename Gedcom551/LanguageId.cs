@@ -40,10 +40,10 @@ namespace Gedcom551
         }
 
         /// <summary>
-        ///
+        /// Validates that the language ID in the given GedcomStructure is valid for GEDCOM 5.5.1.
         /// </summary>
-        /// <param name="s">Gedcom structure</param>
-        /// <returns></returns>
+        /// <param name="s">The GedcomStructure to validate.</param>
+        /// <returns>An error message string if validation fails, or null if validation succeeds.</returns>
         public static string ValidateLanguageId(GedcomStructure s)
         {
             Debug.Assert(s.File.GedcomVersion == GedcomVersion.V551, "LanguageId.ValidateLanguageId called with wrong GedcomVersion");
