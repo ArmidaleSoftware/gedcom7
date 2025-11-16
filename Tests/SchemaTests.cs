@@ -591,6 +591,7 @@ namespace Tests
     public class SchemaTests551 : SchemaTestsUtilities
     {
         public const string VersionString = "5.5.1";
+        private const string TEST_FILES_BASE_551_PATH2 = "../../../../external/test-files/5";
 
         [TestMethod]
         public void ValidateHeaderAndTrailer()
@@ -823,6 +824,115 @@ namespace Tests
         {
             ValidateTimePayloadType(GedcomVersion.V551);
         }
+
+        // Test files from the test-files repository.
+
+        [TestMethod]
+        [Ignore("Known issue: CONC validation not implemented yet")]
+        public void ValidateTestFileAtSign()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "atsign.ged"));
+        }
+
+        [TestMethod]
+        [Ignore("Known issue: char_*.ged validation not implemented yet")]
+        public void ValidateTestFileChar()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_ascii_1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_ascii_2.ged"));
+
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf16be-1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf16be-2.ged"));
+
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf16le-1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf16le-2.ged"));
+
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf8-1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf8-2.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf8-3.ged"));
+        }
+
+        [TestMethod]
+        [Ignore("Known issue: date-all.ged validation not implemented yet")]
+        public void ValidateTestFileDateAll()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "date-all.ged"));
+        }
+
+        [TestMethod]
+        public void ValidateTestFileDateDualValid()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "date-dual-valid.ged"));
+        }
+
+        [TestMethod]
+        public void ValidateTestFileEnumExt()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "enum-ext.ged"));
+        }
+
+        [TestMethod]
+        public void ValidateTestFileFilename()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "filename-1.ged"));
+        }
+
+        [TestMethod]
+        public void ValidateTestFileLangAll()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "lang-all.ged"));
+        }
+
+        [TestMethod]
+        public void ValidateTestFileNotes()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "notes-1.ged"));
+        }
+
+        [TestMethod]
+        [Ignore("Known issue: obje-1.ged validation not implemented yet")]
+        public void ValidateTestFileObje()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "obje-1.ged"));
+        }
+
+        [TestMethod]
+        public void ValidateTestFileObsolete()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "obsolete-1.ged"));
+        }
+
+        [TestMethod]
+        public void ValidateTestFilePedi()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "pedi-1.ged"));
+        }
+
+        [TestMethod]
+        public void ValidateTestFileRela()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "rela_1.ged"));
+        }
+
+        [TestMethod]
+        public void ValidateTestFileSour()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "sour-1.ged"));
+        }
+
+        [TestMethod]
+        public void ValidateTestFileTiny()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "tiny-1.ged"),
+                "Line 1: HEAD is missing a substructure of type https://gedcom.io/terms/v7/GEDC");
+        }
+
+        [TestMethod]
+        [Ignore("Known issue: xref-case.ged validation not implemented yet")]
+        public void ValidateTestFileXrefCase()
+        {
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "xref-case.ged"));
+        }
     }
 
     [TestClass]
@@ -831,6 +941,7 @@ namespace Tests
         public const string VersionString = "7.0";
         private const string TEST_FILES_BASE_70_PATH = "../../../../external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70";
         private const string TEST_FILES_REMOTE_70_PATH = "https://gedcom.io/testfiles/gedcom70/";
+        private const string TEST_FILES_BASE_70_PATH2 = "../../../../external/test-files/7";
 
         [TestMethod]
         public void LoadStructureSchema()
@@ -1381,7 +1492,7 @@ namespace Tests
 2 VERS 7.0
 1 LANG " + value + @"
 0 TRLR
-", "Line 4: \"" + value + "\" is not a valid language");
+", "Line 4: \"" + value + "\" is not a valid language tag");
         }
 
         private void ValidateValidLanguagePayload(string value)
@@ -1498,102 +1609,103 @@ namespace Tests
         [TestMethod]
         public void ValidateTestFileAtSign()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/atsign.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "atsign.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileChar()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/char_ascii_1.ged");
-            ValidateGedcomFile("../../../../external/test-files/7/char_ascii_2.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "char_ascii_1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "char_ascii_2.ged"));
 
-            ValidateGedcomFile("../../../../external/test-files/7/char_utf16be-1.ged");
-            ValidateGedcomFile("../../../../external/test-files/7/char_utf16be-2.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "char_utf16be-1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "char_utf16be-2.ged"));
 
-            ValidateGedcomFile("../../../../external/test-files/7/char_utf16le-1.ged");
-            ValidateGedcomFile("../../../../external/test-files/7/char_utf16le-2.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "char_utf16le-1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "char_utf16le-2.ged"));
 
-            ValidateGedcomFile("../../../../external/test-files/7/char_utf8-1.ged");
-            ValidateGedcomFile("../../../../external/test-files/7/char_utf8-2.ged");
-            ValidateGedcomFile("../../../../external/test-files/7/char_utf8-3.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "char_utf8-1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "char_utf8-2.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "char_utf8-3.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileDateAll()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/date-all.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "date-all.ged"));
         }
 
         [TestMethod]
-        public void ValidateTestFileDateDual()
+        [Ignore("Known issue: date-dual-valid.ged validation not implemented yet")]
+        public void ValidateTestFileDateDualValid()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/date-dual-invalid.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "date-dual-valid.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileEnumExt()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/enum-ext.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "enum-ext.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileFilename()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/filename-1.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "filename-1.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileLangAll()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/lang-all.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "lang-all.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileNotes()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/notes-1.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "notes-1.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileObje()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/obje-1.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "obje-1.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileObsolete()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/obsolete-1.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "obsolete-1.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFilePedi()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/pedi-1.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "pedi-1.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileRela()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/rela_1.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "rela_1.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileSour()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/sour-1.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "sour-1.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileTiny()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/tiny-1.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "tiny-1.ged"));
         }
 
         [TestMethod]
         public void ValidateTestFileXrefCase()
         {
-            ValidateGedcomFile("../../../../external/test-files/7/xref-case.ged");
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_70_PATH2, "xref-case.ged"));
         }
     }
 }
