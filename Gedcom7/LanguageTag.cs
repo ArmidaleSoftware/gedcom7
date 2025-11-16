@@ -32,7 +32,7 @@ namespace Gedcom7
             Debug.Assert(s.File.GedcomVersion != GedcomVersion.V551, "LanguageTag.IsValidLanguageTag called with wrong GedcomVersion");
             if (!IsValidLanguageTag(s.LineVal))
             {
-                return s.ErrorMessage("\"" + s.LineVal + "\" is not a valid language lag");
+                return s.ErrorMessage("\"" + s.LineVal + "\" is not a valid language tag");
             }
             return null;
         }
