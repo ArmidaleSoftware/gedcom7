@@ -835,18 +835,32 @@ namespace Tests
         }
 
         [TestMethod]
-        [Ignore("Known issue: char_*.ged validation not implemented yet")]
-        public void ValidateTestFileChar()
+        public void ValidateTestFileCharAscii()
         {
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_ascii_1.ged"));
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_ascii_2.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_ascii_2.ged"),
+                "Line 7: \"LATIN1\" is not a valid value for CHAR");
+        }
 
+        [TestMethod]
+        [Ignore("Known issue: UTF-16BE validation not implemented yet")]
+        public void ValidateTestFileCharUtf16BE()
+        {
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf16be-1.ged"));
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf16be-2.ged"));
+        }
 
+        [TestMethod]
+        [Ignore("Known issue: UTF-16LE validation not implemented yet")]
+        public void ValidateTestFileCharUtf16LE()
+        {
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf16le-1.ged"));
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf16le-2.ged"));
+        }
 
+        [TestMethod]
+        public void ValidateTestFileCharUtf8()
+        {
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf8-1.ged"));
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf8-2.ged"));
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "char_utf8-3.ged"));
@@ -890,10 +904,10 @@ namespace Tests
         }
 
         [TestMethod]
-        [Ignore("Known issue: obje-1.ged validation not implemented yet")]
         public void ValidateTestFileObje()
         {
-            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "obje-1.ged"));
+            ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "obje-1.ged"),
+                "Line 12: \"mp3\" is not a valid value for FORM\nLine 19: \"other\" is not a valid value for FORM\nLine 22: \"other\" is not a valid value for FORM");
         }
 
         [TestMethod]
