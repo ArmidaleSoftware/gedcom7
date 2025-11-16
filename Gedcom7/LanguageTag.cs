@@ -23,10 +23,10 @@ namespace Gedcom7
         }
 
         /// <summary>
-        ///
+        /// Validates the language tag in the provided GedcomStructure.
         /// </summary>
-        /// <param name="s">Gedcom structure</param>
-        /// <returns></returns>
+        /// <param name="s">The GedcomStructure to validate.</param>
+        /// <returns>An error message string if validation fails, or null if validation succeeds.</returns>
         public static string ValidateLanguageTag(GedcomStructure s)
         {
             Debug.Assert(s.File.GedcomVersion != GedcomVersion.V551, "LanguageTag.IsValidLanguageTag called with wrong GedcomVersion");

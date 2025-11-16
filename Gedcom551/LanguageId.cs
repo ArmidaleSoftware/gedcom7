@@ -46,7 +46,7 @@ namespace Gedcom551
         /// <returns></returns>
         public static string ValidateLanguageId(GedcomStructure s)
         {
-            Debug.Assert(s.File.GedcomVersion == GedcomVersion.V551, "LanguageTag.IsValidLanguageTag called with wrong GedcomVersion");
+            Debug.Assert(s.File.GedcomVersion == GedcomVersion.V551, "LanguageId.ValidateLanguageId called with wrong GedcomVersion");
             if (!IsValidLanguageId(s.LineVal))
             {
                 return s.ErrorMessage("\"" + s.LineVal + "\" is not a valid language ID");

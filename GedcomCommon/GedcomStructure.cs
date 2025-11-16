@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using YamlDotNet.Core;
-using YamlDotNet.Core.Tokens;
 
 namespace GedcomCommon
 {
