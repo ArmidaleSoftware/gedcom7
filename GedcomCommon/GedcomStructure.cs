@@ -3,7 +3,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using YamlDotNet.Core;
 
 namespace GedcomCommon
 {
@@ -891,8 +894,16 @@ namespace GedcomCommon
                             return ErrorMessage(this.Tag + " payload must be 'Y' or empty");
                         }
                         break;
-                    case "https://gedcom.io/terms/v5.5.1/type-NAME_TYPE": // TODO
-                    case "https://gedcom.io/terms/v5.5.1/type-SUBMITTER_TEXT": // TODO
+                    // Name pieces have special behavior to convert to v7 but the payload
+                    // in 5.5.1 is just a string.
+                    case "https://gedcom.io/terms/v5.5.1/type-NAME_PIECE_GIVEN":
+                    case "https://gedcom.io/terms/v5.5.1/type-NAME_PIECE_NICKNAME":
+                    case "https://gedcom.io/terms/v5.5.1/type-NAME_PIECE_PREFIX":
+                    case "https://gedcom.io/terms/v5.5.1/type-NAME_PIECE_SUFFIX":
+                    case "https://gedcom.io/terms/v5.5.1/type-NAME_PIECE_SURNAME":
+                    case "https://gedcom.io/terms/v5.5.1/type-NAME_PIECE_SURNAME_PREFIX":
+                    case "https://gedcom.io/terms/v5.5.1/type-NAME_TYPE":
+                    case "https://gedcom.io/terms/v5.5.1/type-SUBMITTER_TEXT":
                     case "https://gedcom.io/terms/v5.5.1/type-TEXT_FROM_SOURCE": // TODO
                     case "https://gedcom.io/terms/v5.5.1/type-ROLE_IN_EVENT": // TODO
                     case "https://gedcom.io/terms/v5.5.1/type-EVENT_TYPE_CITED_FROM": // TODO complex validation
@@ -901,9 +912,11 @@ namespace GedcomCommon
                     case "https://gedcom.io/terms/v5.5.1/type-LANGUAGE_PREFERENCE": // TODO complex validation
                     case "https://gedcom.io/terms/v5.5.1/type-LANGUAGE_OF_TEXT": // TODO complex validation
                     case "https://gedcom.io/terms/v5.5.1/type-EVENT_DESCRIPTOR": // TODO complex validation
+                    case "https://gedcom.io/terms/v5.5.1/type-PERMANENT_RECORD_FILE_NUMBER": // TODO complex validation
                     case "https://gedcom.io/terms/v7/type-TagDef": // TODO complex validation
                     case "https://gedcom.io/terms/v7/type-Latitude": // TODO complex validation
                     case "https://gedcom.io/terms/v7/type-Longitude": // TODO complex validation
+                    case "https://gedcom.io/terms/v5.5.1/type-PLACE_NAME":
                     case "http://www.w3.org/2001/XMLSchema#string":
                         if ((this.Schema.Uri == "https://gedcom.io/terms/v7/TAG") && (tokens.Length > 3))
                         {
@@ -969,6 +982,12 @@ namespace GedcomCommon
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-CHARACTER_SET":
                         if (this.LineVal != "ANSEL" && this.LineVal != "UTF-8" && this.LineVal != "UNICODE" && this.LineVal != "ASCII")
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
+                    case "https://gedcom.io/terms/v5.5.1/type-ADOPTED_BY_WHICH_PARENT":
+                        if (this.LineVal != "HUSB" && this.LineVal != "WIFE" && this.LineVal != "BOTH")
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
