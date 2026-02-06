@@ -140,8 +140,17 @@ namespace GedcomLoader
                 if (this.GedcomVersion == GedcomVersion.V551)
                 {
                     int level = structurePath.Count();
-                    if (level > 0) {
+                    if (level > 0)
+                    {
                         string conc = $"{level} CONC ";
+                        if (line.StartsWith(conc))
+                        {
+                            structurePath.Last().ConcatenatePayload(line.Substring(conc.Length));
+                            continue;
+                        }
+
+                        // CONC might appear after CONT.
+                        conc = $"{level - 1} CONC ";
                         if (line.StartsWith(conc))
                         {
                             structurePath.Last().ConcatenatePayload(line.Substring(conc.Length));
