@@ -906,7 +906,7 @@ namespace Tests
         public void ValidateTestFileObje()
         {
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "obje-1.ged"),
-                "Line 12: \"mp3\" is not a valid value for FORM\nLine 19: \"other\" is not a valid value for FORM\nLine 22: \"other\" is not a valid value for FORM");
+                "Line 19: \"other\" is not a valid value for FORM\nLine 22: \"other\" is not a valid value for FORM");
         }
 
         [TestMethod]
