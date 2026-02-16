@@ -734,19 +734,19 @@ namespace GedcomCommon
             _payloadParsers[key] = parser; // overwrites if key already exists
         }
 
-        private string[] _ldsBaptismEndowmentDateStatusValues =
+        private static readonly string[] _ldsBaptismEndowmentDateStatusValues =
         {
             "CHILD", "COMPLETED", "EXCLUDED", "PRE-1970",
             "STILLBORN", "SUBMITTED", "UNCLEARED"
         };
 
-        private string[] _ldsChildSealingDateStatusValues =
+        private static readonly string[] _ldsChildSealingDateStatusValues =
         {
             "BIC", "COMPLETED", "EXCLUDED", "DNS", "PRE-1970",
             "STILLBORN", "SUBMITTED", "UNCLEARED"
         };
 
-        private string[] _ldsSpouseSealingDateStatusValues =
+        private static readonly string[] _ldsSpouseSealingDateStatusValues =
         {
             "CANCELED", "COMPLETED", "DNS", "EXCLUDED",
             "DNS/CAN", "PRE-1970", "SUBMITTED", "UNCLEARED"
