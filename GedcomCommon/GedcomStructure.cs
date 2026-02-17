@@ -1035,26 +1035,28 @@ namespace GedcomCommon
                         }
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-CHILD_LINKAGE_STATUS":
-                        if (this.LineVal != "challenged" && this.LineVal != "disproven" && this.LineVal != "proven")
+                        if (!string.Equals(this.LineVal, "challenged", StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(this.LineVal, "disproven", StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(this.LineVal, "proven", StringComparison.OrdinalIgnoreCase))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-LDS_BAPTISM_DATE_STATUS":
                     case "https://gedcom.io/terms/v5.5.1/type-LDS_ENDOWMENT_DATE_STATUS":
-                        if (!_ldsBaptismEndowmentDateStatusValues.Contains(this.LineVal))
+                        if (!_ldsBaptismEndowmentDateStatusValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-LDS_CHILD_SEALING_DATE_STATUS":
-                        if (!_ldsChildSealingDateStatusValues.Contains(this.LineVal))
+                        if (!_ldsChildSealingDateStatusValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-LDS_SPOUSE_SEALING_DATE_STATUS":
-                        if (!_ldsSpouseSealingDateStatusValues.Contains(this.LineVal))
+                        if (!_ldsSpouseSealingDateStatusValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
