@@ -9,8 +9,7 @@
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="powershell -NonInteractive -ExecutionPolicy Unrestricted $(ProjectDir)..\scripts\copy_pre_commit.ps1 $(ProjectDir)..\scripts\pre-commit" Condition="'$(OS)' == 'Windows_NT'" ContinueOnError="true" />
-    <Exec Command="bash $(ProjectDir)../scripts/copy_pre_commit.sh $(ProjectDir)../scripts/pre-commit" Condition="'$(OS)' != 'Windows_NT'" ContinueOnError="true" />
+    <Exec Command="powershell -NonInteractive -ExecutionPolicy Unrestricted $(ProjectDir)..\scripts\copy_pre_commit.ps1 $(ProjectDir)..\scripts\pre-commit" />
   </Target>
 
 </Project>
