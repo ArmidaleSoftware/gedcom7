@@ -734,6 +734,55 @@ namespace GedcomCommon
             _payloadParsers[key] = parser; // overwrites if key already exists
         }
 
+        private static readonly string[] _adoptedByWhichParentValues =
+        {
+            "HUSB", "WIFE", "BOTH"
+        };
+
+        private static readonly string[] _characterSetValues =
+        {
+            "ANSEL", "UTF-8", "UNICODE", "ASCII"
+        };
+
+        private static readonly string[] _ldsBaptismEndowmentDateStatusValues =
+        {
+            "CHILD", "COMPLETED", "EXCLUDED", "PRE-1970",
+            "STILLBORN", "SUBMITTED", "UNCLEARED"
+        };
+
+        private static readonly string[] _ldsChildSealingDateStatusValues =
+        {
+            "BIC", "COMPLETED", "EXCLUDED", "DNS", "PRE-1970",
+            "STILLBORN", "SUBMITTED", "UNCLEARED"
+        };
+
+        private static readonly string[] _ldsSpouseSealingDateStatusValues =
+        {
+            "CANCELED", "COMPLETED", "DNS", "EXCLUDED",
+            "DNS/CAN", "PRE-1970", "SUBMITTED", "UNCLEARED"
+        };
+
+        private static readonly string[] _sourceMediaTypeValues =
+        {
+            "audio", "book", "card", "electronic", "fiche", "film", "magazine",
+            "manuscript", "map", "newspaper", "photo", "tombstone", "video"
+        };
+
+        private static readonly string[] _pedigreeLinkageTypeValues =
+        {
+            "adopted", "birth", "foster", "sealing"
+        };
+
+        private static readonly string[] _multimediaFormatValues =
+        {
+            "bmp", "gif", "jpg", "ole", "pcx", "tif", "wav"
+        };
+
+        private static readonly string[] _childLinkageStatusValues =
+        {
+            "challenged", "disproven", "proven"
+        };
+
         /// <summary>
         /// Parse a line of text into a GEDCOM structure.
         /// </summary>
@@ -889,7 +938,7 @@ namespace GedcomCommon
                         }
                         break;
                     case "Y|<NULL>":
-                        if (this.LineVal != null && this.LineVal != "Y")
+                        if (this.LineVal != null && this.LineVal.ToUpper() != "Y")
                         {
                             return ErrorMessage(this.Tag + " payload must be 'Y' or empty");
                         }
@@ -918,7 +967,7 @@ namespace GedcomCommon
                     case "https://gedcom.io/terms/v7/type-Longitude": // TODO complex validation
                     case "https://gedcom.io/terms/v5.5.1/type-PLACE_NAME":
                     case "http://www.w3.org/2001/XMLSchema#string":
-                        if ((this.Schema.Uri == "https://gedcom.io/terms/v7/TAG") && (tokens.Length > 3))
+                        if ((this.Schema?.Uri == "https://gedcom.io/terms/v7/TAG") && (tokens.Length > 3))
                         {
                             string sourceProgram = this.File.SourceProduct?.LineVal ?? "Unknown";
                             string tag = tokens[2];
@@ -926,7 +975,7 @@ namespace GedcomCommon
                             GedcomStructureSchema.AddSchema(this.File.GedcomVersion, sourceProgram, tag, uri);
                             break;
                         }
-                        if (this.Schema.Uri == "https://gedcom.io/terms/v5.5.1/SEX")
+                        if (this.Schema?.Uri == "https://gedcom.io/terms/v5.5.1/SEX")
                         {
                             if (this.LineVal.Length > 7)
                             {
@@ -975,37 +1024,38 @@ namespace GedcomCommon
                         break;
                     // TODO(#4): handle some GEDCOM 5.5.1 enum types.
                     case "https://gedcom.io/terms/v5.5.1/type-GEDCOM_FORM":
-                        if (this.LineVal != "LINEAGE-LINKED")
+                        if (this.LineVal.ToUpper() != "LINEAGE-LINKED")
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-CHARACTER_SET":
-                        if (this.LineVal != "ANSEL" && this.LineVal != "UTF-8" && this.LineVal != "UNICODE" && this.LineVal != "ASCII")
+                        if (!_characterSetValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-ADOPTED_BY_WHICH_PARENT":
-                        if (this.LineVal != "HUSB" && this.LineVal != "WIFE" && this.LineVal != "BOTH")
+                        if (!_adoptedByWhichParentValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-ORDINANCE_PROCESS_FLAG":
-                        if (this.LineVal != "yes" && this.LineVal != "no")
+                        if (!string.Equals(this.LineVal, "yes", StringComparison.OrdinalIgnoreCase)
+                            && !string.Equals(this.LineVal, "no", StringComparison.OrdinalIgnoreCase))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-MULTIMEDIA_FORMAT":
-                        if (this.LineVal != "bmp" && this.LineVal != "gif" && this.LineVal != "jpg" && this.LineVal != "ole" && this.LineVal != "pcx" && this.LineVal != "tif" && this.LineVal != "wav")
+                        if (!_multimediaFormatValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-PEDIGREE_LINKAGE_TYPE":
-                        if (this.LineVal != "adopted" && this.LineVal != "birth" && this.LineVal != "foster" && this.LineVal != "sealing")
+                        if (!_pedigreeLinkageTypeValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
@@ -1016,11 +1066,33 @@ namespace GedcomCommon
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
                         break;
+                    case "https://gedcom.io/terms/v5.5.1/type-CHILD_LINKAGE_STATUS":
+                        if (!_childLinkageStatusValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
+                    case "https://gedcom.io/terms/v5.5.1/type-LDS_BAPTISM_DATE_STATUS":
+                    case "https://gedcom.io/terms/v5.5.1/type-LDS_ENDOWMENT_DATE_STATUS":
+                        if (!_ldsBaptismEndowmentDateStatusValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
+                    case "https://gedcom.io/terms/v5.5.1/type-LDS_CHILD_SEALING_DATE_STATUS":
+                        if (!_ldsChildSealingDateStatusValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
+                    case "https://gedcom.io/terms/v5.5.1/type-LDS_SPOUSE_SEALING_DATE_STATUS":
+                        if (!_ldsSpouseSealingDateStatusValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
                     case "https://gedcom.io/terms/v5.5.1/type-SOURCE_MEDIA_TYPE":
-                        if (this.LineVal != "audio" && this.LineVal != "book" && this.LineVal != "card" && this.LineVal != "electronic" &&
-                            this.LineVal != "fiche" && this.LineVal != "film" && this.LineVal != "magazine" && this.LineVal != "manuscript" &&
-                            this.LineVal != "map" && this.LineVal != "newspaper" && this.LineVal != "photo" && this.LineVal != "tombstone" &&
-                            this.LineVal != "video")
+                        if (!_sourceMediaTypeValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
