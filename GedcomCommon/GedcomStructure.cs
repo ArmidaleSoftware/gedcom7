@@ -1042,7 +1042,8 @@ namespace GedcomCommon
                         }
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-ORDINANCE_PROCESS_FLAG":
-                        if (this.LineVal.ToLower() != "yes" && this.LineVal.ToLower() != "no")
+                        if (!string.Equals(this.LineVal, "yes", StringComparison.OrdinalIgnoreCase)
+                            && !string.Equals(this.LineVal, "no", StringComparison.OrdinalIgnoreCase))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
