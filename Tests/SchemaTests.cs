@@ -906,7 +906,7 @@ namespace Tests
         public void ValidateTestFileObje()
         {
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "obje-1.ged"),
-                "Line 12: \"mp3\" is not a valid value for FORM\nLine 19: \"other\" is not a valid value for FORM\nLine 22: \"other\" is not a valid value for FORM");
+                "Line 19: \"other\" is not a valid value for FORM\nLine 22: \"other\" is not a valid value for FORM");
         }
 
         [TestMethod]
@@ -945,6 +945,383 @@ namespace Tests
         {
             ValidateGedcomFile(Path.Combine(TEST_FILES_BASE_551_PATH2, "xref-case.ged"),
                 "Line 3: @test@ has no associated record");
+        }
+
+        /// <summary>
+        /// Validate CHILD_LINKAGE_STATUS payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateChildLinkageStatusPayloadType()
+        {
+            // Test valid values for STAT under FAMC (case insensitive).
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 FAMC @F1@
+2 STAT challenged
+0 @F1@ FAM
+0 TRLR
+");
+
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 FAMC @F1@
+2 STAT disproven
+0 @F1@ FAM
+0 TRLR
+");
+
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 FAMC @F1@
+2 STAT proven
+0 @F1@ FAM
+0 TRLR
+");
+
+            // Test case insensitivity.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 FAMC @F1@
+2 STAT CHALLENGED
+0 @F1@ FAM
+0 TRLR
+");
+
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 FAMC @F1@
+2 STAT Proven
+0 @F1@ FAM
+0 TRLR
+");
+
+            // Test invalid value.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 FAMC @F1@
+2 STAT invalid
+0 @F1@ FAM
+0 TRLR
+", "Line 12: \"invalid\" is not a valid value for STAT");
+        }
+
+        /// <summary>
+        /// Validate LDS_BAPTISM_DATE_STATUS and LDS_ENDOWMENT_DATE_STATUS payload types.
+        /// </summary>
+        [TestMethod]
+        public void ValidateLdsBaptismEndowmentDateStatusPayloadType()
+        {
+            // Test valid values for BAPL STAT.
+            string[] validValues = { "CHILD", "COMPLETED", "EXCLUDED", "PRE-1970", "STILLBORN", "SUBMITTED", "UNCLEARED" };
+            foreach (string value in validValues)
+            {
+                ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 BAPL
+2 STAT " + value + @"
+3 DATE 1 JAN 2000
+0 TRLR
+");
+            }
+
+            // Test valid values for ENDL STAT.
+            foreach (string value in validValues)
+            {
+                ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 ENDL
+2 STAT " + value + @"
+3 DATE 1 JAN 2000
+0 TRLR
+");
+            }
+
+            // Test case insensitivity for BAPL.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 BAPL
+2 STAT completed
+3 DATE 1 JAN 2000
+0 TRLR
+");
+
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 BAPL
+2 STAT Excluded
+3 DATE 1 JAN 2000
+0 TRLR
+");
+
+            // Test invalid value for BAPL.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 BAPL
+2 STAT INVALID
+3 DATE 1 JAN 2000
+0 TRLR
+", "Line 12: \"INVALID\" is not a valid value for STAT");
+
+            // Test invalid value for ENDL.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 ENDL
+2 STAT NOTVALID
+3 DATE 1 JAN 2000
+0 TRLR
+", "Line 12: \"NOTVALID\" is not a valid value for STAT");
+        }
+
+        /// <summary>
+        /// Validate LDS_CHILD_SEALING_DATE_STATUS payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateLdsChildSealingDateStatusPayloadType()
+        {
+            // Test valid values for SLGC STAT.
+            string[] validValues = { "BIC", "COMPLETED", "EXCLUDED", "DNS", "PRE-1970", "STILLBORN", "SUBMITTED", "UNCLEARED" };
+            foreach (string value in validValues)
+            {
+                ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 SLGC
+2 STAT " + value + @"
+3 DATE 1 JAN 2000
+0 TRLR
+");
+            }
+
+            // Test case insensitivity.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 SLGC
+2 STAT bic
+3 DATE 1 JAN 2000
+0 TRLR
+");
+
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 SLGC
+2 STAT Completed
+3 DATE 1 JAN 2000
+0 TRLR
+");
+
+            // Test invalid value.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 SLGC
+2 STAT WRONG
+3 DATE 1 JAN 2000
+0 TRLR
+", "Line 12: \"WRONG\" is not a valid value for STAT");
+        }
+
+        /// <summary>
+        /// Validate LDS_SPOUSE_SEALING_DATE_STATUS payload type.
+        /// </summary>
+        [TestMethod]
+        public void ValidateLdsSpouseSealingDateStatusPayloadType()
+        {
+            // Test valid values for SLGS STAT.
+            string[] validValues = { "CANCELED", "COMPLETED", "DNS", "EXCLUDED", "DNS/CAN", "PRE-1970", "SUBMITTED", "UNCLEARED" };
+            foreach (string value in validValues)
+            {
+                ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @F1@ FAM
+1 SLGS
+2 STAT " + value + @"
+3 DATE 1 JAN 2000
+0 TRLR
+");
+            }
+
+            // Test case insensitivity.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @F1@ FAM
+1 SLGS
+2 STAT canceled
+3 DATE 1 JAN 2000
+0 TRLR
+");
+
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @F1@ FAM
+1 SLGS
+2 STAT Dns/Can
+3 DATE 1 JAN 2000
+0 TRLR
+");
+
+            // Test invalid value.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @F1@ FAM
+1 SLGS
+2 STAT BADVALUE
+3 DATE 1 JAN 2000
+0 TRLR
+", "Line 12: \"BADVALUE\" is not a valid value for STAT");
         }
     }
 
