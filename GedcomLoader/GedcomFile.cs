@@ -96,6 +96,7 @@ namespace GedcomLoader
                             if (line.Contains(GedcomStructureSchema.GetGedcomVersionString(version)))
                             {
                                 this.GedcomVersion = version;
+                                break;
                             }
                         }
                         break;
