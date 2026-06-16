@@ -41,13 +41,6 @@ namespace GedcomCommon
 
         static Dictionary<string, CalendarSchema> s_CalendarsByTag = new Dictionary<string, CalendarSchema>();
 
-        /// <summary>
-        /// Check whether this schema applies to a given GEDCOM version.
-        /// </summary>
-        /// <param name="version">GEDCOM version</param>
-        /// <returns>true if applies, false if not</returns>
-        private bool HasVersion(GedcomVersion version) => GedcomStructureSchema.UriHasVersion(this.Uri, version);
-
         public static void LoadAll(GedcomVersion version, string gedcomRegistriesPath)
         {
             if (s_CalendarsByTag.Count > 0)
@@ -55,6 +48,29 @@ namespace GedcomCommon
                 return;
             }
             MonthSchema.LoadAll(gedcomRegistriesPath);
+
+            // Read the manifest file to get the list of calendar files for this version.
+            var standardManifestPath = Path.Combine(gedcomRegistriesPath, "manifest", "standard", "manifest-" + GedcomStructureSchema.GetGedcomVersionString(version) + "-en-US.tsv");
+            var calendarFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (File.Exists(standardManifestPath))
+            {
+                using var manifestReader = new StreamReader(standardManifestPath);
+
+                // Skip header line.
+                manifestReader.ReadLine();
+                string line;
+                while ((line = manifestReader.ReadLine()) != null)
+                {
+                    line = line.Trim();
+                    if (line.StartsWith("calendar/standard/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Convert the manifest path to just the filename for comparison.
+                        var filename = Path.GetFileName(line);
+                        calendarFiles.Add(filename);
+                    }
+                }
+            }
+
             var path = Path.Combine(gedcomRegistriesPath, "calendar/standard");
             string[] files;
             try
@@ -68,14 +84,17 @@ namespace GedcomCommon
             }
             foreach (string filename in files)
             {
+                // Only load files that are in the manifest.
+                var justFilename = Path.GetFileName(filename);
+                if (!calendarFiles.Contains(justFilename))
+                {
+                    continue;
+                }
+
                 var deserializer = new DeserializerBuilder().Build();
                 using var reader = new StreamReader(filename);
                 var dictionary = deserializer.Deserialize<Dictionary<object, object>>(reader);
                 var schema = new CalendarSchema(dictionary);
-                if (!schema.HasVersion(version))
-                {
-                    continue;
-                }
                 s_CalendarsByTag.Add(schema.StandardTag, schema);
             }
         }

@@ -91,17 +91,12 @@ namespace GedcomLoader
                 {
                     if (line.Contains("2 VERS"))
                     {
-                        if (line.Contains("7.0"))
+                        for (GedcomVersion version = GedcomVersion.V551; version <= GedcomVersion.V71; version++)
                         {
-                            this.GedcomVersion = GedcomVersion.V70;
-                        }
-                        else if (line.Contains("7.1"))
-                        {
-                            this.GedcomVersion = GedcomVersion.V71;
-                        }
-                        else if (line.Contains("5.5.1"))
-                        {
-                            this.GedcomVersion = GedcomVersion.V551;
+                            if (line.Contains(GedcomStructureSchema.GetGedcomVersionString(version)))
+                            {
+                                this.GedcomVersion = version;
+                            }
                         }
                         break;
                     }
