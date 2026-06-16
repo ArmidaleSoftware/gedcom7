@@ -52,24 +52,37 @@ namespace GedcomCommon
 
             // Read the manifest file to get the list of enumeration-set files for this version.
             var standardManifestPath = Path.Combine(gedcomRegistriesPath, "manifest", "standard", "manifest-" + GedcomStructureSchema.GetGedcomVersionString(version) + "-en-US.tsv");
-            var enumSetFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (File.Exists(standardManifestPath))
+            if (!File.Exists(standardManifestPath))
             {
-                using var manifestReader = new StreamReader(standardManifestPath);
+                throw new FileNotFoundException($"Standard manifest file not found: {standardManifestPath}", standardManifestPath);
+            }
 
+            var enumSetFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var manifestReader = new StreamReader(standardManifestPath))
+            {
                 // Skip header line.
                 manifestReader.ReadLine();
                 string line;
                 while ((line = manifestReader.ReadLine()) != null)
                 {
-                    line = line.Trim();
-                    if (line.StartsWith("enumeration-set/standard/", StringComparison.OrdinalIgnoreCase))
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        continue;
+                    }
+
+                    // The manifest is TSV; the first column is the path.
+                    var manifestPath = line.Split('\t')[0].Trim();
+                    if (manifestPath.StartsWith("enumeration-set/standard/", StringComparison.OrdinalIgnoreCase))
                     {
                         // Convert the manifest path to just the filename for comparison.
-                        var filename = Path.GetFileName(line);
-                        enumSetFiles.Add(filename);
+                        enumSetFiles.Add(Path.GetFileName(manifestPath));
                     }
                 }
+            }
+
+            if (enumSetFiles.Count == 0)
+            {
+                throw new InvalidDataException($"No enumeration-set files were found in manifest: {standardManifestPath}");
             }
 
             var path = Path.Combine(gedcomRegistriesPath, "enumeration-set", "standard");
