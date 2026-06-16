@@ -91,9 +91,11 @@ namespace GedcomLoader
                 {
                     if (line.Contains("2 VERS"))
                     {
+                        var versPayload = line.Substring(line.IndexOf("2 VERS") + "2 VERS".Length).Trim();
+                        var versToken = versPayload.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
                         for (GedcomVersion version = GedcomVersion.V551; version <= GedcomVersion.V71; version++)
                         {
-                            if (line.Contains(GedcomStructureSchema.GetGedcomVersionString(version)))
+                            if (string.Equals(versToken, GedcomStructureSchema.GetGedcomVersionString(version), StringComparison.Ordinal))
                             {
                                 this.GedcomVersion = version;
                                 break;
