@@ -50,39 +50,7 @@ namespace GedcomCommon
             MonthSchema.LoadAll(gedcomRegistriesPath);
 
             // Read the manifest file to get the list of calendar files for this version.
-            var standardManifestPath = Path.Combine(gedcomRegistriesPath, "manifest", "standard", "manifest-" + GedcomStructureSchema.GetGedcomVersionString(version) + "-en-US.tsv");
-            if (!File.Exists(standardManifestPath))
-            {
-                throw new FileNotFoundException($"Standard manifest file not found: {standardManifestPath}", standardManifestPath);
-            }
-
-            var calendarFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            using (var manifestReader = new StreamReader(standardManifestPath))
-            {
-                // Skip header line.
-                manifestReader.ReadLine();
-                string line;
-                while ((line = manifestReader.ReadLine()) != null)
-                {
-                    if (string.IsNullOrWhiteSpace(line))
-                    {
-                        continue;
-                    }
-
-                    // The manifest is TSV; the first column is the path.
-                    var manifestPath = line.Split('\t')[0].Trim();
-                    if (manifestPath.StartsWith("calendar/standard/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Convert the manifest path to just the filename for comparison.
-                        calendarFiles.Add(Path.GetFileName(manifestPath));
-                    }
-                }
-            }
-
-            if (calendarFiles.Count == 0)
-            {
-                throw new InvalidDataException($"No calendar files were found in manifest: {standardManifestPath}");
-            }
+            var calendarFiles = GedcomStructureSchema.LoadManifestFilenames(gedcomRegistriesPath, version, "calendar/standard/");
 
             var path = Path.Combine(gedcomRegistriesPath, "calendar/standard");
             string[] files;

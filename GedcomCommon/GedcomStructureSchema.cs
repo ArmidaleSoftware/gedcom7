@@ -240,19 +240,14 @@ namespace GedcomCommon
             }
         }
 
-        public static void LoadAll(GedcomVersion version, string gedcomRegistriesPath = null)
+        /// <summary>
+        /// Reads a GEDCOM-registries standard manifest TSV and returns the set of filenames
+        /// whose first column starts with <paramref name="pathPrefix"/>.
+        /// Throws <see cref="FileNotFoundException"/> if the manifest does not exist and
+        /// <see cref="InvalidDataException"/> if no matching entries are found.
+        /// </summary>
+        public static HashSet<string> LoadManifestFilenames(string gedcomRegistriesPath, GedcomVersion version, string pathPrefix)
         {
-            Debug.Assert(version != GedcomVersion.Unknown && version != GedcomVersion.All);
-            if (s_StructureSchemasByVersion[(int)version].Count > 0)
-            {
-                // Already loaded.
-                return;
-            }
-            if (gedcomRegistriesPath == null)
-            {
-                string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                gedcomRegistriesPath = Path.GetFullPath(Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "gedcom7", "external", "GEDCOM-registries"));
-            }
             var standardManifestPath = Path.Combine(gedcomRegistriesPath, "manifest", "standard", "manifest-" + GetGedcomVersionString(version) + "-en-US.tsv");
 
             if (!File.Exists(standardManifestPath))
@@ -260,8 +255,7 @@ namespace GedcomCommon
                 throw new FileNotFoundException($"Standard manifest file not found: {standardManifestPath}", standardManifestPath);
             }
 
-            // Read the manifest file to get the list of structure files for this version.
-            var structureFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var filenames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             using (var manifestReader = new StreamReader(standardManifestPath))
             {
                 // Skip header line.
@@ -276,18 +270,36 @@ namespace GedcomCommon
 
                     // The manifest is TSV; the first column is the path.
                     var manifestPath = line.Split('\t')[0].Trim();
-                    if (manifestPath.StartsWith("structure/standard/", StringComparison.OrdinalIgnoreCase))
+                    if (manifestPath.StartsWith(pathPrefix, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Convert the manifest path to just the filename for comparison.
-                        structureFiles.Add(Path.GetFileName(manifestPath));
+                        filenames.Add(Path.GetFileName(manifestPath));
                     }
                 }
             }
 
-            if (structureFiles.Count == 0)
+            if (filenames.Count == 0)
             {
-                throw new InvalidDataException($"No structure files were found in manifest: {standardManifestPath}");
+                throw new InvalidDataException($"No files with prefix \"{pathPrefix}\" were found in manifest: {standardManifestPath}");
             }
+
+            return filenames;
+        }
+
+        public static void LoadAll(GedcomVersion version, string gedcomRegistriesPath = null)
+        {
+            Debug.Assert(version != GedcomVersion.Unknown && version != GedcomVersion.All);
+            if (s_StructureSchemasByVersion[(int)version].Count > 0)
+            {
+                // Already loaded.
+                return;
+            }
+            if (gedcomRegistriesPath == null)
+            {
+                string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                gedcomRegistriesPath = Path.GetFullPath(Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "gedcom7", "external", "GEDCOM-registries"));
+            }
+
+            var structureFiles = LoadManifestFilenames(gedcomRegistriesPath, version, "structure/standard/");
 
             var standardStructurePath = Path.Combine(gedcomRegistriesPath, "structure", "standard");
             string[] files = Directory.GetFiles(standardStructurePath);
