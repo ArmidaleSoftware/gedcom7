@@ -255,25 +255,38 @@ namespace GedcomCommon
             }
             var standardManifestPath = Path.Combine(gedcomRegistriesPath, "manifest", "standard", "manifest-" + GetGedcomVersionString(version) + "-en-US.tsv");
 
+            if (!File.Exists(standardManifestPath))
+            {
+                throw new FileNotFoundException($"Standard manifest file not found: {standardManifestPath}", standardManifestPath);
+            }
+
             // Read the manifest file to get the list of structure files for this version.
             var structureFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (File.Exists(standardManifestPath))
+            using (var manifestReader = new StreamReader(standardManifestPath))
             {
-                using var manifestReader = new StreamReader(standardManifestPath);
-
                 // Skip header line.
                 manifestReader.ReadLine();
                 string line;
                 while ((line = manifestReader.ReadLine()) != null)
                 {
-                    line = line.Trim();
-                    if (line.StartsWith("structure/standard/", StringComparison.OrdinalIgnoreCase))
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        continue;
+                    }
+
+                    // The manifest is TSV; the first column is the path.
+                    var manifestPath = line.Split('\t')[0].Trim();
+                    if (manifestPath.StartsWith("structure/standard/", StringComparison.OrdinalIgnoreCase))
                     {
                         // Convert the manifest path to just the filename for comparison.
-                        var filename = Path.GetFileName(line);
-                        structureFiles.Add(filename);
+                        structureFiles.Add(Path.GetFileName(manifestPath));
                     }
                 }
+            }
+
+            if (structureFiles.Count == 0)
+            {
+                throw new InvalidDataException($"No structure files were found in manifest: {standardManifestPath}");
             }
 
             var standardStructurePath = Path.Combine(gedcomRegistriesPath, "structure", "standard");
