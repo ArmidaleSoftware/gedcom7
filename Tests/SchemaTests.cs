@@ -1081,7 +1081,8 @@ namespace Tests
             }
 
             // Test valid values for ENDL STAT.
-            foreach (string value in validValues)
+            string[] endlValidValues = { "CHILD", "COMPLETED", "EXCLUDED", "INFANT", "PRE-1970", "STILLBORN", "SUBMITTED", "UNCLEARED" };
+            foreach (string value in endlValidValues)
             {
                 ValidateGedcomText(@"0 HEAD
 1 GEDC
@@ -1149,6 +1150,23 @@ namespace Tests
 3 DATE 1 JAN 2000
 0 TRLR
 ", "Line 12: \"INVALID\" is not a valid value for STAT");
+
+            // Test that INFANT is invalid for BAPL.
+            ValidateGedcomText(@"0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 SOUR Test
+1 CHAR ASCII
+1 SUBM @S1@
+0 @S1@ SUBM
+1 NAME Test
+0 @I1@ INDI
+1 BAPL
+2 STAT INFANT
+3 DATE 1 JAN 2000
+0 TRLR
+", "Line 12: \"INFANT\" is not a valid value for STAT");
 
             // Test invalid value for ENDL.
             ValidateGedcomText(@"0 HEAD
