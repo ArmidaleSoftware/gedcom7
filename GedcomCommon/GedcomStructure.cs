@@ -744,9 +744,15 @@ namespace GedcomCommon
             "ANSEL", "UTF-8", "UNICODE", "ASCII"
         };
 
-        private static readonly string[] _ldsBaptismEndowmentDateStatusValues =
+        private static readonly string[] _ldsBaptismDateStatusValues =
         {
             "CHILD", "COMPLETED", "EXCLUDED", "PRE-1970",
+            "STILLBORN", "SUBMITTED", "UNCLEARED"
+        };
+
+        private static readonly string[] _ldsEndowmentDateStatusValues =
+        {
+            "CHILD", "COMPLETED", "EXCLUDED", "INFANT", "PRE-1970",
             "STILLBORN", "SUBMITTED", "UNCLEARED"
         };
 
@@ -1073,8 +1079,13 @@ namespace GedcomCommon
                         }
                         break;
                     case "https://gedcom.io/terms/v5.5.1/type-LDS_BAPTISM_DATE_STATUS":
+                        if (!_ldsBaptismDateStatusValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
+                        }
+                        break;
                     case "https://gedcom.io/terms/v5.5.1/type-LDS_ENDOWMENT_DATE_STATUS":
-                        if (!_ldsBaptismEndowmentDateStatusValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
+                        if (!_ldsEndowmentDateStatusValues.Any(v => string.Equals(v, this.LineVal, StringComparison.OrdinalIgnoreCase)))
                         {
                             return ErrorMessage("\"" + this.LineVal + "\" is not a valid value for " + this.Tag);
                         }
