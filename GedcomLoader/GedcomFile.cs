@@ -91,17 +91,15 @@ namespace GedcomLoader
                 {
                     if (line.Contains("2 VERS"))
                     {
-                        if (line.Contains("7.0"))
+                        var versPayload = line.Substring(line.IndexOf("2 VERS") + "2 VERS".Length).Trim();
+                        var versToken = versPayload.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                        for (GedcomVersion version = GedcomVersion.V551; version <= GedcomVersion.V71; version++)
                         {
-                            this.GedcomVersion = GedcomVersion.V70;
-                        }
-                        else if (line.Contains("7.1"))
-                        {
-                            this.GedcomVersion = GedcomVersion.V71;
-                        }
-                        else if (line.Contains("5.5.1"))
-                        {
-                            this.GedcomVersion = GedcomVersion.V551;
+                            if (string.Equals(versToken, GedcomStructureSchema.GetGedcomVersionString(version), StringComparison.Ordinal))
+                            {
+                                this.GedcomVersion = version;
+                                break;
+                            }
                         }
                         break;
                     }
