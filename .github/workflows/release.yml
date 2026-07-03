@@ -141,6 +141,7 @@ jobs:
           asset_content_type: application/zip
 
   deploy-ubuntu:
+    needs: deploy
     runs-on: ubuntu-latest
     steps:
       - id: skip_check
@@ -180,17 +181,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Wait up to 150 seconds for the Windows job to create the release.
-          for i in {1..30}; do
-            if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
-              break
-            fi
-            sleep 5
-          done
-          if ! gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
-            echo "Release ${{ github.ref_name }} was not created in time" >&2
-            exit 1
-          fi
           gh release upload "${{ github.ref_name }}" \
             "${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/Ubuntu-${{env.BUILD_CONFIGURATION}}-GedValidate.zip" \
             --clobber
