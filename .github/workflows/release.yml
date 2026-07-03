@@ -184,7 +184,7 @@ jobs:
         run: |
           upload_url=$(gh api "repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" --jq '.upload_url')
           if [[ -z "$upload_url" || "$upload_url" == "null" ]]; then
-            echo "Failed to determine release upload URL for tag ${{ github.ref_name }}"
+            echo "Failed to determine release upload URL for tag ${{ github.ref_name }}" >&2
             exit 1
           fi
           echo "upload_url=${upload_url}" >> "$GITHUB_OUTPUT"
