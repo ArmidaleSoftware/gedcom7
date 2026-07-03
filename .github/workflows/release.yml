@@ -139,3 +139,59 @@ jobs:
           asset_path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/Windows-${{env.BUILD_CONFIGURATION}}-GedValidate.zip
           asset_name: Windows-${{env.BUILD_CONFIGURATION}}-GedValidate.zip
           asset_content_type: application/zip
+
+  deploy-ubuntu:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          cancel_others: 'false'
+          paths_ignore: '["**.md"]'
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        if: steps.skip_check.outputs.should_skip != 'true'
+        with:
+          submodules: 'recursive'
+
+      - name: Restore NuGet packages
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet restore ${{env.SOLUTION_FILE_PATH}}
+
+      - name: Build
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet build ${{env.SOLUTION_FILE_PATH}} --configuration ${{env.BUILD_CONFIGURATION}} /p:Analysis='True'
+
+      - name: Run Basic Unit Tests
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet test ./Tests/Tests.csproj --configuration ${{env.BUILD_CONFIGURATION}} --no-build --logger "trx"
+
+      - name: Zip the directory
+        if: steps.skip_check.outputs.should_skip != 'true'
+        run: |
+          cd "${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/"
+          zip -r "Ubuntu-${{env.BUILD_CONFIGURATION}}-GedValidate.zip" ./*
+
+      - name: Get release upload URL
+        if: steps.skip_check.outputs.should_skip != 'true'
+        id: release_data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          upload_url=$(python3 -c 'import json,sys,urllib.request; req=urllib.request.Request("https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}",headers={"Authorization":"token " + "'"$GITHUB_TOKEN"'", "Accept":"application/vnd.github+json"}); data=json.load(urllib.request.urlopen(req)); print(data["upload_url"])')
+          echo "upload_url=${upload_url}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Release Assets
+        if: steps.skip_check.outputs.should_skip != 'true'
+        uses: actions/upload-release-asset@e8f9f06c4b078e705bd2ea027f0926603fc9b4d5  # v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release_data.outputs.upload_url }}
+          asset_path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/Ubuntu-${{env.BUILD_CONFIGURATION}}-GedValidate.zip
+          asset_name: Ubuntu-${{env.BUILD_CONFIGURATION}}-GedValidate.zip
+          asset_content_type: application/zip
