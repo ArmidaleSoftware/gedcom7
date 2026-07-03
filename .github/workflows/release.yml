@@ -180,9 +180,13 @@ jobs:
         if: steps.skip_check.outputs.should_skip != 'true'
         id: release_data
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          upload_url=$(python3 -c 'import json,sys,urllib.request; req=urllib.request.Request("https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}",headers={"Authorization":"token " + "'"$GITHUB_TOKEN"'", "Accept":"application/vnd.github+json"}); data=json.load(urllib.request.urlopen(req)); print(data["upload_url"])')
+          upload_url=$(gh api "repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" --jq '.upload_url')
+          if [[ -z "$upload_url" || "$upload_url" == "null" ]]; then
+            echo "Failed to determine release upload URL for tag ${{ github.ref_name }}"
+            exit 1
+          fi
           echo "upload_url=${upload_url}" >> "$GITHUB_OUTPUT"
 
       - name: Upload Release Assets
