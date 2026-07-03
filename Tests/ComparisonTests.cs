@@ -11,7 +11,8 @@ namespace Tests
     [TestClass]
     public class ComparisonTests
     {
-        private const string TEST_FILES_BASE_PATH = "..\\..\\..\\..\\external\\GEDCOM-registries\\registry_tools\\GEDCOM.io\\testfiles\\gedcom70";
+        private static readonly string TestFilesBasePath = Path.Combine("..", "..", "..", "..", "external", "GEDCOM-registries", "registry_tools", "GEDCOM.io", "testfiles", "gedcom70");
+        private static readonly string SamplesBasePath = Path.Combine("..", "..", "..", "samples");
 
         void CompareFileWithSelf(string path)
         {
@@ -28,23 +29,23 @@ namespace Tests
         [TestMethod]
         public void CompareMinimalWithSelf()
         {
-            CompareFileWithSelf(Path.Combine(TEST_FILES_BASE_PATH, "minimal70.ged"));
+            CompareFileWithSelf(Path.Combine(TestFilesBasePath, "minimal70.ged"));
         }
 
         [TestMethod]
         public void CompareMaximalWithSelf()
         {
-            CompareFileWithSelf(Path.Combine(TEST_FILES_BASE_PATH, "maximal70.ged"));
+            CompareFileWithSelf(Path.Combine(TestFilesBasePath, "maximal70.ged"));
         }
 
         private void CompareSubsetWithSuperset(string subset, string superset, int structuresAdded, int percentage)
         {
             var subsetFile = new GedcomFile();
-            List<string> errors = subsetFile.LoadFromPath(Path.Combine(TEST_FILES_BASE_PATH, subset + ".ged"));
+            List<string> errors = subsetFile.LoadFromPath(Path.Combine(TestFilesBasePath, subset + ".ged"));
             Assert.IsEmpty(errors);
 
             var supersetFile = new GedcomFile();
-            errors = supersetFile.LoadFromPath(Path.Combine(TEST_FILES_BASE_PATH, superset + ".ged"));
+            errors = supersetFile.LoadFromPath(Path.Combine(TestFilesBasePath, superset + ".ged"));
             Assert.IsEmpty(errors);
 
             // Adding information is ok.
@@ -118,11 +119,11 @@ namespace Tests
         public void CompareNoteWithSharedNote()
         {
             var note = new GedcomFile();
-            List<string> errors = note.LoadFromPath("..\\..\\..\\samples\\note.ged");
+            List<string> errors = note.LoadFromPath(Path.Combine(SamplesBasePath, "note.ged"));
             Assert.IsEmpty(errors);
 
             var snote = new GedcomFile();
-            errors = snote.LoadFromPath("..\\..\\..\\samples\\snote.ged");
+            errors = snote.LoadFromPath(Path.Combine(SamplesBasePath, "snote.ged"));
             Assert.IsEmpty(errors);
 
             GedcomComparisonReport report = note.Compare(snote);
