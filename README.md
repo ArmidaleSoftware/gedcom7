@@ -1,6 +1,6 @@
 # GEDCOM 7 Library
 
-This repository contains code for doing FamilySearch GEDCOM 7 operations on Windows.
+This repository contains code for doing FamilySearch GEDCOM 7 operations on Windows and Linux.
 It contains:
 
 - Gedcom7 - a project that builds a GEDCOM parser library.
@@ -15,7 +15,7 @@ The same Gedcom7 library is used by the online web site tools:
 
 # Prerequisites
 
-- Windows 10 or above
+- Windows 10 or above, or Ubuntu
 - [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/), any edition (the free Community edition will do)
 
 # GedValidate Command-line Tool Usage

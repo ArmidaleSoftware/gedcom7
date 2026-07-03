@@ -139,3 +139,48 @@ jobs:
           asset_path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/Windows-${{env.BUILD_CONFIGURATION}}-GedValidate.zip
           asset_name: Windows-${{env.BUILD_CONFIGURATION}}-GedValidate.zip
           asset_content_type: application/zip
+
+  deploy-ubuntu:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          cancel_others: 'false'
+          paths_ignore: '["**.md"]'
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        if: steps.skip_check.outputs.should_skip != 'true'
+        with:
+          submodules: 'recursive'
+
+      - name: Restore NuGet packages
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet restore ${{env.SOLUTION_FILE_PATH}}
+
+      - name: Build
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet build ${{env.SOLUTION_FILE_PATH}} --configuration ${{env.BUILD_CONFIGURATION}} /p:Analysis='True'
+
+      - name: Run Basic Unit Tests
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet test ./Tests/Tests.csproj --configuration ${{env.BUILD_CONFIGURATION}} --no-build --logger "trx"
+
+      - name: Zip the directory
+        if: steps.skip_check.outputs.should_skip != 'true'
+        run: |
+          cd "${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/"
+          zip -r "Ubuntu-${{env.BUILD_CONFIGURATION}}-GedValidate.zip" ./*
+
+      - name: Upload Release Assets
+        if: steps.skip_check.outputs.should_skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            "${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/Ubuntu-${{env.BUILD_CONFIGURATION}}-GedValidate.zip" \
+            --clobber
