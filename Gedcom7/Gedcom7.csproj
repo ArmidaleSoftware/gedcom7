@@ -8,7 +8,7 @@
     <ProjectReference Include="..\GedcomCommon\GedcomCommon.csproj" />
   </ItemGroup>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(OS)' == 'Windows_NT'">
     <Exec Command="powershell -NonInteractive -ExecutionPolicy Unrestricted $(ProjectDir)..\scripts\copy_pre_commit.ps1 $(ProjectDir)..\scripts\pre-commit" />
   </Target>
 

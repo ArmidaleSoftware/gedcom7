@@ -11,7 +11,8 @@ namespace Tests
     [TestClass]
     public class ComparisonTests
     {
-        private const string TEST_FILES_BASE_PATH = "..\\..\\..\\..\\external\\GEDCOM-registries\\registry_tools\\GEDCOM.io\\testfiles\\gedcom70";
+        private static readonly string TEST_FILES_BASE_PATH = Path.Combine("..", "..", "..", "..", "external", "GEDCOM-registries", "registry_tools", "GEDCOM.io", "testfiles", "gedcom70");
+        private static readonly string SAMPLES_BASE_PATH = Path.Combine("..", "..", "..", "samples");
 
         void CompareFileWithSelf(string path)
         {
@@ -118,11 +119,11 @@ namespace Tests
         public void CompareNoteWithSharedNote()
         {
             var note = new GedcomFile();
-            List<string> errors = note.LoadFromPath("..\\..\\..\\samples\\note.ged");
+            List<string> errors = note.LoadFromPath(Path.Combine(SAMPLES_BASE_PATH, "note.ged"));
             Assert.IsEmpty(errors);
 
             var snote = new GedcomFile();
-            errors = snote.LoadFromPath("..\\..\\..\\samples\\snote.ged");
+            errors = snote.LoadFromPath(Path.Combine(SAMPLES_BASE_PATH, "snote.ged"));
             Assert.IsEmpty(errors);
 
             GedcomComparisonReport report = note.Compare(snote);
