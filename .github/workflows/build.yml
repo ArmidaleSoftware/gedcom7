@@ -25,7 +25,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-windows:
     strategy:
       matrix:
         configurations: [Debug, Release]
@@ -98,5 +98,66 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: Windows ${{env.BUILD_CONFIGURATION}} GedValidate
+          path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/
+          retention-days: 5
+
+  build-ubuntu:
+    strategy:
+      matrix:
+        configurations: [Debug, Release]
+    runs-on: ubuntu-latest
+    env:
+      # Path to the solution file relative to the root of the project.
+      SOLUTION_FILE_PATH: Gedcom7.sln
+
+      # Configuration type to build.
+      # You can convert this to a build matrix if you need coverage of multiple configuration types.
+      # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+      BUILD_CONFIGURATION: ${{matrix.configurations}}
+
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          cancel_others: 'false'
+          paths_ignore: '["**.md"]'
+
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        if: steps.skip_check.outputs.should_skip != 'true'
+        with:
+          submodules: 'recursive'
+
+      - name: Restore NuGet packages
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet restore ${{env.SOLUTION_FILE_PATH}}
+
+      - name: Build
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet build ${{env.SOLUTION_FILE_PATH}} --configuration ${{env.BUILD_CONFIGURATION}} /p:Analysis='True'
+
+      - name: Run Basic Unit Tests
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet test ./Tests/Tests.csproj --configuration ${{env.BUILD_CONFIGURATION}} --no-build --logger "trx"
+
+      - name: Validate GEDCOM.io test files
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/
+        run: |
+          dotnet GedValidate.dll ${{github.workspace}}/external/GEDCOM-registries ${{github.workspace}}/external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/
+
+      - name: Validate test-files test files
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/
+        run: |
+          dotnet GedValidate.dll ${{github.workspace}}/external/GEDCOM-registries ${{github.workspace}}/external/test-files/7/
+
+      - name: Upload GedValidate binary
+        if: steps.skip_check.outputs.should_skip != 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: Ubuntu ${{env.BUILD_CONFIGURATION}} GedValidate
           path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/
           retention-days: 5
