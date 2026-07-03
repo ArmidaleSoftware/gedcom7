@@ -180,6 +180,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Wait up to 150 seconds for the Windows job to create the release.
           for i in {1..30}; do
             if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
               break
