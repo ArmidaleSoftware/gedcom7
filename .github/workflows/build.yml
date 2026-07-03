@@ -139,8 +139,8 @@ jobs:
 
       - name: Run Basic Unit Tests
         if: steps.skip_check.outputs.should_skip != 'true'
-        working-directory: ${{env.GITHUB_WORKSPACE}}
-        run: dotnet test ./Tests/Tests.csproj --configuration ${{env.BUILD_CONFIGURATION}} --no-build --logger "trx"
+        working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net8.0
+        run: dotnet vstest Tests.dll --logger "trx"
 
       - name: Validate GEDCOM.io test files
         if: steps.skip_check.outputs.should_skip != 'true'
