@@ -121,28 +121,6 @@ namespace GedcomCommon
             return (version == GedcomVersion.V70 || version == GedcomVersion.V71 || version == GedcomVersion.All);
         }
 
-        /// <summary>
-        /// Check whether this schema applies to a given GEDCOM version.
-        /// </summary>
-        /// <param name="version">GEDCOM version</param>
-        /// <returns>true if applies, false if not</returns>
-        public bool HasVersion(GedcomVersion version)
-        {
-            Debug.Assert(version != GedcomVersion.Unknown);
-            if (IsDocumented && !UriHasVersion(this.Uri, version))
-            {
-                return false;
-            }
-            foreach (string uri in Substructures.Keys)
-            {
-                if (!UriHasVersion(uri, version))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
         GedcomStructureSchema(Dictionary<object, object> dictionary)
         {
             this.Lang = dictionary["lang"] as string;
@@ -247,6 +225,66 @@ namespace GedcomCommon
             s_StructureSchemasByVersion[(int)version][structureSchemaKey] = schema;
         }
 
+        public static string GetGedcomVersionString(GedcomVersion version)
+        {
+            switch (version)
+            {
+                case GedcomVersion.V551:
+                    return "5.5.1";
+                case GedcomVersion.V70:
+                    return "7.0";
+                case GedcomVersion.V71:
+                    return "7.1";
+                default:
+                    return "Unknown";
+            }
+        }
+
+        /// <summary>
+        /// Reads a GEDCOM-registries standard manifest TSV and returns the set of filenames
+        /// whose first column starts with <paramref name="pathPrefix"/>.
+        /// Throws <see cref="FileNotFoundException"/> if the manifest does not exist and
+        /// <see cref="InvalidDataException"/> if no matching entries are found.
+        /// </summary>
+        public static HashSet<string> LoadManifestFilenames(string gedcomRegistriesPath, GedcomVersion version, string pathPrefix)
+        {
+            var standardManifestPath = Path.Combine(gedcomRegistriesPath, "manifest", "standard", "manifest-" + GetGedcomVersionString(version) + "-en-US.tsv");
+
+            if (!File.Exists(standardManifestPath))
+            {
+                throw new FileNotFoundException($"Standard manifest file not found: {standardManifestPath}", standardManifestPath);
+            }
+
+            var filenames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var manifestReader = new StreamReader(standardManifestPath))
+            {
+                // Skip header line.
+                manifestReader.ReadLine();
+                string line;
+                while ((line = manifestReader.ReadLine()) != null)
+                {
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        continue;
+                    }
+
+                    // The manifest is TSV; the first column is the path.
+                    var manifestPath = line.Split('\t')[0].Trim();
+                    if (manifestPath.StartsWith(pathPrefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        filenames.Add(Path.GetFileName(manifestPath));
+                    }
+                }
+            }
+
+            if (filenames.Count == 0)
+            {
+                throw new InvalidDataException($"No files with prefix \"{pathPrefix}\" were found in manifest: {standardManifestPath}");
+            }
+
+            return filenames;
+        }
+
         public static void LoadAll(GedcomVersion version, string gedcomRegistriesPath = null)
         {
             Debug.Assert(version != GedcomVersion.Unknown && version != GedcomVersion.All);
@@ -260,18 +298,24 @@ namespace GedcomCommon
                 string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 gedcomRegistriesPath = Path.GetFullPath(Path.Combine(baseDirectory, "..", "..", "..", "..", "..", "gedcom7", "external", "GEDCOM-registries"));
             }
-            var path = Path.Combine(gedcomRegistriesPath, "structure", "standard");
-            string[] files = Directory.GetFiles(path);
+
+            var structureFiles = LoadManifestFilenames(gedcomRegistriesPath, version, "structure/standard/");
+
+            var standardStructurePath = Path.Combine(gedcomRegistriesPath, "structure", "standard");
+            string[] files = Directory.GetFiles(standardStructurePath);
             foreach (string filename in files)
             {
+                // Only load files that are in the manifest.
+                var justFilename = Path.GetFileName(filename);
+                if (!structureFiles.Contains(justFilename))
+                {
+                    continue;
+                }
+
                 var deserializer = new DeserializerBuilder().Build();
                 using var reader = new StreamReader(filename);
                 var dictionary = deserializer.Deserialize<Dictionary<object, object>>(reader);
                 var schema = new GedcomStructureSchema(dictionary);
-                if (!schema.HasVersion(version))
-                {
-                    continue;
-                }
                 s_StructureSchemasByUri[schema.Uri] = schema;
                 if (schema.Superstructures.Count == 0)
                 {
