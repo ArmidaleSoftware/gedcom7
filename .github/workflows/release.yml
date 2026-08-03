@@ -155,6 +155,10 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Install Native AOT prerequisites
+        if: steps.skip_check.outputs.should_skip != 'true'
+        run: sudo apt-get install -y clang zlib1g-dev
+
       - name: Restore NuGet packages
         if: steps.skip_check.outputs.should_skip != 'true'
         working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -170,11 +174,16 @@ jobs:
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: dotnet test ./Tests/Tests.csproj --configuration ${{env.BUILD_CONFIGURATION}} --no-build --logger "trx"
 
-      - name: Zip the directory
+      - name: Publish GedValidate as Native AOT
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet publish GedValidate/GedValidate.csproj -r linux-x64 -c ${{env.BUILD_CONFIGURATION}} -p:PublishAot=true
+
+      - name: Create tar.gz archive
         if: steps.skip_check.outputs.should_skip != 'true'
         run: |
-          cd "${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/"
-          zip -r "Ubuntu-${{env.BUILD_CONFIGURATION}}-GedValidate.zip" ./*
+          tar -czf "${{github.workspace}}/Ubuntu-${{env.BUILD_CONFIGURATION}}-GedValidate.tar.gz" \
+            -C "${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/linux-x64/publish/" .
 
       - name: Upload Release Assets
         if: steps.skip_check.outputs.should_skip != 'true'
@@ -182,5 +191,5 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${{ github.ref_name }}" \
-            "${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/Ubuntu-${{env.BUILD_CONFIGURATION}}-GedValidate.zip" \
+            "${{github.workspace}}/Ubuntu-${{env.BUILD_CONFIGURATION}}-GedValidate.tar.gz" \
             --clobber

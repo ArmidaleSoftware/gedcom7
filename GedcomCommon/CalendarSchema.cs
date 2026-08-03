@@ -4,7 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using YamlDotNet.Serialization;
+using YamlDotNet.RepresentationModel;
 
 namespace GedcomCommon
 {
@@ -68,9 +68,11 @@ namespace GedcomCommon
             }
             foreach (string filename in files)
             {
-                var deserializer = new DeserializerBuilder().Build();
+                var yamlStream = new YamlStream();
                 using var reader = new StreamReader(filename);
-                var dictionary = deserializer.Deserialize<Dictionary<object, object>>(reader);
+                yamlStream.Load(reader);
+                var mapping = (YamlMappingNode)yamlStream.Documents[0].RootNode;
+                var dictionary = GedcomStructureSchema.YamlNodeToDictionary(mapping);
                 var schema = new CalendarSchema(dictionary);
                 if (!schema.HasVersion(version))
                 {

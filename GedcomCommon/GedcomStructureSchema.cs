@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using YamlDotNet.Serialization;
+using YamlDotNet.RepresentationModel;
 
 namespace GedcomCommon
 {
@@ -43,6 +43,54 @@ namespace GedcomCommon
                 }
             }
         }
+
+        /// <summary>
+        /// Convert a YamlMappingNode into a Dictionary<object, object> that matches
+        /// what YamlDotNet's high-level Deserialize<Dictionary<object,object>> used to produce,
+        /// so the existing schema constructors can be reused without change.
+        /// This uses the reflection-free YamlStream API and is compatible with Native AOT.
+        /// </summary>
+        internal static Dictionary<object, object> YamlNodeToDictionary(YamlMappingNode mapping)
+        {
+            var dict = new Dictionary<object, object>();
+            foreach (var entry in mapping.Children)
+            {
+                var key = ((YamlScalarNode)entry.Key).Value;
+                dict[key] = YamlNodeToObject(entry.Value);
+            }
+            return dict;
+        }
+
+        static object YamlNodeToObject(YamlNode node)
+        {
+            if (node is YamlScalarNode scalar)
+            {
+                // YamlDotNet's Deserialize used to return null for YAML null scalars.
+                if (scalar.Tag == "tag:yaml.org,2002:null" ||
+                    scalar.Value == "~" ||
+                    (scalar.Style == YamlDotNet.Core.ScalarStyle.Plain &&
+                        (scalar.Value == null || string.Equals(scalar.Value, "null", StringComparison.OrdinalIgnoreCase))))
+                {
+                    return null;
+                }
+                return scalar.Value;
+            }
+            if (node is YamlSequenceNode sequence)
+            {
+                var list = new List<object>();
+                foreach (var item in sequence.Children)
+                {
+                    list.Add(YamlNodeToObject(item));
+                }
+                return list;
+            }
+            if (node is YamlMappingNode mapping)
+            {
+                return YamlNodeToDictionary(mapping);
+            }
+            return null;
+        }
+
         static void AddDictionary(Dictionary<string, GedcomStructureCountInfo> dictionary, Dictionary<object, object> input)
         {
             if (input != null)
@@ -264,9 +312,11 @@ namespace GedcomCommon
             string[] files = Directory.GetFiles(path);
             foreach (string filename in files)
             {
-                var deserializer = new DeserializerBuilder().Build();
+                var yamlStream = new YamlStream();
                 using var reader = new StreamReader(filename);
-                var dictionary = deserializer.Deserialize<Dictionary<object, object>>(reader);
+                yamlStream.Load(reader);
+                var mapping = (YamlMappingNode)yamlStream.Documents[0].RootNode;
+                var dictionary = YamlNodeToDictionary(mapping);
                 var schema = new GedcomStructureSchema(dictionary);
                 if (!schema.HasVersion(version))
                 {
