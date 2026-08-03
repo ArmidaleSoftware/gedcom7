@@ -65,8 +65,11 @@ namespace GedcomCommon
         {
             if (node is YamlScalarNode scalar)
             {
-                // YamlDotNet's Deserialize used to return null for "~" or empty nulls.
-                if (scalar.Value == "~" || (scalar.Value == null && scalar.Style == YamlDotNet.Core.ScalarStyle.Plain))
+                // YamlDotNet's Deserialize used to return null for YAML null scalars.
+                if (scalar.Tag == "tag:yaml.org,2002:null" ||
+                    scalar.Value == "~" ||
+                    (scalar.Style == YamlDotNet.Core.ScalarStyle.Plain &&
+                        (scalar.Value == null || string.Equals(scalar.Value, "null", StringComparison.OrdinalIgnoreCase))))
                 {
                     return null;
                 }
