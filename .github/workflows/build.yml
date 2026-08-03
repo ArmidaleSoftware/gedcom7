@@ -142,22 +142,29 @@ jobs:
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: dotnet test ./Tests/Tests.csproj --configuration ${{env.BUILD_CONFIGURATION}} --no-build --logger "trx"
 
+      - name: Install Native AOT prerequisites
+        if: steps.skip_check.outputs.should_skip != 'true'
+        run: sudo apt-get install -y clang zlib1g-dev
+
+      - name: Publish GedValidate as Native AOT
+        if: steps.skip_check.outputs.should_skip != 'true'
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet publish GedValidate/GedValidate.csproj -r linux-x64 -c ${{env.BUILD_CONFIGURATION}} -p:PublishAot=true
+
       - name: Validate GEDCOM.io test files
         if: steps.skip_check.outputs.should_skip != 'true'
-        working-directory: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/
         run: |
-          dotnet GedValidate.dll ${{github.workspace}}/external/GEDCOM-registries ${{github.workspace}}/external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/
+          ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/linux-x64/publish/GedValidate ${{github.workspace}}/external/GEDCOM-registries ${{github.workspace}}/external/GEDCOM-registries/registry_tools/GEDCOM.io/testfiles/gedcom70/
 
       - name: Validate test-files test files
         if: steps.skip_check.outputs.should_skip != 'true'
-        working-directory: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/
         run: |
-          dotnet GedValidate.dll ${{github.workspace}}/external/GEDCOM-registries ${{github.workspace}}/external/test-files/7/
+          ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/linux-x64/publish/GedValidate ${{github.workspace}}/external/GEDCOM-registries ${{github.workspace}}/external/test-files/7/
 
       - name: Upload GedValidate binary
         if: steps.skip_check.outputs.should_skip != 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: Ubuntu ${{env.BUILD_CONFIGURATION}} GedValidate
-          path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/
+          path: ${{github.workspace}}/GedValidate/bin/${{env.BUILD_CONFIGURATION}}/net8.0/linux-x64/publish/
           retention-days: 5
