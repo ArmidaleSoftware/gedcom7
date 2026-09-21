@@ -51,21 +51,15 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Add MSBuild to PATH
-        if: steps.skip_check.outputs.should_skip != 'true'
-        uses: microsoft/setup-msbuild@v3
-
       - name: Restore NuGet packages
         if: steps.skip_check.outputs.should_skip != 'true'
         working-directory: ${{env.GITHUB_WORKSPACE}}
-        run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+        run: dotnet restore ${{env.SOLUTION_FILE_PATH}}
 
       - name: Build
         if: steps.skip_check.outputs.should_skip != 'true'
         working-directory: ${{env.GITHUB_WORKSPACE}}
-        # Add additional options to the MSBuild command line here (like platform or verbosity level).
-        # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-        run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Analysis='True' ${{env.SOLUTION_FILE_PATH}}
+        run: dotnet build ${{env.SOLUTION_FILE_PATH}} --configuration ${{env.BUILD_CONFIGURATION}} /p:Analysis='True'
 
       - name: Run Basic Unit Tests
         if: steps.skip_check.outputs.should_skip != 'true'
@@ -86,7 +80,7 @@ jobs:
 
       - name: Dump memory usage
         if: steps.skip_check.outputs.should_skip != 'true'
-        working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net8.0/TestResults
+        working-directory: ./Tests/TestResults
         run: findstr bytes *.trx
 
       - name: Upload GedValidate binary
