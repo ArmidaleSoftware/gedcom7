@@ -55,10 +55,6 @@ jobs:
         if: steps.skip_check.outputs.should_skip != 'true'
         uses: microsoft/setup-msbuild@v3
 
-      - name: Set up VSTest Path
-        if: steps.skip_check.outputs.should_skip != 'true'
-        uses: darenm/Setup-VSTest@v1
-
       - name: Restore NuGet packages
         if: steps.skip_check.outputs.should_skip != 'true'
         working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -73,8 +69,8 @@ jobs:
 
       - name: Run Basic Unit Tests
         if: steps.skip_check.outputs.should_skip != 'true'
-        working-directory: ./Tests/bin/${{env.BUILD_CONFIGURATION}}/net8.0
-        run: vstest.console.exe Tests.dll /Logger:trx
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet test ./Tests/Tests.csproj --configuration ${{env.BUILD_CONFIGURATION}} --no-build --logger "trx"
 
       - name: Validate GEDCOM.io test files
         if: steps.skip_check.outputs.should_skip != 'true'
