@@ -19,7 +19,6 @@ namespace GedcomCommon
     }
     public struct GedcomStructureSchemaKey
     {
-        public GedcomVersion GedcomVersion;
         public string SourceProgram; // null (wildcard) for standard tags.
         public string SuperstructureUri; // null (wildcard) for undocumented extensions, "-" for records.
         public string Tag;
@@ -228,7 +227,6 @@ namespace GedcomCommon
         {
             Debug.Assert(sourceProgram != string.Empty); // Use null as the wildcard for all source programs, not an empty string.
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
-            structureSchemaKey.GedcomVersion = version;
             structureSchemaKey.SourceProgram = sourceProgram;
             structureSchemaKey.SuperstructureUri = superstructureUri;
             structureSchemaKey.Tag = tag;
@@ -249,7 +247,6 @@ namespace GedcomCommon
         public static void AddSchema(GedcomVersion version, string sourceProgram, string tag, string uri)
         {
             var structureSchemaKey = new GedcomStructureSchemaKey();
-            structureSchemaKey.GedcomVersion = version;
             structureSchemaKey.SourceProgram = sourceProgram;
             // Leave SuperstructureUri as null for a wildcard.
             structureSchemaKey.Tag = tag;
@@ -398,7 +395,6 @@ namespace GedcomCommon
         {
             // First look for a schema with a wildcard source program.
             GedcomStructureSchemaKey structureSchemaKey = new GedcomStructureSchemaKey();
-            structureSchemaKey.GedcomVersion = version;
             structureSchemaKey.SuperstructureUri = superstructureUri;
             structureSchemaKey.Tag = tag;
             structureSchemaKey.IsPointer = (version == GedcomVersion.V551) ? isPointer : false;
