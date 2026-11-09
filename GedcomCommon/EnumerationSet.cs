@@ -42,13 +42,6 @@ namespace GedcomCommon
 
         static Dictionary<string, EnumerationSet> s_EnumerationSets = new Dictionary<string, EnumerationSet>();
 
-        /// <summary>
-        /// Check whether this schema applies to a given GEDCOM version.
-        /// </summary>
-        /// <param name="version">GEDCOM version</param>
-        /// <returns>true if applies, false if not</returns>
-        private bool HasVersion(GedcomVersion version) => GedcomStructureSchema.UriHasVersion(this.Uri, version);
-
         public static void LoadAll(GedcomVersion version, string gedcomRegistriesPath)
         {
             if (s_EnumerationSets.Count > 0)
@@ -56,6 +49,10 @@ namespace GedcomCommon
                 return;
             }
             EnumerationValue.LoadAll(gedcomRegistriesPath);
+
+            // Read the manifest file to get the list of enumeration-set files for this version.
+            var enumSetFiles = GedcomStructureSchema.LoadManifestFilenames(gedcomRegistriesPath, version, "enumeration-set/standard/");
+
             var path = Path.Combine(gedcomRegistriesPath, "enumeration-set", "standard");
             string[] files;
             try
@@ -69,16 +66,19 @@ namespace GedcomCommon
             }
             foreach (string filename in files)
             {
+                // Only load files that are in the manifest.
+                var justFilename = Path.GetFileName(filename);
+                if (!enumSetFiles.Contains(justFilename))
+                {
+                    continue;
+                }
+
                 var yamlStream = new YamlStream();
                 using var reader = new StreamReader(filename);
                 yamlStream.Load(reader);
                 var mapping = (YamlMappingNode)yamlStream.Documents[0].RootNode;
                 var dictionary = GedcomStructureSchema.YamlNodeToDictionary(mapping);
                 var schema = new EnumerationSet(dictionary);
-                if (!schema.HasVersion(version))
-                {
-                    continue;
-                }
                 s_EnumerationSets.Add(schema.Uri, schema);
             }
         }

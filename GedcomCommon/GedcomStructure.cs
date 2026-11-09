@@ -95,6 +95,23 @@ namespace GedcomCommon
 
                 bool isPointer = (tokens.Length > index) && (tokens[index].Length > 0) && IsPointer(tokens[index]);
 
+                // Because new structures may be added over time in any order, x may be a substructure
+                // of y if either x's superstructures includes y or y's substructures includes x.
+                // First check if y's substructures includes x.
+                if (this.Superstructure?.Schema != null)
+                {
+                    foreach (string substructureUri in this.Superstructure?.Schema.Substructures.Keys)
+                    {
+                        var schema = GedcomStructureSchema.GetSchema(substructureUri);
+                        if (schema.StandardTag == this.Tag)
+                        {
+                            this.Schema = schema;
+                            return;
+                        }
+                    }
+                }
+
+                // Now check if x's superstructure includes y.
                 this.Schema = GedcomStructureSchema.GetSchema(this.File.GedcomVersion, sourceProgram, superstructureUri, value, isPointer);
             }
         }
